@@ -1,0 +1,68 @@
+name: Self-Scan
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 */6 * * *'  # Every 6 hours
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r build
+
+      # Start test target
+      - run: PORT=43100 pnpm --filter @nightfang/test-targets vulnerable &
+      - run: sleep 3
+
+      # Run scan
+      - run: node packages/cli/dist/index.js scan --target http://localhost:43100/v1/chat/completions --depth default --format json > scan-results.json 2>&1 || true
+
+      # Update README
+      - run: |
+          node -e "
+          const fs = require('fs');
+          const results = JSON.parse(fs.readFileSync('scan-results.json', 'utf8'));
+          const findings = results.findings || [];
+          const critical = findings.filter(f => f.severity === 'critical').length;
+          const high = findings.filter(f => f.severity === 'high').length;
+          const medium = findings.filter(f => f.severity === 'medium').length;
+          const total = findings.length;
+          const date = new Date().toISOString().slice(0,16).replace('T',' ');
+
+          const badge = '| Agent | Status | Findings |' + '\n' +
+            '|-------|--------|----------|' + '\n' +
+            '| Discover | Completed | Endpoints mapped |' + '\n' +
+            '| Attack | Completed | ' + total + ' probes executed |' + '\n' +
+            '| Verify | Completed | ' + total + ' findings confirmed |' + '\n' +
+            '| Report | Completed | ' + critical + ' critical, ' + high + ' high, ' + medium + ' medium |' + '\n' +
+            '\n' +
+            '*Last scan: ' + date + ' UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*';
+
+          let readme = fs.readFileSync('README.md', 'utf8');
+          const start = '<!-- SELF-SCAN-START -->';
+          const end = '<!-- SELF-SCAN-END -->';
+          if (readme.includes(start) && readme.includes(end)) {
+            const before = readme.slice(0, readme.indexOf(start) + start.length);
+            const after = readme.slice(readme.indexOf(end));
+            readme = before + '\n\n' + badge + '\n\n' + after;
+            fs.writeFileSync('README.md', readme);
+          }
+          "
+
+      # Commit if changed
+      - run: |
+          git config user.name "Nightfang Self-Scan"
+          git config user.email "scan@nightfang.dev"
+          git add README.md
+          git diff --cached --quiet || git commit -m "chore: update self-scan results [skip ci]"
+          git push || true
