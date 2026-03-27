@@ -3,11 +3,16 @@
   "private": true,
   "version": "0.1.0",
   "description": "AI-powered red-teaming toolkit for LLM applications",
+  "bin": {
+    "nightfang": "packages/cli/dist/index.js"
+  },
   "scripts": {
     "build": "pnpm -r build",
     "dev": "pnpm -r --parallel dev",
     "lint": "eslint . --ext .ts",
-    "clean": "pnpm -r clean"
+    "clean": "pnpm -r clean",
+    "vulnerable": "PORT=43100 pnpm --filter @nightfang/test-targets vulnerable",
+    "safe": "PORT=43101 pnpm --filter @nightfang/test-targets safe"
   },
   "keywords": [
     "ai",

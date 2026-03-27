@@ -10,7 +10,7 @@ import type {
   RuntimeMode,
   ScanMode,
 } from "@nightfang/shared";
-import { scan, createRuntime } from "@nightfang/core";
+import { scan, agenticScan, createRuntime } from "@nightfang/core";
 import { formatReport } from "./formatters/index.js";
 import { renderProgressBar } from "./formatters/terminal.js";
 
@@ -31,6 +31,8 @@ program
   .option("--mode <mode>", "Scan mode: probe, deep, mcp", "probe")
   .option("--repo <path>", "Path to target repo for deep scan source analysis")
   .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
+  .option("--agentic", "Use multi-turn agentic scan with tool use and SQLite persistence", false)
+  .option("--db-path <path>", "Path to SQLite database (default: ~/.nightfang/nightfang.db)")
   .option("--verbose", "Show detailed output", false)
   .action(async (opts) => {
     const depth = opts.depth as ScanDepth;
@@ -94,19 +96,18 @@ program
     let attackTotal = 0;
     let attacksDone = 0;
 
-    try {
-      const report = await scan(
-        {
-          target: opts.target,
-          depth,
-          format,
-          runtime,
-          mode,
-          repoPath: opts.repo,
-          timeout: parseInt(opts.timeout, 10),
-          verbose,
-        },
-        (event) => {
+    const scanConfig = {
+      target: opts.target,
+      depth,
+      format,
+      runtime,
+      mode,
+      repoPath: opts.repo,
+      timeout: parseInt(opts.timeout, 10),
+      verbose,
+    };
+
+    const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
           if (format !== "terminal") return;
 
           switch (event.type) {
@@ -158,8 +159,16 @@ program
               spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
               break;
           }
-        }
-      );
+        };
+
+    try {
+      const report = opts.agentic
+        ? await agenticScan({
+            config: scanConfig,
+            dbPath: opts.dbPath,
+            onEvent: eventHandler,
+          })
+        : await scan(scanConfig, eventHandler);
 
       const output = formatReport(report, format);
       console.log(output);
@@ -175,6 +184,45 @@ program
       );
       process.exit(2);
     }
+  });
+
+// ── History command ──
+program
+  .command("history")
+  .description("Show past scan history from the SQLite database")
+  .option("--db-path <path>", "Path to SQLite database")
+  .option("--limit <n>", "Number of scans to show", "10")
+  .action(async (opts) => {
+    const { NightfangDB } = await import("@nightfang/core");
+    const db = new NightfangDB(opts.dbPath);
+    const scans = db.listScans(parseInt(opts.limit, 10));
+    db.close();
+
+    if (scans.length === 0) {
+      console.log(chalk.gray("No scan history found."));
+      return;
+    }
+
+    console.log("");
+    console.log(chalk.red.bold("  ◆ nightfang") + chalk.gray(" scan history"));
+    console.log("");
+
+    for (const scan of scans) {
+      const status =
+        scan.status === "completed"
+          ? chalk.green("done")
+          : scan.status === "failed"
+            ? chalk.red("fail")
+            : chalk.yellow("run");
+      const summary = scan.summary ? JSON.parse(scan.summary) : null;
+      const findings = summary?.totalFindings ?? "?";
+      const duration = scan.durationMs ? `${(scan.durationMs / 1000).toFixed(1)}s` : "-";
+
+      console.log(
+        `  ${status} ${chalk.white(scan.target)} ${chalk.gray(`[${scan.depth}]`)} ${chalk.gray(duration)} ${chalk.yellow(`${findings} findings`)} ${chalk.gray(scan.startedAt)}`
+      );
+    }
+    console.log("");
   });
 
 function depthLabel(depth: ScanDepth): string {
