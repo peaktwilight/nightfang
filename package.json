@@ -2,7 +2,7 @@
   "name": "nightfang",
   "type": "module",
   "version": "0.1.0",
-  "description": "AI-powered red-teaming toolkit for LLM applications",
+  "description": "AI-powered security research automation. Scan LLM endpoints, audit npm packages, review source code. Four autonomous agents discover, attack, verify, and report.",
   "bin": {
     "nightfang": "dist/index.js"
   },
@@ -33,7 +33,7 @@
     "prompt-injection"
   ],
   "author": "Peak Twilight",
-  "homepage": "https://github.com/peaktwilight/nightfang#readme",
+  "homepage": "https://nightfang.dev",
   "bugs": {
     "url": "https://github.com/peaktwilight/nightfang/issues"
   },
