@@ -289,7 +289,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 
 ## Built By
 
-Created by a security researcher with [7 published CVEs](https://www.cve.org/) across node-forge, uptime-kuma, liquidjs, picomatch, and jspdf — plus the creator of [OpenSOAR](https://github.com/peaktwilight) (SOAR platform) and PhishMind (phishing analysis).
+Created by a security researcher with [7 published CVEs](https://doruk.ch/blog) across node-forge, mysql2, uptime-kuma, liquidjs, picomatch, and jspdf.
 
 Nightfang exists because traditional security tools can't see AI attack surfaces. You can't `nmap` a language model. You can't write a static rule for a jailbreak that hasn't been invented yet. You need agents that think like attackers — and then prove what they find.
 
