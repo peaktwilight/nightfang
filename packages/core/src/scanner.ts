@@ -1,6 +1,7 @@
 import type { ScanConfig, ScanContext, ScanReport } from "@nightfang/shared";
 import { loadTemplates } from "@nightfang/templates";
 import { createScanContext, finalize } from "./context.js";
+import { createRuntime } from "./runtime/index.js";
 import { runDiscovery } from "./stages/discovery.js";
 import { runAttacks } from "./stages/attack.js";
 import { runVerification } from "./stages/verify.js";
@@ -30,6 +31,12 @@ export async function scan(
   const emit = onEvent ?? (() => {});
   const ctx: ScanContext = createScanContext(config);
 
+  // Create runtime based on config
+  const runtime = createRuntime({
+    type: config.runtime ?? "api",
+    timeout: config.timeout ?? 30_000,
+  });
+
   // Stage 1: Discovery
   emit({ type: "stage:start", stage: "discovery", message: "Probing target..." });
   const discovery = await runDiscovery(ctx);
@@ -50,7 +57,7 @@ export async function scan(
     message: `Running ${templates.length} templates...`,
   });
 
-  const attackResult = await runAttacks(ctx, templates);
+  const attackResult = await runAttacks(ctx, templates, runtime);
   emit({
     type: "stage:end",
     stage: "attack",

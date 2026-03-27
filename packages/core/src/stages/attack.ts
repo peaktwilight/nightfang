@@ -6,7 +6,9 @@ import type {
   AttackOutcome,
 } from "@nightfang/shared";
 import { DEPTH_CONFIG } from "@nightfang/shared";
+import type { Runtime, RuntimeContext } from "../runtime/types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
+import { buildDeepScanPrompt, buildMcpAuditPrompt } from "../prompts.js";
 
 export interface AttackStageResult {
   results: AttackResult[];
@@ -16,7 +18,8 @@ export interface AttackStageResult {
 
 export async function runAttacks(
   ctx: ScanContext,
-  templates: AttackTemplate[]
+  templates: AttackTemplate[],
+  runtime: Runtime
 ): Promise<StageResult<AttackStageResult>> {
   const start = Date.now();
   const results: AttackResult[] = [];
@@ -32,11 +35,10 @@ export async function runAttacks(
     for (const payload of payloads) {
       payloadsRun++;
       try {
-        const res = await sendPrompt(ctx.config.target, payload.prompt, {
-          timeout: ctx.config.timeout,
-        });
+        const { responseText, latencyMs } = runtime.type === "api"
+          ? await executeApiAttack(ctx, payload.prompt)
+          : await executeProcessAttack(runtime, ctx, template, payload.prompt);
 
-        const responseText = extractResponseText(res.body);
         const outcome = evaluateResponse(responseText, template);
 
         const result: AttackResult = {
@@ -45,7 +47,7 @@ export async function runAttacks(
           outcome,
           request: payload.prompt,
           response: responseText,
-          latencyMs: res.latencyMs,
+          latencyMs,
           timestamp: Date.now(),
         };
 
@@ -77,6 +79,53 @@ export async function runAttacks(
       payloadsRun,
     },
     durationMs: Date.now() - start,
+  };
+}
+
+/** Execute attack via direct HTTP (API mode) */
+async function executeApiAttack(
+  ctx: ScanContext,
+  prompt: string
+): Promise<{ responseText: string; latencyMs: number }> {
+  const res = await sendPrompt(ctx.config.target, prompt, {
+    timeout: ctx.config.timeout,
+  });
+  return {
+    responseText: extractResponseText(res.body),
+    latencyMs: res.latencyMs,
+  };
+}
+
+/** Execute attack via Claude Code / Codex subprocess */
+async function executeProcessAttack(
+  runtime: Runtime,
+  ctx: ScanContext,
+  template: AttackTemplate,
+  prompt: string
+): Promise<{ responseText: string; latencyMs: number }> {
+  // For deep scan: wrap the payload in an agent prompt that gives
+  // Claude Code context about the target and what to look for
+  const agentPrompt = template.category === "tool-misuse"
+    ? buildMcpAuditPrompt(ctx.config.target, template, prompt)
+    : buildDeepScanPrompt(ctx.config.target, template, prompt);
+
+  const runtimeCtx: RuntimeContext = {
+    target: ctx.config.target,
+    templateId: template.id,
+    findings: ctx.findings.length > 0
+      ? JSON.stringify(ctx.findings.map((f) => ({ id: f.id, title: f.title, severity: f.severity })))
+      : undefined,
+  };
+
+  const result = await runtime.execute(agentPrompt, runtimeCtx);
+
+  if (result.error && !result.output) {
+    throw new Error(`Runtime error: ${result.error}`);
+  }
+
+  return {
+    responseText: result.output,
+    latencyMs: result.durationMs,
   };
 }
 

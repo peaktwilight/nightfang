@@ -4,7 +4,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import ora from "ora";
 import { VERSION } from "@nightfang/shared";
-import type { ScanDepth, OutputFormat, RuntimeMode } from "@nightfang/shared";
+import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@nightfang/shared";
 import { scan, createRuntime } from "@nightfang/core";
 import { formatReport } from "./formatters/index.js";
 
@@ -22,13 +22,24 @@ program
   .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
   .option("--runtime <runtime>", "Runtime: api, claude, codex", "api")
+  .option("--mode <mode>", "Scan mode: probe, deep, mcp", "probe")
+  .option("--repo <path>", "Path to target repo for deep scan source analysis")
   .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
   .option("--verbose", "Show detailed output", false)
   .action(async (opts) => {
     const depth = opts.depth as ScanDepth;
     const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
     const runtime = opts.runtime as RuntimeMode;
+    const mode = opts.mode as ScanMode;
     const verbose = opts.verbose as boolean;
+
+    // Deep and MCP modes require a process runtime
+    if (mode !== "probe" && runtime === "api") {
+      console.error(
+        chalk.red(`Mode '${mode}' requires --runtime claude or --runtime codex`)
+      );
+      process.exit(2);
+    }
 
     // Check runtime availability
     if (runtime !== "api") {
@@ -50,6 +61,9 @@ program
       if (runtime !== "api") {
         console.log(chalk.gray(`  Runtime: ${runtime}`));
       }
+      if (mode !== "probe") {
+        console.log(chalk.gray(`  Mode: ${mode}`));
+      }
       console.log("");
     }
 
@@ -62,6 +76,8 @@ program
           depth,
           format,
           runtime,
+          mode,
+          repoPath: opts.repo,
           timeout: parseInt(opts.timeout, 10),
           verbose,
         },

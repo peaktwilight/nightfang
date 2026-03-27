@@ -4,3 +4,4 @@ export { createScanContext, addFinding, addAttackResult, finalize } from "./cont
 export { sendPrompt, extractResponseText } from "./http.js";
 export { createRuntime, ApiRuntime, ProcessRuntime } from "./runtime/index.js";
 export type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType } from "./runtime/index.js";
+export { buildDeepScanPrompt, buildMcpAuditPrompt, buildSourceAnalysisPrompt } from "./prompts.js";

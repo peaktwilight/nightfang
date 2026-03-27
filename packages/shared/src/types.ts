@@ -3,12 +3,15 @@
 export type ScanDepth = "quick" | "default" | "deep";
 export type OutputFormat = "terminal" | "json" | "markdown";
 export type RuntimeMode = "api" | "claude" | "codex";
+export type ScanMode = "probe" | "deep" | "mcp";
 
 export interface ScanConfig {
   target: string;
   depth: ScanDepth;
   format: OutputFormat;
   runtime?: RuntimeMode;
+  mode?: ScanMode;
+  repoPath?: string;
   apiKey?: string;
   model?: string;
   templateFilter?: string[];
