@@ -41,11 +41,11 @@ One command. Zero config. Every finding verified with proof.
 | Stage | Status | Details |
 |-------|--------|---------|
 | Install | Completed | Dependencies audited |
-| npm audit | Completed | Advisories checked |
+| npm audit | Completed | 0 advisories checked |
 | Semgrep | Completed | Static analysis done |
 | Summary | Completed | 0 critical, 0 high, 0 medium |
 
-*Last audit: 2026-03-26 00:00 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
+*Last audit: 2026-03-27 23:51 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
 
 <!-- SELF-SCAN-END -->
 
