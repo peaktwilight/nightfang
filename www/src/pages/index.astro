@@ -1,5 +1,8 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import TerminalHero from '../components/TerminalHero';
+import PipelineViz from '../components/PipelineViz';
+import AnimatedSection from '../components/AnimatedSection';
 ---
 
 <Layout title="Nightfang - Open-source pentesting toolkit for AI, code, and supply chain">
@@ -57,8 +60,11 @@ import Layout from '../layouts/Layout.astro';
           </a>
         </div>
 
-        <!-- Terminal demo -->
+        <!-- Animated Terminal demo -->
         <div class="animate-fade-up max-w-2xl mx-auto" style="animation-delay: 0.4s">
+          <TerminalHero client:visible />
+          <!-- Static fallback for no-JS -->
+          <noscript>
           <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
             <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
               <div class="flex gap-1.5">
@@ -134,6 +140,7 @@ import Layout from '../layouts/Layout.astro';
               </div>
             </div>
           </div>
+          </noscript>
         </div>
       </div>
     </section>
