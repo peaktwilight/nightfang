@@ -4,6 +4,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import ora from "ora";
 import { VERSION } from "@nightfang/shared";
+import { createNightfangSpinner } from "./spinner.js";
 import type {
   ScanDepth,
   OutputFormat,
@@ -244,7 +245,7 @@ program
       console.log("");
     }
 
-    const spinner = format === "terminal" ? ora({ spinner: "dots" }) : null;
+    const spinner = format === "terminal" ? createNightfangSpinner("Initializing...") : null;
     let attackTotal = 0;
     let attacksDone = 0;
 
@@ -277,25 +278,25 @@ program
                 const match = event.message.match(/(\d+)/);
                 if (match) attackTotal = parseInt(match[1], 10);
                 attacksDone = 0;
-                spinner?.start(
-                  `  ${chalk.gray("Running attacks")} ${renderProgressBar(0, attackTotal || 1)}`
-                );
+                spinner?.update(`Running attacks ${renderProgressBar(0, attackTotal || 1)}`);
+                spinner?.start();
               } else {
-                spinner?.start(`  ${chalk.gray(event.message)}`);
+                spinner?.update(event.message);
+                spinner?.start();
               }
               break;
 
             case "attack:end":
               attacksDone++;
               if (spinner && attackTotal > 0) {
-                spinner.text = `  ${chalk.gray("Running attacks")} ${renderProgressBar(attacksDone, attackTotal)}`;
+                spinner.update(`Running attacks ${renderProgressBar(attacksDone, attackTotal)}`);
               }
               break;
 
             case "stage:end":
               if (event.stage === "attack") {
                 spinner?.succeed(
-                  `  ${chalk.gray("Attacks complete")} ${renderProgressBar(attackTotal, attackTotal)}`
+                  `${chalk.gray("Attacks complete")} ${renderProgressBar(attackTotal, attackTotal)}`
                 );
               } else if (
                 event.stage === "discovery" &&
@@ -304,14 +305,14 @@ program
                 "success" in event.data &&
                 event.data.success === false
               ) {
-                spinner?.warn(`  ${chalk.yellow("!")} ${chalk.yellow(event.message)}`);
+                spinner?.warn(event.message);
               } else if (
                 event.stage === "discovery" ||
                 event.stage === "verify"
               ) {
-                spinner?.succeed(`  ${chalk.green("✓")} ${chalk.gray(event.message)}`);
+                spinner?.succeed(event.message);
               } else {
-                spinner?.succeed(`  ${chalk.gray(event.message)}`);
+                spinner?.succeed(event.message);
               }
               break;
 
@@ -324,7 +325,7 @@ program
               break;
 
             case "error":
-              spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
+              spinner?.fail(event.message);
               break;
           }
         };
@@ -354,7 +355,7 @@ program
         process.exit(2);
       }
     } catch (err) {
-      spinner?.fail(`  ${chalk.red("✗ Scan failed")}`);
+      spinner?.fail("Scan failed");
       console.error(
         chalk.red(err instanceof Error ? err.message : String(err))
       );
@@ -667,17 +668,18 @@ program
       console.log("");
     }
 
-    const spinner = format === "terminal" ? ora({ spinner: "dots" }) : null;
+    const spinner = format === "terminal" ? createNightfangSpinner("Initializing review...") : null;
 
     const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
       if (format !== "terminal") return;
 
       switch (event.type) {
         case "stage:start":
-          spinner?.start(`  ${chalk.gray(event.message)}`);
+          spinner?.update(event.message);
+          spinner?.start();
           break;
         case "stage:end":
-          spinner?.succeed(`  ${chalk.green("✓")} ${chalk.gray(event.message)}`);
+          spinner?.succeed(event.message);
           break;
         case "finding":
           if (verbose) {
@@ -687,7 +689,7 @@ program
           }
           break;
         case "error":
-          spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
+          spinner?.fail(event.message);
           break;
       }
     };
@@ -714,7 +716,7 @@ program
         process.exit(1);
       }
     } catch (err) {
-      spinner?.fail(`  ${chalk.red("✗ Review failed")}`);
+      spinner?.fail("Review failed");
       console.error(
         chalk.red(err instanceof Error ? err.message : String(err))
       );
@@ -785,17 +787,18 @@ program
       console.log("");
     }
 
-    const spinner = format === "terminal" ? ora({ spinner: "dots" }) : null;
+    const spinner = format === "terminal" ? createNightfangSpinner("Initializing audit...") : null;
 
     const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
       if (format !== "terminal") return;
 
       switch (event.type) {
         case "stage:start":
-          spinner?.start(`  ${chalk.gray(event.message)}`);
+          spinner?.update(event.message);
+          spinner?.start();
           break;
         case "stage:end":
-          spinner?.succeed(`  ${chalk.green("✓")} ${chalk.gray(event.message)}`);
+          spinner?.succeed(event.message);
           break;
         case "finding":
           if (verbose) {
@@ -805,7 +808,7 @@ program
           }
           break;
         case "error":
-          spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
+          spinner?.fail(event.message);
           break;
       }
     };
@@ -833,7 +836,7 @@ program
         process.exit(1);
       }
     } catch (err) {
-      spinner?.fail(`  ${chalk.red("✗ Audit failed")}`);
+      spinner?.fail("Audit failed");
       console.error(
         chalk.red(err instanceof Error ? err.message : String(err))
       );

@@ -5,833 +5,1003 @@ import {
   useVideoConfig,
   Sequence,
   Easing,
+  spring,
 } from "remotion";
-import { loadFont } from "@remotion/google-fonts/JetBrainsMono";
+import { loadFont } from "@remotion/google-fonts/SpaceMono";
 
-const { fontFamily } = loadFont("normal", {
+const { fontFamily: spaceMono } = loadFont("normal", {
   weights: ["400", "700"],
   subsets: ["latin"],
 });
 
-// ── Color palette (matches nightfang terminal.ts) ──
+// ── Colors ──
 const C = {
-  bg: "#0d1117",
-  fg: "#e6edf3",
-  dimmed: "#6e7681",
-  red: "#ff7b72",
-  redBg: "#da3633",
-  orangeBg: "#d29922",
-  yellowBg: "#e3b341",
-  green: "#3fb950",
-  blue: "#58a6ff",
-  cyan: "#39d2c0",
-  prompt: "#3fb950",
-  cursor: "#58a6ff",
-  border: "#30363d",
+  bg: "#0a0a0a",
+  crimson: "#DC2626",
+  crimsonGlow: "rgba(220, 38, 38, 0.3)",
+  white: "#ffffff",
+  dimmed: "#6b7280",
+  green: "#22c55e",
+  orange: "#f97316",
+  yellow: "#eab308",
+  blue: "#3b82f6",
+  darkPanel: "#111111",
+  border: "#1f1f1f",
+  laneActive: "rgba(220, 38, 38, 0.08)",
 };
 
-// ── Timeline (in seconds) ──
-const T = {
-  // Scene 1: Full scan
-  typeStart: 0.4,
-  typeEnd: 2.8,
-  bannerStart: 3.2,
-  targetInfo: 4.0,
-  discoveryStart: 5.0,
-  discoveryDone: 5.8,
-  attackStart: 6.2,
-  attackEnd: 10.0,
-  finding1: 10.6,
-  finding2: 11.4,
-  finding3: 12.2,
-  finding4: 13.0,
-  finding5: 13.8,
-  summaryStart: 14.8,
-  // Scroll down to reveal summary
-  scrollStart: 15.5,
-  scrollEnd: 16.8,
-  // Hold on summary
-  summaryHold: 20.0,
-  // Scene 2: audit express
-  scene2Start: 20.5,
-  scene2TypeStart: 21.0,
-  scene2TypeEnd: 22.8,
-  scene2BannerStart: 23.2,
-  scene2ResultStart: 23.8,
-  scene2Done: 25.5,
-  // Closing screen
-  closingStart: 26.0,
-  closingEnd: 28.0,
+// ── Scene boundaries (seconds) ──
+const S = {
+  // Scene 1: Intro (0-3s)
+  introStart: 0,
+  introEnd: 3,
+  // Scene 2: Command (3-8s)
+  cmdStart: 3,
+  cmdEnd: 8,
+  // Scene 3: Agents (8-14s)
+  agentsStart: 8,
+  agentsEnd: 14,
+  // Scene 4: Results (14-18s)
+  resultsStart: 14,
+  resultsEnd: 18,
+  // Scene 5: CTA (18-22s)
+  ctaStart: 18,
+  ctaEnd: 22,
 };
 
-const COMMAND = "npx nightfang scan --target https://demo.app/api/chat";
-const COMMAND2 = "npx nightfang audit --package express@4.17.1";
+const COMMAND = "npx nightfang scan --target https://api.example.com";
 
+// ── Main Component ──
 export const DemoVideo = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const sec = frame / fps;
 
-  // Scene 1 fades out before scene 2
-  const scene1Opacity = interpolate(
-    sec,
-    [T.summaryHold, T.scene2Start],
-    [1, 0],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  return (
+    <AbsoluteFill
+      style={{
+        backgroundColor: C.bg,
+        fontFamily: spaceMono,
+        color: C.white,
+        overflow: "hidden",
+      }}
+    >
+      {/* Subtle grid background */}
+      <GridBackground />
+
+      {/* Scene 1: Intro */}
+      <Sequence from={0} durationInFrames={Math.floor(S.introEnd * fps)} layout="none">
+        <IntroScene />
+      </Sequence>
+
+      {/* Scene 2: Command */}
+      <Sequence from={Math.floor(S.cmdStart * fps)} durationInFrames={Math.floor((S.cmdEnd - S.cmdStart) * fps)} layout="none">
+        <CommandScene />
+      </Sequence>
+
+      {/* Scene 3: Agents at Work */}
+      <Sequence from={Math.floor(S.agentsStart * fps)} durationInFrames={Math.floor((S.agentsEnd - S.agentsStart) * fps)} layout="none">
+        <AgentsScene />
+      </Sequence>
+
+      {/* Scene 4: Results */}
+      <Sequence from={Math.floor(S.resultsStart * fps)} durationInFrames={Math.floor((S.resultsEnd - S.resultsStart) * fps)} layout="none">
+        <ResultsScene />
+      </Sequence>
+
+      {/* Scene 5: CTA */}
+      <Sequence from={Math.floor(S.ctaStart * fps)} durationInFrames={Math.floor((S.ctaEnd - S.ctaStart) * fps)} layout="none">
+        <CTAScene />
+      </Sequence>
+    </AbsoluteFill>
   );
+};
 
-  // Scene 2 fades in
-  const scene2Opacity = interpolate(
-    sec,
-    [T.summaryHold, T.scene2Start],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+// ── Grid Background ──
+const GridBackground = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
+
+  const opacity = interpolate(sec, [0, 1], [0, 0.04], {
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        inset: 0,
+        opacity,
+        backgroundImage: `
+          linear-gradient(rgba(220,38,38,0.15) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(220,38,38,0.15) 1px, transparent 1px)
+        `,
+        backgroundSize: "60px 60px",
+      }}
+    />
   );
+};
 
-  // Closing fades in
-  const closingOpacity = interpolate(
-    sec,
-    [T.scene2Done, T.closingStart],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
+// ── Scene 1: INTRO ──
+const IntroScene = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
 
-  // Scene 2 fades out for closing
-  const scene2FadeOut = sec >= T.scene2Done
-    ? interpolate(sec, [T.scene2Done, T.closingStart], [1, 0], {
-        extrapolateLeft: "clamp",
-        extrapolateRight: "clamp",
-      })
-    : 1;
+  // Logo scale with spring
+  const logoScale = spring({
+    frame,
+    fps,
+    config: { damping: 12, stiffness: 80, mass: 0.8 },
+    durationInFrames: 40,
+  });
 
-  // Scroll amount for scene 1 (scroll up to reveal summary)
-  const scrollY = interpolate(
-    sec,
-    [T.scrollStart, T.scrollEnd],
-    [0, -180],
-    {
-      extrapolateLeft: "clamp",
-      extrapolateRight: "clamp",
-      easing: Easing.out(Easing.cubic),
-    }
+  // Logo opacity
+  const logoOpacity = interpolate(frame, [0, 10], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  // Text fade in (staggered)
+  const titleOpacity = interpolate(sec, [0.6, 1.0], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const titleY = interpolate(sec, [0.6, 1.0], [20, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  const taglineOpacity = interpolate(sec, [1.2, 1.6], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const taglineY = interpolate(sec, [1.2, 1.6], [15, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  // Fade out at end of scene
+  const fadeOut = interpolate(sec, [2.4, 3.0], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Glow pulse
+  const glowIntensity = interpolate(
+    Math.sin(sec * 3),
+    [-1, 1],
+    [0.2, 0.6],
   );
 
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: C.bg,
-        fontFamily,
-        fontSize: 16,
-        color: C.fg,
-        padding: 40,
-        overflow: "hidden",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: fadeOut,
       }}
     >
-      {/* Window chrome (always visible) */}
-      <WindowChrome />
+      {/* Logo SVG */}
+      <div
+        style={{
+          opacity: logoOpacity,
+          transform: `scale(${logoScale})`,
+          filter: `drop-shadow(0 0 ${30 * glowIntensity}px ${C.crimson})`,
+          marginBottom: 24,
+        }}
+      >
+        <NightfangLogo size={120} />
+      </div>
 
-      {/* ── Scene 1: Full scan ── */}
-      {sec < T.scene2Start + 0.5 && (
-        <div
-          style={{
-            opacity: scene1Opacity,
-            marginTop: 16,
-            whiteSpace: "pre",
-            lineHeight: 1.7,
-            letterSpacing: 0.3,
-            transform: `translateY(${scrollY}px)`,
-          }}
-        >
-          <PromptLine sec={sec} fps={fps} frame={frame} />
+      {/* Title */}
+      <div
+        style={{
+          opacity: titleOpacity,
+          transform: `translateY(${titleY}px)`,
+          fontSize: 48,
+          fontWeight: 700,
+          color: C.white,
+          letterSpacing: -1,
+        }}
+      >
+        nightfang
+      </div>
 
-          <Sequence from={Math.floor(T.bannerStart * fps)} layout="none">
-            <BannerBlock />
-          </Sequence>
-
-          <Sequence from={Math.floor(T.targetInfo * fps)} layout="none">
-            <FadeInLine>
-              <Span color={C.dimmed}>Target:</Span>{" "}
-              <Span color={C.fg}>https://demo.app/api/chat</Span>
-            </FadeInLine>
-            <FadeInLine delay={6}>
-              <Span color={C.dimmed}>Mode:</Span>{" "}
-              <Span color={C.fg}>full scan</Span>
-              <Span color={C.dimmed}> · </Span>
-              <Span color={C.dimmed}>Model:</Span>{" "}
-              <Span color={C.fg}>claude-sonnet-4-20250514</Span>
-            </FadeInLine>
-          </Sequence>
-
-          <Sequence from={Math.floor(T.discoveryStart * fps)} layout="none">
-            <DiscoveryLine sec={sec} fps={fps} />
-          </Sequence>
-
-          <Sequence from={Math.floor(T.attackStart * fps)} layout="none">
-            <AttackProgress sec={sec} fps={fps} frame={frame} />
-          </Sequence>
-
-          <Sequence from={Math.floor(T.finding1 * fps)} layout="none">
-            <FindingsBlock sec={sec} fps={fps} />
-          </Sequence>
-
-          <Sequence from={Math.floor(T.summaryStart * fps)} layout="none">
-            <SummaryBox />
-          </Sequence>
-        </div>
-      )}
-
-      {/* ── Scene 2: audit express ── */}
-      {sec >= T.summaryHold && sec < T.closingStart + 0.5 && (
-        <div
-          style={{
-            opacity: scene2Opacity * scene2FadeOut,
-            position: "absolute",
-            top: 52,
-            left: 40,
-            right: 40,
-            bottom: 40,
-            whiteSpace: "pre",
-            lineHeight: 1.7,
-            letterSpacing: 0.3,
-          }}
-        >
-          <Scene2AuditExpress sec={sec} fps={fps} frame={frame} />
-        </div>
-      )}
-
-      {/* ── Closing screen ── */}
-      {sec >= T.scene2Done && (
-        <div
-          style={{
-            opacity: closingOpacity,
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ClosingScreen sec={sec} fps={fps} />
-        </div>
-      )}
+      {/* Tagline */}
+      <div
+        style={{
+          opacity: taglineOpacity,
+          transform: `translateY(${taglineY}px)`,
+          fontSize: 18,
+          color: C.dimmed,
+          marginTop: 12,
+          letterSpacing: 2,
+          textTransform: "uppercase",
+        }}
+      >
+        AI-powered security research
+      </div>
     </AbsoluteFill>
   );
 };
 
-// ── Window Chrome ──
-const WindowChrome = () => (
-  <div
-    style={{
-      display: "flex",
-      gap: 8,
-      alignItems: "center",
-      paddingBottom: 12,
-      borderBottom: `1px solid ${C.border}`,
-    }}
+// ── Nightfang Logo (Fang SVG with eyes) ──
+const NightfangLogo = ({ size = 120 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 128 128"
+    xmlns="http://www.w3.org/2000/svg"
   >
-    <div style={{ width: 12, height: 12, borderRadius: 6, background: "#ff5f56" }} />
-    <div style={{ width: 12, height: 12, borderRadius: 6, background: "#ffbd2e" }} />
-    <div style={{ width: 12, height: 12, borderRadius: 6, background: "#27c93f" }} />
-    <div style={{ flex: 1 }} />
-    <span style={{ color: C.dimmed, fontSize: 13 }}>Terminal</span>
-    <div style={{ flex: 1 }} />
-  </div>
+    <path
+      d="M32 48 L64 24 L96 48 L96 88 L80 104 L64 88 L48 104 L32 88Z"
+      fill="none"
+      stroke={C.crimson}
+      strokeWidth="5"
+      strokeLinejoin="round"
+    />
+    <circle cx="52" cy="64" r="5" fill={C.crimson} />
+    <circle cx="76" cy="64" r="5" fill={C.crimson} />
+  </svg>
 );
 
-// ── Prompt line with typewriter ──
-const PromptLine = ({
-  sec,
-  fps,
-  frame,
-}: {
-  sec: number;
-  fps: number;
-  frame: number;
-}) => {
-  const typeDuration = T.typeEnd - T.typeStart;
-  const progress = Math.min(
-    1,
-    Math.max(0, (sec - T.typeStart) / typeDuration)
-  );
-  const charsVisible = Math.floor(progress * COMMAND.length);
-  const showCursor = sec < T.bannerStart && Math.floor(frame / 8) % 2 === 0;
-
-  return (
-    <div>
-      <Span color={C.prompt}>{"❯"}</Span>{" "}
-      <Span color={C.fg}>{COMMAND.slice(0, charsVisible)}</Span>
-      {showCursor && (
-        <Span
-          color={C.cursor}
-          style={{ background: C.cursor, color: C.bg, padding: "0 1px" }}
-        >
-          {" "}
-        </Span>
-      )}
-    </div>
-  );
-};
-
-// ── Banner block ──
-const BannerBlock = () => {
+// ── Scene 2: THE COMMAND ──
+const CommandScene = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const opacity = interpolate(frame, [0, 0.3 * fps], [0, 1], {
+  const sec = frame / fps;
+
+  // Terminal window fades/slides in
+  const terminalScale = spring({
+    frame,
+    fps,
+    config: { damping: 15, stiffness: 100, mass: 0.6 },
+    durationInFrames: 25,
+  });
+
+  const terminalOpacity = interpolate(frame, [0, 12], [0, 1], {
     extrapolateRight: "clamp",
   });
 
-  return (
-    <div style={{ opacity, marginTop: 8, marginBottom: 4 }}>
-      <div>
-        <Span color={C.red} style={{ fontWeight: 700, fontSize: 18 }}>
-          {"  ◆ nightfang"}
-        </Span>
-        <Span color={C.dimmed}> v0.1.0</Span>
-      </div>
-      <div style={{ marginBottom: 4 }}>
-        <Span color={C.dimmed}>{"  AI-powered security scanner"}</Span>
-      </div>
-    </div>
+  // Typewriter starts at 1s into scene
+  const typeDelay = 1.0;
+  const typeDuration = 2.5;
+  const typeProgress = Math.min(
+    1,
+    Math.max(0, (sec - typeDelay) / typeDuration),
   );
-};
+  const charsVisible = Math.floor(typeProgress * COMMAND.length);
 
-// ── Discovery line ──
-const DiscoveryLine = ({ sec, fps }: { sec: number; fps: number }) => {
-  const frame = useCurrentFrame();
-  const done = sec >= T.discoveryDone;
-  const spin = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
-  const spinIdx = Math.floor(frame / 3) % spin.length;
+  // Cursor blink
+  const showCursor = sec < 4.2 && Math.floor(frame / 8) % 2 === 0;
 
-  const opacity = interpolate(frame, [0, 0.2 * fps], [0, 1], {
+  // "Enter" flash at ~3.5s
+  const enterTime = 3.8;
+  const enterFlash =
+    sec >= enterTime
+      ? interpolate(sec, [enterTime, enterTime + 0.3], [0.15, 0], {
+          extrapolateLeft: "clamp",
+          extrapolateRight: "clamp",
+        })
+      : 0;
+
+  // Fade out
+  const fadeOut = interpolate(sec, [4.2, 5.0], [1, 0], {
+    extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
 
   return (
-    <div style={{ opacity, marginTop: 4 }}>
-      {done ? (
-        <>
-          <Span color={C.green}>{"  ✓"}</Span>
-          <Span color={C.fg}>{" Discovery"}</Span>
-          <Span color={C.dimmed}>
-            {" — found 8 endpoints, 3 input vectors"}
-          </Span>
-        </>
-      ) : (
-        <>
-          <Span color={C.cyan}>{"  " + spin[spinIdx]}</Span>
-          <Span color={C.fg}>{" Discovering endpoints..."}</Span>
-        </>
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: fadeOut,
+      }}
+    >
+      {/* Flash overlay on enter */}
+      {enterFlash > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: C.crimson,
+            opacity: enterFlash,
+          }}
+        />
       )}
-    </div>
+
+      <div
+        style={{
+          width: 900,
+          opacity: terminalOpacity,
+          transform: `scale(${0.95 + terminalScale * 0.05})`,
+        }}
+      >
+        {/* Terminal chrome */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "14px 20px",
+            backgroundColor: "#1a1a1a",
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+            borderBottom: `1px solid ${C.border}`,
+          }}
+        >
+          <div style={{ width: 12, height: 12, borderRadius: 6, background: "#ff5f56" }} />
+          <div style={{ width: 12, height: 12, borderRadius: 6, background: "#ffbd2e" }} />
+          <div style={{ width: 12, height: 12, borderRadius: 6, background: "#27c93f" }} />
+          <div style={{ flex: 1 }} />
+          <span style={{ color: C.dimmed, fontSize: 13 }}>Terminal</span>
+          <div style={{ flex: 1 }} />
+        </div>
+
+        {/* Terminal body */}
+        <div
+          style={{
+            backgroundColor: C.bg,
+            padding: "24px 28px",
+            borderBottomLeftRadius: 12,
+            borderBottomRightRadius: 12,
+            border: `1px solid ${C.border}`,
+            borderTop: "none",
+            fontSize: 17,
+            lineHeight: 1.8,
+            whiteSpace: "pre",
+          }}
+        >
+          <span style={{ color: C.green }}>{">"}</span>{" "}
+          <span style={{ color: C.white }}>{COMMAND.slice(0, charsVisible)}</span>
+          {showCursor && (
+            <span
+              style={{
+                backgroundColor: C.crimson,
+                color: C.bg,
+                padding: "0 2px",
+              }}
+            >
+              {" "}
+            </span>
+          )}
+        </div>
+      </div>
+    </AbsoluteFill>
   );
 };
 
-// ── Attack progress bar ──
-const AttackProgress = ({
-  sec,
-  fps,
-  frame,
-}: {
-  sec: number;
-  fps: number;
-  frame: number;
-}) => {
-  const localFrame = useCurrentFrame();
-  const attackDuration = T.attackEnd - T.attackStart;
-  const progress = Math.min(1, Math.max(0, (sec - T.attackStart) / attackDuration));
-  const totalProbes = 47;
-  const currentProbe = Math.floor(progress * totalProbes);
-  const barWidth = 30;
-  const filled = Math.round(progress * barWidth);
-  const empty = barWidth - filled;
-  const pct = Math.round(progress * 100);
-
-  const opacity = interpolate(localFrame, [0, 0.2 * fps], [0, 1], {
-    extrapolateRight: "clamp",
-  });
-
-  return (
-    <div style={{ opacity, marginTop: 4 }}>
-      <Span color={C.dimmed}>{"  Attack "}</Span>
-      <Span color={C.red}>{"█".repeat(filled)}</Span>
-      <Span color={C.dimmed}>{"░".repeat(empty)}</Span>
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {" " + pct}
-      </Span>
-      <Span color={C.dimmed}>
-        {"% (" + currentProbe + "/" + totalProbes + ")"}
-      </Span>
-    </div>
-  );
+// ── Scene 3: AGENTS AT WORK ──
+type AgentLane = {
+  name: string;
+  icon: string;
+  color: string;
+  activateAt: number; // seconds into scene
+  items: { text: string; isVuln?: boolean; isFalsePositive?: boolean; delay: number }[];
 };
 
-// ── Findings ──
-type FindingData = {
-  severity: "CRITICAL" | "HIGH" | "MEDIUM";
-  bgColor: string;
-  textColor: string;
-  title: string;
-  category: string;
-  confirmed: boolean;
-};
-
-const findings: FindingData[] = [
+const lanes: AgentLane[] = [
   {
-    severity: "CRITICAL",
-    bgColor: C.redBg,
-    textColor: "#ffffff",
-    title: "System Prompt Extraction via Instruction Override",
-    category: "Prompt Injection",
-    confirmed: true,
+    name: "DISCOVER",
+    icon: "\u{1F50D}",
+    color: C.blue,
+    activateAt: 0.3,
+    items: [
+      { text: "/api/chat", delay: 0.5 },
+      { text: "/api/completions", delay: 1.0 },
+      { text: "/api/embeddings", delay: 1.4 },
+      { text: "System prompt found", delay: 2.0 },
+      { text: "3 input vectors", delay: 2.5 },
+    ],
   },
   {
-    severity: "CRITICAL",
-    bgColor: C.redBg,
-    textColor: "#ffffff",
-    title: "Indirect Prompt Injection via Retrieved Context",
-    category: "Prompt Injection",
-    confirmed: true,
+    name: "ATTACK",
+    icon: "\u{26A1}",
+    color: C.crimson,
+    activateAt: 1.5,
+    items: [
+      { text: "Prompt Injection", delay: 1.8 },
+      { text: "System Prompt Extraction", delay: 2.6, isVuln: true },
+      { text: "DAN Jailbreak", delay: 3.2, isVuln: true },
+      { text: "Tool Call Manipulation", delay: 3.8, isVuln: true },
+      { text: "Context Overflow", delay: 4.2 },
+    ],
   },
   {
-    severity: "CRITICAL",
-    bgColor: C.redBg,
-    textColor: "#ffffff",
-    title: "Tool Call Manipulation — Unauthorized API Access",
-    category: "Tool Abuse",
-    confirmed: true,
+    name: "VERIFY",
+    icon: "\u{2705}",
+    color: C.green,
+    activateAt: 3.0,
+    items: [
+      { text: "Re-testing #1...", delay: 3.3 },
+      { text: "Confirmed: Critical", delay: 3.8, isVuln: true },
+      { text: "Confirmed: Critical", delay: 4.1, isVuln: true },
+      { text: "False positive", delay: 4.5, isFalsePositive: true },
+      { text: "Confirmed: High", delay: 4.8, isVuln: true },
+    ],
   },
   {
-    severity: "HIGH",
-    bgColor: C.orangeBg,
-    textColor: "#ffffff",
-    title: "PII Leakage Through Conversation History",
-    category: "Data Leakage",
-    confirmed: true,
-  },
-  {
-    severity: "MEDIUM",
-    bgColor: C.yellowBg,
-    textColor: "#000000",
-    title: "Excessive Token Consumption via Recursive Prompts",
-    category: "Denial Of Service",
-    confirmed: false,
+    name: "REPORT",
+    icon: "\u{1F4CB}",
+    color: C.orange,
+    activateAt: 4.5,
+    items: [
+      { text: "Compiling findings...", delay: 4.7 },
+      { text: "3 Critical", delay: 5.0, isVuln: true },
+      { text: "1 High", delay: 5.2 },
+      { text: "1 Medium", delay: 5.4 },
+      { text: "Report ready", delay: 5.6 },
+    ],
   },
 ];
 
-const findingTimes = [T.finding1, T.finding2, T.finding3, T.finding4, T.finding5];
+const AgentsScene = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
 
-const FindingsBlock = ({ sec, fps }: { sec: number; fps: number }) => {
+  // Fade in
+  const fadeIn = interpolate(sec, [0, 0.4], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Fade out
+  const fadeOut = interpolate(sec, [5.2, 6.0], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
   return (
-    <div style={{ marginTop: 12 }}>
-      <Sequence from={0} layout="none">
-        <FindingsHeader />
-      </Sequence>
-      {findings.map((f, i) => {
-        const delay = Math.floor((findingTimes[i] - T.finding1) * fps);
-        return (
-          <Sequence key={i} from={delay} layout="none">
-            <FindingCard finding={f} />
-          </Sequence>
-        );
-      })}
+    <AbsoluteFill
+      style={{
+        opacity: fadeIn * fadeOut,
+        display: "flex",
+        flexDirection: "column",
+        padding: "40px 50px",
+      }}
+    >
+      {/* Header */}
+      <div
+        style={{
+          fontSize: 14,
+          color: C.dimmed,
+          textTransform: "uppercase",
+          letterSpacing: 4,
+          marginBottom: 24,
+          textAlign: "center",
+        }}
+      >
+        Agents at work
+      </div>
+
+      {/* 4 Lanes */}
+      <div
+        style={{
+          display: "flex",
+          gap: 16,
+          flex: 1,
+        }}
+      >
+        {lanes.map((lane, idx) => (
+          <LaneColumn key={lane.name} lane={lane} sec={sec} fps={fps} frame={frame} index={idx} />
+        ))}
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const LaneColumn = ({
+  lane,
+  sec,
+  fps,
+  frame,
+  index,
+}: {
+  lane: AgentLane;
+  sec: number;
+  fps: number;
+  frame: number;
+  index: number;
+}) => {
+  const isActive = sec >= lane.activateAt;
+
+  // Lane header glow when active
+  const headerGlow = isActive
+    ? interpolate(
+        sec,
+        [lane.activateAt, lane.activateAt + 0.5],
+        [0, 1],
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+      )
+    : 0;
+
+  // Pulse effect on activation
+  const pulseOpacity = isActive
+    ? interpolate(
+        sec,
+        [lane.activateAt, lane.activateAt + 0.3, lane.activateAt + 0.6],
+        [0, 0.15, 0],
+        { extrapolateLeft: "clamp", extrapolateRight: "clamp" },
+      )
+    : 0;
+
+  return (
+    <div
+      style={{
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
+        backgroundColor: isActive ? C.laneActive : "transparent",
+        border: `1px solid ${isActive ? lane.color + "40" : C.border}`,
+        borderRadius: 10,
+        padding: 16,
+        position: "relative",
+        overflow: "hidden",
+        transition: "all 0.3s",
+      }}
+    >
+      {/* Activation flash */}
+      {pulseOpacity > 0 && (
+        <div
+          style={{
+            position: "absolute",
+            inset: 0,
+            backgroundColor: lane.color,
+            opacity: pulseOpacity,
+            borderRadius: 10,
+          }}
+        />
+      )}
+
+      {/* Lane Header */}
+      <div
+        style={{
+          textAlign: "center",
+          marginBottom: 14,
+          paddingBottom: 10,
+          borderBottom: `1px solid ${C.border}`,
+        }}
+      >
+        <div style={{ fontSize: 22, marginBottom: 4 }}>{lane.icon}</div>
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 700,
+            color: isActive ? lane.color : C.dimmed,
+            letterSpacing: 2,
+            opacity: 0.4 + headerGlow * 0.6,
+          }}
+        >
+          {lane.name}
+        </div>
+      </div>
+
+      {/* Items */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {lane.items.map((item, i) => {
+          const visible = sec >= item.delay;
+          if (!visible) return null;
+
+          const itemAge = sec - item.delay;
+          const itemOpacity = Math.min(1, itemAge / 0.2);
+          const itemSlide = interpolate(itemAge, [0, 0.2], [10, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          });
+
+          // Red flash for vulns
+          const vulnFlash =
+            item.isVuln && itemAge < 0.4
+              ? interpolate(itemAge, [0, 0.15, 0.4], [0.3, 0.5, 0], {
+                  extrapolateLeft: "clamp",
+                  extrapolateRight: "clamp",
+                })
+              : 0;
+
+          return (
+            <div
+              key={i}
+              style={{
+                opacity: itemOpacity,
+                transform: `translateY(${itemSlide}px)`,
+                fontSize: 11,
+                padding: "5px 8px",
+                borderRadius: 5,
+                backgroundColor: item.isVuln
+                  ? "rgba(220, 38, 38, 0.15)"
+                  : item.isFalsePositive
+                    ? "rgba(107, 114, 128, 0.1)"
+                    : "rgba(255, 255, 255, 0.04)",
+                color: item.isVuln
+                  ? C.crimson
+                  : item.isFalsePositive
+                    ? C.dimmed
+                    : C.white,
+                textDecoration: item.isFalsePositive ? "line-through" : "none",
+                position: "relative",
+                overflow: "hidden",
+              }}
+            >
+              {/* Flash overlay */}
+              {vulnFlash > 0 && (
+                <div
+                  style={{
+                    position: "absolute",
+                    inset: 0,
+                    backgroundColor: C.crimson,
+                    opacity: vulnFlash,
+                    borderRadius: 5,
+                  }}
+                />
+              )}
+              <span style={{ position: "relative", zIndex: 1 }}>
+                {item.isVuln ? "\u{26A0} " : item.isFalsePositive ? "\u{2717} " : ""}
+                {item.text}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Activity indicator */}
+      {isActive && sec < lane.activateAt + 5 && (
+        <div
+          style={{
+            marginTop: "auto",
+            paddingTop: 10,
+          }}
+        >
+          <ActivityBar color={lane.color} sec={sec} startAt={lane.activateAt} />
+        </div>
+      )}
     </div>
   );
 };
 
-const FindingsHeader = () => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const opacity = interpolate(frame, [0, 0.2 * fps], [0, 1], {
-    extrapolateRight: "clamp",
-  });
+const ActivityBar = ({
+  color,
+  sec,
+  startAt,
+}: {
+  color: string;
+  sec: number;
+  startAt: number;
+}) => {
+  const elapsed = sec - startAt;
+  const progress = Math.min(1, elapsed / 4);
+
   return (
-    <div style={{ opacity, marginBottom: 6 }}>
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {"  FINDINGS"}
-      </Span>
+    <div
+      style={{
+        height: 3,
+        backgroundColor: color + "20",
+        borderRadius: 2,
+        overflow: "hidden",
+      }}
+    >
+      <div
+        style={{
+          height: "100%",
+          width: `${progress * 100}%`,
+          backgroundColor: color,
+          borderRadius: 2,
+          boxShadow: `0 0 8px ${color}`,
+        }}
+      />
     </div>
   );
 };
 
-const FindingCard = ({ finding }: { finding: FindingData }) => {
+// ── Scene 4: RESULTS ──
+const ResultsScene = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const opacity = interpolate(frame, [0, 0.2 * fps], [0, 1], {
+  const sec = frame / fps;
+
+  // Terminal slides up
+  const slideUp = spring({
+    frame,
+    fps,
+    config: { damping: 14, stiffness: 80, mass: 0.7 },
+    durationInFrames: 30,
+  });
+
+  const fadeIn = interpolate(frame, [0, 15], [0, 1], {
     extrapolateRight: "clamp",
   });
-  const translateY = interpolate(frame, [0, 0.3 * fps], [8, 0], {
+
+  const fadeOut = interpolate(sec, [3.2, 4.0], [1, 0], {
+    extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+  // Staggered badge entries
+  const badge1 = Math.min(1, Math.max(0, (sec - 0.6) / 0.3));
+  const badge2 = Math.min(1, Math.max(0, (sec - 0.9) / 0.3));
+  const badge3 = Math.min(1, Math.max(0, (sec - 1.2) / 0.3));
+  const statsOpacity = Math.min(1, Math.max(0, (sec - 1.8) / 0.4));
+
+  return (
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: fadeIn * fadeOut,
+      }}
+    >
+      <div
+        style={{
+          width: 700,
+          transform: `translateY(${(1 - slideUp) * 40}px)`,
+        }}
+      >
+        {/* Terminal chrome */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "12px 20px",
+            backgroundColor: "#1a1a1a",
+            borderTopLeftRadius: 12,
+            borderTopRightRadius: 12,
+            borderBottom: `1px solid ${C.border}`,
+          }}
+        >
+          <div style={{ width: 12, height: 12, borderRadius: 6, background: "#ff5f56" }} />
+          <div style={{ width: 12, height: 12, borderRadius: 6, background: "#ffbd2e" }} />
+          <div style={{ width: 12, height: 12, borderRadius: 6, background: "#27c93f" }} />
+          <div style={{ flex: 1 }} />
+          <span style={{ color: C.dimmed, fontSize: 13 }}>Scan Results</span>
+          <div style={{ flex: 1 }} />
+        </div>
+
+        {/* Results body */}
+        <div
+          style={{
+            backgroundColor: C.bg,
+            padding: "32px 40px",
+            borderBottomLeftRadius: 12,
+            borderBottomRightRadius: 12,
+            border: `1px solid ${C.border}`,
+            borderTop: "none",
+          }}
+        >
+          {/* Header */}
+          <div
+            style={{
+              fontSize: 13,
+              color: C.dimmed,
+              textTransform: "uppercase",
+              letterSpacing: 3,
+              marginBottom: 28,
+            }}
+          >
+            Scan Complete
+          </div>
+
+          {/* Severity badges */}
+          <div
+            style={{
+              display: "flex",
+              gap: 20,
+              marginBottom: 32,
+            }}
+          >
+            <SeverityBadge
+              count={3}
+              label="Critical"
+              color={C.crimson}
+              bgColor="rgba(220, 38, 38, 0.15)"
+              opacity={badge1}
+            />
+            <SeverityBadge
+              count={1}
+              label="High"
+              color={C.orange}
+              bgColor="rgba(249, 115, 22, 0.15)"
+              opacity={badge2}
+            />
+            <SeverityBadge
+              count={1}
+              label="Medium"
+              color={C.yellow}
+              bgColor="rgba(234, 179, 8, 0.15)"
+              opacity={badge3}
+            />
+          </div>
+
+          {/* Stats line */}
+          <div
+            style={{
+              opacity: statsOpacity,
+              fontSize: 16,
+              color: C.dimmed,
+              borderTop: `1px solid ${C.border}`,
+              paddingTop: 20,
+              display: "flex",
+              gap: 24,
+            }}
+          >
+            <span>
+              <span style={{ color: C.white, fontWeight: 700 }}>5</span> findings
+            </span>
+            <span style={{ color: C.border }}>|</span>
+            <span>
+              <span style={{ color: C.white, fontWeight: 700 }}>47</span> probes
+            </span>
+            <span style={{ color: C.border }}>|</span>
+            <span>
+              <span style={{ color: C.white, fontWeight: 700 }}>12.4s</span>
+            </span>
+          </div>
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+const SeverityBadge = ({
+  count,
+  label,
+  color,
+  bgColor,
+  opacity,
+}: {
+  count: number;
+  label: string;
+  color: string;
+  bgColor: string;
+  opacity: number;
+}) => {
+  const scale = interpolate(opacity, [0, 0.5, 1], [0.8, 1.05, 1]);
 
   return (
     <div
       style={{
         opacity,
-        transform: `translateY(${translateY}px)`,
-        marginBottom: 2,
+        transform: `scale(${scale})`,
+        display: "flex",
+        alignItems: "center",
+        gap: 12,
+        backgroundColor: bgColor,
+        border: `1px solid ${color}40`,
+        borderRadius: 10,
+        padding: "14px 24px",
       }}
     >
-      {"  "}
-      <span
-        style={{
-          backgroundColor: finding.bgColor,
-          color: finding.textColor,
-          fontWeight: 700,
-          fontSize: 13,
-          padding: "1px 8px",
-          borderRadius: 3,
-          display: "inline-block",
-          minWidth: 80,
-          textAlign: "center",
-        }}
-      >
-        {finding.severity}
+      <span style={{ fontSize: 32, fontWeight: 700, color }}>{count}</span>
+      <span style={{ fontSize: 14, color, fontWeight: 700, textTransform: "uppercase", letterSpacing: 1 }}>
+        {label}
       </span>
-      {"  "}
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {finding.title}
-      </Span>
-      {"\n"}
-      {"             "}
-      <Span color={C.dimmed}>{"Category: "}</Span>
-      <Span color={C.fg}>{finding.category}</Span>
-      {finding.confirmed && (
-        <>
-          <Span color={C.dimmed}>{" · "}</Span>
-          <Span color={C.green}>{"✓ Confirmed"}</Span>
-        </>
-      )}
-      {"\n"}
     </div>
   );
 };
 
-// ── Summary Box ──
-const SummaryBox = () => {
-  const localFrame = useCurrentFrame();
+// ── Scene 5: CTA ──
+const CTAScene = () => {
+  const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const opacity = interpolate(localFrame, [0, 0.4 * fps], [0, 1], {
+  const sec = frame / fps;
+
+  const logoScale = spring({
+    frame,
+    fps,
+    config: { damping: 12, stiffness: 80, mass: 0.8 },
+    durationInFrames: 30,
+  });
+
+  const logoOpacity = interpolate(frame, [0, 15], [0, 1], {
     extrapolateRight: "clamp",
   });
 
-  const W = 58;
-  const h = "─";
-  const top = "  ╭" + h.repeat(W) + "╮";
-  const bot = "  ╰" + h.repeat(W) + "╯";
-  const div = "  ├" + h.repeat(W) + "┤";
+  const cmdOpacity = interpolate(sec, [0.6, 1.0], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const cmdY = interpolate(sec, [0.6, 1.0], [15, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
 
-  const pad = (s: string, len: number) => {
-    const padLen = Math.max(0, len - s.length);
-    return s + " ".repeat(padLen);
-  };
+  const urlOpacity = interpolate(sec, [1.2, 1.6], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
-  return (
-    <div style={{ opacity, marginTop: 8 }}>
-      <Span color={C.border}>{top}</Span>
-      {"\n"}
-      <Span color={C.border}>{"  │ "}</Span>
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {pad("SUMMARY", W - 1)}
-      </Span>
-      <Span color={C.border}>{"│"}</Span>
-      {"\n"}
-      <Span color={C.border}>{div}</Span>
-      {"\n"}
-      <Span color={C.border}>{"  │ "}</Span>
-      <SeverityDot color={C.red} />
-      <Span color={C.red} style={{ fontWeight: 700 }}>
-        {" 3"}
-      </Span>
-      <Span color={C.dimmed}>{" Critical  "}</Span>
-      <SeverityDot color={C.orangeBg} />
-      <Span color={C.orangeBg} style={{ fontWeight: 700 }}>
-        {" 1"}
-      </Span>
-      <Span color={C.dimmed}>{" High  "}</Span>
-      <SeverityDot color={C.yellowBg} />
-      <Span color={C.yellowBg} style={{ fontWeight: 700 }}>
-        {" 1"}
-      </Span>
-      <Span color={C.dimmed}>{" Medium                  "}</Span>
-      <Span color={C.border}>{"│"}</Span>
-      {"\n"}
-      <Span color={C.border}>{"  │ "}</Span>
-      <Span color={C.dimmed}>{"                                                          "}</Span>
-      <Span color={C.border}>{"│"}</Span>
-      {"\n"}
-      <Span color={C.border}>{"  │ "}</Span>
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {"5"}
-      </Span>
-      <Span color={C.dimmed}>{" findings"}</Span>
-      <Span color={C.dimmed}>{"  │  "}</Span>
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {"47"}
-      </Span>
-      <Span color={C.dimmed}>{" probes"}</Span>
-      <Span color={C.dimmed}>{"  │  "}</Span>
-      <Span color={C.fg} style={{ fontWeight: 700 }}>
-        {"12.4s"}
-      </Span>
-      <Span color={C.dimmed}>{"                        "}</Span>
-      <Span color={C.border}>{"│"}</Span>
-      {"\n"}
-      <Span color={C.border}>{bot}</Span>
-    </div>
-  );
-};
+  const badgeOpacity = interpolate(sec, [1.6, 2.0], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
-// ── Scene 2: Audit Express ──
-const Scene2AuditExpress = ({
-  sec,
-  fps,
-  frame,
-}: {
-  sec: number;
-  fps: number;
-  frame: number;
-}) => {
-  const typeDuration = T.scene2TypeEnd - T.scene2TypeStart;
-  const typeProgress = Math.min(
-    1,
-    Math.max(0, (sec - T.scene2TypeStart) / typeDuration)
-  );
-  const charsVisible = Math.floor(typeProgress * COMMAND2.length);
-  const showCursor =
-    sec >= T.scene2TypeStart &&
-    sec < T.scene2BannerStart &&
-    Math.floor(frame / 8) % 2 === 0;
-
-  const showBanner = sec >= T.scene2BannerStart;
-  const showResult = sec >= T.scene2ResultStart;
-
-  const bannerOpacity = showBanner
-    ? interpolate(
-        sec,
-        [T.scene2BannerStart, T.scene2BannerStart + 0.3],
-        [0, 1],
-        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-      )
-    : 0;
-
-  const resultOpacity = showResult
-    ? interpolate(
-        sec,
-        [T.scene2ResultStart, T.scene2ResultStart + 0.4],
-        [0, 1],
-        { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-      )
-    : 0;
-
-  return (
-    <div style={{ marginTop: 16 }}>
-      {/* Prompt + typing */}
-      <div>
-        <Span color={C.prompt}>{"❯"}</Span>{" "}
-        <Span color={C.fg}>{COMMAND2.slice(0, charsVisible)}</Span>
-        {showCursor && (
-          <Span
-            color={C.cursor}
-            style={{ background: C.cursor, color: C.bg, padding: "0 1px" }}
-          >
-            {" "}
-          </Span>
-        )}
-      </div>
-
-      {/* Banner */}
-      {showBanner && (
-        <div style={{ opacity: bannerOpacity, marginTop: 8, marginBottom: 4 }}>
-          <div>
-            <Span color={C.red} style={{ fontWeight: 700, fontSize: 18 }}>
-              {"  ◆ nightfang audit"}
-            </Span>
-            <Span color={C.dimmed}> — dependency scanner</Span>
-          </div>
-        </div>
-      )}
-
-      {/* Quick audit result */}
-      {showResult && (
-        <div style={{ opacity: resultOpacity, marginTop: 4 }}>
-          <div>
-            <Span color={C.dimmed}>{"  Package: "}</Span>
-            <Span color={C.fg}>{"express@4.17.1"}</Span>
-          </div>
-          <div style={{ marginTop: 4 }}>
-            <Span color={C.green}>{"  ✓"}</Span>
-            <Span color={C.fg}>{" Scanned 42 dependencies"}</Span>
-            <Span color={C.dimmed}>{" in 3.2s"}</Span>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <Span color={C.fg} style={{ fontWeight: 700 }}>
-              {"  VULNERABILITIES"}
-            </Span>
-          </div>
-          <div style={{ marginTop: 4 }}>
-            {"  "}
-            <span
-              style={{
-                backgroundColor: C.redBg,
-                color: "#ffffff",
-                fontWeight: 700,
-                fontSize: 13,
-                padding: "1px 8px",
-                borderRadius: 3,
-                display: "inline-block",
-                minWidth: 80,
-                textAlign: "center",
-              }}
-            >
-              CRITICAL
-            </span>
-            {"  "}
-            <Span color={C.fg} style={{ fontWeight: 700 }}>
-              {"CVE-2024-29041"}
-            </Span>
-            <Span color={C.dimmed}>{" — path traversal in serve-static"}</Span>
-          </div>
-          <div style={{ marginTop: 4 }}>
-            {"  "}
-            <span
-              style={{
-                backgroundColor: C.orangeBg,
-                color: "#ffffff",
-                fontWeight: 700,
-                fontSize: 13,
-                padding: "1px 8px",
-                borderRadius: 3,
-                display: "inline-block",
-                minWidth: 80,
-                textAlign: "center",
-              }}
-            >
-              HIGH
-            </span>
-            {"  "}
-            <Span color={C.fg} style={{ fontWeight: 700 }}>
-              {"CVE-2024-43796"}
-            </Span>
-            <Span color={C.dimmed}>{" — XSS via response.redirect()"}</Span>
-          </div>
-          <div style={{ marginTop: 12 }}>
-            <Span color={C.dimmed}>{"  "}</Span>
-            <Span color={C.red} style={{ fontWeight: 700 }}>
-              {"2"}
-            </Span>
-            <Span color={C.dimmed}>{" vulnerabilities found"}</Span>
-            <Span color={C.dimmed}>{" · "}</Span>
-            <Span color={C.green} style={{ fontWeight: 700 }}>
-              {"Fix: "}
-            </Span>
-            <Span color={C.fg}>{"npm install express@4.21.2"}</Span>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// ── Closing Screen ──
-const ClosingScreen = ({ sec, fps }: { sec: number; fps: number }) => {
-  const titleOpacity = interpolate(
-    sec,
-    [T.closingStart, T.closingStart + 0.4],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
-  const subtitleOpacity = interpolate(
-    sec,
-    [T.closingStart + 0.3, T.closingStart + 0.7],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
-  );
-  const badgeOpacity = interpolate(
-    sec,
-    [T.closingStart + 0.6, T.closingStart + 1.0],
-    [0, 1],
-    { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+  // Glow pulse
+  const glowIntensity = interpolate(
+    Math.sin(sec * 2.5),
+    [-1, 1],
+    [0.2, 0.5],
   );
 
   return (
-    <div
+    <AbsoluteFill
       style={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: 16,
+        justifyContent: "center",
+        gap: 20,
       }}
     >
-      <div style={{ opacity: titleOpacity }}>
-        <Span color={C.red} style={{ fontWeight: 700, fontSize: 42 }}>
-          {"◆ nightfang"}
-        </Span>
+      {/* Logo */}
+      <div
+        style={{
+          opacity: logoOpacity,
+          transform: `scale(${logoScale})`,
+          filter: `drop-shadow(0 0 ${20 * glowIntensity}px ${C.crimson})`,
+          marginBottom: 8,
+        }}
+      >
+        <NightfangLogo size={80} />
       </div>
-      <div style={{ opacity: subtitleOpacity }}>
-        <Span color={C.dimmed} style={{ fontSize: 20 }}>
-          {"AI-powered security scanner for LLM applications"}
-        </Span>
+
+      {/* Command */}
+      <div
+        style={{
+          opacity: cmdOpacity,
+          transform: `translateY(${cmdY}px)`,
+          fontSize: 20,
+          padding: "14px 32px",
+          backgroundColor: "rgba(220, 38, 38, 0.1)",
+          border: `1px solid ${C.crimson}40`,
+          borderRadius: 10,
+          color: C.white,
+        }}
+      >
+        <span style={{ color: C.green }}>{">"}</span>{" "}
+        npx nightfang scan --target{" "}
+        <span style={{ color: C.crimson }}>{"<your-url>"}</span>
       </div>
-      <div style={{ opacity: badgeOpacity, marginTop: 12 }}>
-        <Span color={C.blue} style={{ fontSize: 22, fontWeight: 700 }}>
-          {"nightfang.dev"}
-        </Span>
+
+      {/* URL */}
+      <div
+        style={{
+          opacity: urlOpacity,
+          fontSize: 28,
+          fontWeight: 700,
+          color: C.crimson,
+          marginTop: 8,
+        }}
+      >
+        nightfang.dev
       </div>
-      <div style={{ opacity: badgeOpacity, marginTop: 8 }}>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            background: C.border,
-            padding: "6px 16px",
-            borderRadius: 6,
-            fontSize: 16,
-          }}
-        >
-          <Span color={C.fg} style={{ fontWeight: 700 }}>
-            {"★"}
-          </Span>
-          <Span color={C.fg}>{"Star on GitHub"}</Span>
-          <Span color={C.dimmed}>{"·"}</Span>
-          <Span color={C.fg}>{"npm install -g nightfang"}</Span>
-        </span>
+
+      {/* GitHub badge */}
+      <div
+        style={{
+          opacity: badgeOpacity,
+          display: "flex",
+          alignItems: "center",
+          gap: 10,
+          backgroundColor: "#1a1a1a",
+          border: `1px solid ${C.border}`,
+          borderRadius: 8,
+          padding: "10px 20px",
+          fontSize: 15,
+          marginTop: 4,
+        }}
+      >
+        <span style={{ color: C.yellow }}>{"★"}</span>
+        <span style={{ color: C.white, fontWeight: 700 }}>Star on GitHub</span>
       </div>
-    </div>
+    </AbsoluteFill>
   );
-};
-
-const SeverityDot = ({ color }: { color: string }) => (
-  <span style={{ color }}>{"●"}</span>
-);
-
-// ── Utility components ──
-const Span = ({
-  color,
-  style,
-  children,
-}: {
-  color: string;
-  style?: React.CSSProperties;
-  children: React.ReactNode;
-}) => <span style={{ color, ...style }}>{children}</span>;
-
-const FadeInLine = ({
-  children,
-  delay = 0,
-}: {
-  children: React.ReactNode;
-  delay?: number;
-}) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const opacity = interpolate(frame - delay, [0, 0.2 * fps], [0, 1], {
-    extrapolateRight: "clamp",
-    extrapolateLeft: "clamp",
-  });
-  return <div style={{ opacity }}>{children}</div>;
 };
