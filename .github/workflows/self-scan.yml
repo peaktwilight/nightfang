@@ -5,6 +5,9 @@ on:
   schedule:
     - cron: '0 */6 * * *'  # Every 6 hours
 
+permissions:
+  contents: write
+
 jobs:
   scan:
     runs-on: ubuntu-latest
