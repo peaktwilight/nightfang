@@ -108,7 +108,7 @@ const program = new Command();
 
 program
   .name("nightfang")
-  .description("AI-powered red-teaming toolkit for LLM applications")
+  .description("AI-powered agentic security scanner")
   .version(VERSION);
 
 program
