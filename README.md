@@ -38,7 +38,14 @@ One command. Zero config. Every finding verified with proof.
 
 <!-- SELF-SCAN-START -->
 
-*Self-scan results will appear here after first CI run.*
+| Agent | Status | Findings |
+|-------|--------|----------|
+| Discover | Completed | Endpoints mapped |
+| Attack | Completed | 9 probes executed |
+| Verify | Completed | 9 findings confirmed |
+| Report | Completed | 4 critical, 3 high, 2 medium |
+
+*Last scan: 2026-03-27 23:22 UTC — [View full report](https://github.com/peaktwilight/nightfang/actions)*
 
 <!-- SELF-SCAN-END -->
 
