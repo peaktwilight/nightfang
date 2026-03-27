@@ -75,7 +75,7 @@ import Layout from '../layouts/Layout.astro';
                 <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> nightfang v0.1.0
               </div>
               <div class="text-smoke terminal-line">
-                <span class="text-crimson">&#9646;</span> Target: https://demo.app/api/chat
+                <span class="inline-block w-2 h-2 rounded-sm bg-crimson"></span> Target: https://demo.app/api/chat
               </div>
               <div class="terminal-line">&nbsp;</div>
               <div class="text-emerald-400 terminal-line">
@@ -148,27 +148,37 @@ import Layout from '../layouts/Layout.astro';
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
-            <div class="text-2xl mb-3">&#128274;</div>
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
             <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
             <p class="text-xs text-ash">ChatGPT, Claude, Llama APIs, custom chatbots</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
-            <div class="text-2xl mb-3">&#128268;</div>
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg>
+            </div>
             <h3 class="font-semibold text-sm mb-1">MCP Servers</h3>
             <p class="text-xs text-ash">Tool schemas, validation, auth, poisoning</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
-            <div class="text-2xl mb-3">&#128230;</div>
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            </div>
             <h3 class="font-semibold text-sm mb-1">npm Packages</h3>
             <p class="text-xs text-ash">Supply chain, malicious code, dependency risk</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
-            <div class="text-2xl mb-3">&#128193;</div>
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+            </div>
             <h3 class="font-semibold text-sm mb-1">Source Code</h3>
             <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
-            <div class="text-2xl mb-3">&#127760;</div>
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
+            </div>
             <h3 class="font-semibold text-sm mb-1">Web Apps</h3>
             <p class="text-xs text-ash">AI copilots, RAG pipelines, agent APIs</p>
           </div>
@@ -294,17 +304,23 @@ import Layout from '../layouts/Layout.astro';
       <div class="max-w-6xl mx-auto px-6">
         <div class="grid md:grid-cols-3 gap-8">
           <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson text-lg">&#9656;</div>
+            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+            </div>
             <h3 class="text-lg font-semibold">One command, zero config</h3>
             <p class="text-smoke text-sm leading-relaxed">No YAML files. No Python environments. Just <code class="text-white bg-white/5 px-1.5 py-0.5 rounded text-xs">npx nightfang scan</code> and you're running.</p>
           </div>
           <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson text-lg">&#10003;</div>
+            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
             <h3 class="text-lg font-semibold">Zero false positives</h3>
             <p class="text-smoke text-sm leading-relaxed">Every finding is re-exploited with proof before it hits the report. No more triaging 200 "possible prompt injections."</p>
           </div>
           <div class="space-y-3">
-            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson text-lg">$</div>
+            <div class="w-10 h-10 rounded-lg bg-crimson/10 flex items-center justify-center text-crimson">
+              <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+            </div>
             <h3 class="text-lg font-semibold">$0.05 per CI scan</h3>
             <p class="text-smoke text-sm leading-relaxed">Quick scans in under a minute. Deep audits for $1. Cheaper than one hour of manual pentesting.</p>
           </div>
@@ -646,7 +662,7 @@ import Layout from '../layouts/Layout.astro';
   <footer class="border-t border-white/5 py-8">
     <div class="max-w-6xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-ash">
       <div class="flex items-center gap-2">
-        <span class="text-crimson">&#9646;</span>
+        <span class="w-2 h-2 rounded-sm bg-crimson inline-block"></span>
         <span>nightfang</span>
         <span>&middot;</span>
         <span>MIT License</span>
