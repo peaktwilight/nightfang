@@ -3,3 +3,5 @@ dist/
 *.tsbuildinfo
 .DS_Store
 .internal/
+demo/out/
+pnpm-publish-summary.json

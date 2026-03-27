@@ -10,30 +10,123 @@ import type {
   NativeContentBlock,
 } from "./types.js";
 
-const DEFAULT_MODEL = "claude-sonnet-4-6";
+const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
+const DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-4";
+const DEFAULT_OPENAI_MODEL = "gpt-4o";
+
+type ApiProvider = "openrouter" | "anthropic" | "openai";
 
 /**
- * Runtime that calls the Anthropic Claude Messages API directly.
+ * Detect which API provider to use based on available keys.
+ * Priority: OPENROUTER_API_KEY -> ANTHROPIC_API_KEY -> OPENAI_API_KEY
+ */
+function detectProvider(configApiKey?: string): {
+  provider: ApiProvider;
+  apiKey: string;
+  baseUrl: string;
+  defaultModel: string;
+} {
+  // If an explicit API key is passed via config, try to guess the provider from the key prefix
+  if (configApiKey) {
+    if (configApiKey.startsWith("sk-or-")) {
+      return {
+        provider: "openrouter",
+        apiKey: configApiKey,
+        baseUrl: "https://openrouter.ai/api/v1",
+        defaultModel: DEFAULT_OPENROUTER_MODEL,
+      };
+    }
+    if (configApiKey.startsWith("sk-ant-")) {
+      return {
+        provider: "anthropic",
+        apiKey: configApiKey,
+        baseUrl: "https://api.anthropic.com",
+        defaultModel: DEFAULT_ANTHROPIC_MODEL,
+      };
+    }
+    // Assume OpenAI-compatible for other keys
+    return {
+      provider: "openai",
+      apiKey: configApiKey,
+      baseUrl: "https://api.openai.com/v1",
+      defaultModel: DEFAULT_OPENAI_MODEL,
+    };
+  }
+
+  // Check env vars in priority order
+  const openrouterKey = process.env.OPENROUTER_API_KEY;
+  if (openrouterKey) {
+    return {
+      provider: "openrouter",
+      apiKey: openrouterKey,
+      baseUrl: "https://openrouter.ai/api/v1",
+      defaultModel: DEFAULT_OPENROUTER_MODEL,
+    };
+  }
+
+  const anthropicKey = process.env.ANTHROPIC_API_KEY;
+  if (anthropicKey) {
+    return {
+      provider: "anthropic",
+      apiKey: anthropicKey,
+      baseUrl: process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com",
+      defaultModel: DEFAULT_ANTHROPIC_MODEL,
+    };
+  }
+
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (openaiKey) {
+    return {
+      provider: "openai",
+      apiKey: openaiKey,
+      baseUrl: "https://api.openai.com/v1",
+      defaultModel: DEFAULT_OPENAI_MODEL,
+    };
+  }
+
+  // No key found — default to Anthropic (will fail at runtime with helpful message)
+  return {
+    provider: "anthropic",
+    apiKey: "",
+    baseUrl: process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com",
+    defaultModel: DEFAULT_ANTHROPIC_MODEL,
+  };
+}
+
+/**
+ * Runtime that calls LLM APIs directly.
+ *
+ * Supports multiple providers with automatic detection:
+ * - OpenRouter (OPENROUTER_API_KEY) — access many models through one API
+ * - Anthropic (ANTHROPIC_API_KEY) — direct Claude API access
+ * - OpenAI (OPENAI_API_KEY) — direct OpenAI API access
+ *
+ * Priority: OPENROUTER_API_KEY -> ANTHROPIC_API_KEY -> OPENAI_API_KEY
+ *
+ * Model can be overridden with NIGHTFANG_MODEL env var or --model flag.
  *
  * Supports two modes:
  * - Legacy: single-prompt execute() for backward compat with existing agent loop
  * - Native: structured multi-turn messages with tool_use for the new agent loop
- *
- * Requires ANTHROPIC_API_KEY env var.
  */
 export class ClaudeApiRuntime implements Runtime, NativeRuntime {
   readonly type = "api" as const;
   private config: RuntimeConfig;
+  private provider: ApiProvider;
   private apiKey: string;
   private baseUrl: string;
   private model: string;
 
   constructor(config: RuntimeConfig) {
     this.config = config;
-    this.apiKey = config.apiKey ?? process.env.ANTHROPIC_API_KEY ?? "";
-    this.baseUrl =
-      process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com";
-    this.model = config.model ?? DEFAULT_MODEL;
+    const detected = detectProvider(config.apiKey);
+    this.provider = detected.provider;
+    this.apiKey = detected.apiKey;
+    this.baseUrl = detected.baseUrl;
+    this.model =
+      config.model ??
+      process.env.NIGHTFANG_MODEL ??
+      detected.defaultModel;
   }
 
   // ── Legacy Runtime interface (single-prompt) ──
