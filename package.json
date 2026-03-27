@@ -1,40 +1,20 @@
 {
   "name": "nightfang",
+  "type": "module",
   "version": "0.1.0",
   "description": "AI-powered red-teaming toolkit for LLM applications",
   "bin": {
-    "nightfang": "packages/cli/dist/index.js"
+    "nightfang": "dist/index.js"
   },
   "files": [
     "LICENSE",
     "README.md",
     "package.json",
-    "packages/cli/dist",
-    "packages/cli/package.json",
-    "packages/core/dist",
-    "packages/core/package.json",
-    "packages/db/dist",
-    "packages/db/package.json",
-    "packages/shared/dist",
-    "packages/shared/package.json",
-    "packages/templates/attacks",
-    "packages/templates/dist",
-    "packages/templates/package.json"
-  ],
-  "bundleDependencies": [
-    "@nightfang/core",
-    "@nightfang/db",
-    "@nightfang/shared",
-    "@nightfang/templates",
-    "better-sqlite3",
-    "chalk",
-    "commander",
-    "drizzle-orm",
-    "ora",
-    "yaml"
+    "dist"
   ],
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "pnpm -r build && pnpm run build:bundle",
+    "build:bundle": "node ./scripts/bundle-cli.mjs",
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r exec tsc --noEmit",
     "test": "pnpm --filter @nightfang/test-targets test",
@@ -67,10 +47,6 @@
     "pnpm": ">=8"
   },
   "dependencies": {
-    "@nightfang/core": "file:packages/core",
-    "@nightfang/db": "file:packages/db",
-    "@nightfang/shared": "file:packages/shared",
-    "@nightfang/templates": "file:packages/templates",
     "better-sqlite3": "^12.8.0",
     "chalk": "^5.3.0",
     "commander": "^12.1.0",
@@ -79,6 +55,7 @@
     "yaml": "^2.4.0"
   },
   "devDependencies": {
+    "esbuild": "^0.27.4",
     "@types/node": "^25.5.0"
   }
 }

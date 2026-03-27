@@ -8,18 +8,6 @@ importers:
 
   .:
     dependencies:
-      '@nightfang/core':
-        specifier: file:packages/core
-        version: file:packages/core
-      '@nightfang/db':
-        specifier: file:packages/db
-        version: file:packages/db(@types/better-sqlite3@7.6.13)
-      '@nightfang/shared':
-        specifier: file:packages/shared
-        version: link:packages/shared
-      '@nightfang/templates':
-        specifier: file:packages/templates
-        version: file:packages/templates
       better-sqlite3:
         specifier: ^12.8.0
         version: 12.8.0
@@ -42,6 +30,9 @@ importers:
       '@types/node':
         specifier: ^25.5.0
         version: 25.5.0
+      esbuild:
+        specifier: ^0.27.4
+        version: 0.27.4
 
   packages/cli:
     dependencies:
@@ -451,15 +442,6 @@ packages:
 
   '@jridgewell/sourcemap-codec@1.5.5':
     resolution: {integrity: sha512-cYQ9310grqxueWbl+WuIUIaiUaDcj7WOq5fVhEljNVgRfOUhY9fy2zTvfoqWsnebh8Sl70VScFbICvJnLKB0Og==}
-
-  '@nightfang/core@file:packages/core':
-    resolution: {directory: packages/core, type: directory}
-
-  '@nightfang/db@file:packages/db':
-    resolution: {directory: packages/db, type: directory}
-
-  '@nightfang/templates@file:packages/templates':
-    resolution: {directory: packages/templates, type: directory}
 
   '@rollup/rollup-android-arm-eabi@4.60.0':
     resolution: {integrity: sha512-WOhNW9K8bR3kf4zLxbfg6Pxu2ybOUbB2AjMDHSQx86LIF4rH4Ft7vmMwNt0loO0eonglSNy4cpD3MKXXKQu0/A==}
@@ -1580,53 +1562,6 @@ snapshots:
     optional: true
 
   '@jridgewell/sourcemap-codec@1.5.5': {}
-
-  '@nightfang/core@file:packages/core':
-    dependencies:
-      '@nightfang/db': link:packages/db
-      '@nightfang/shared': link:packages/shared
-      '@nightfang/templates': link:packages/templates
-      better-sqlite3: 12.8.0
-
-  '@nightfang/db@file:packages/db(@types/better-sqlite3@7.6.13)':
-    dependencies:
-      '@nightfang/shared': link:packages/shared
-      better-sqlite3: 12.8.0
-      drizzle-orm: 0.44.7(@types/better-sqlite3@7.6.13)(better-sqlite3@12.8.0)
-    transitivePeerDependencies:
-      - '@aws-sdk/client-rds-data'
-      - '@cloudflare/workers-types'
-      - '@electric-sql/pglite'
-      - '@libsql/client'
-      - '@libsql/client-wasm'
-      - '@neondatabase/serverless'
-      - '@op-engineering/op-sqlite'
-      - '@opentelemetry/api'
-      - '@planetscale/database'
-      - '@prisma/client'
-      - '@tidbcloud/serverless'
-      - '@types/better-sqlite3'
-      - '@types/pg'
-      - '@types/sql.js'
-      - '@upstash/redis'
-      - '@vercel/postgres'
-      - '@xata.io/client'
-      - bun-types
-      - expo-sqlite
-      - gel
-      - knex
-      - kysely
-      - mysql2
-      - pg
-      - postgres
-      - prisma
-      - sql.js
-      - sqlite3
-
-  '@nightfang/templates@file:packages/templates':
-    dependencies:
-      '@nightfang/shared': link:packages/shared
-      yaml: 2.8.3
 
   '@rollup/rollup-android-arm-eabi@4.60.0':
     optional: true

@@ -1,5 +1,9 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import type { Server } from "http";
+import { spawnSync } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 let vulnServer: Server;
 let safeServer: Server;
@@ -8,6 +12,7 @@ let safeTarget = "";
 let vulnMcpTarget = "";
 let safeMcpTarget = "";
 let runScan: (typeof import("../../packages/core/src/scanner.js"))["scan"];
+const testTargetsRoot = fileURLToPath(new URL("..", import.meta.url));
 
 async function chat(target: string, prompt: string): Promise<string> {
   const res = await fetch(target, {
@@ -217,5 +222,54 @@ describe("Nightfang scan integration", () => {
     });
 
     expect(report.summary.totalFindings).toBe(0);
+  });
+
+  it("returns a clean report for the safe target at default depth", async () => {
+    const report = await runScan({
+      target: safeTarget,
+      depth: "default",
+      format: "json",
+      timeout: 5000,
+    });
+
+    expect(report.summary.totalFindings).toBe(0);
+  });
+
+  it("lists findings from the parent findings command", async () => {
+    const dbPath = join(tmpdir(), `nightfang-findings-${Date.now()}.db`);
+
+    await runScan(
+      {
+        target: vulnTarget,
+        depth: "quick",
+        format: "json",
+        timeout: 5000,
+      },
+      undefined,
+      dbPath,
+    );
+
+    const result = spawnSync(
+      "pnpm",
+      [
+        "exec",
+        "tsx",
+        "../packages/cli/src/index.ts",
+        "findings",
+        "--db-path",
+        dbPath,
+        "--limit",
+        "5",
+      ],
+      {
+        cwd: testTargetsRoot,
+        encoding: "utf-8",
+      },
+    );
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).toBe("");
+    expect(result.stdout).toMatch(/nightfang/);
+    expect(result.stdout).toMatch(/findings/i);
   });
 });
