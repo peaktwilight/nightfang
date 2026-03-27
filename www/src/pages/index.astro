@@ -18,11 +18,10 @@ import DataGridBackground from '../components/DataGridBackground';
       <div class="relative max-w-6xl mx-auto px-6 text-center">
         <div class="animate-fade-up">
           <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6" style="font-family: 'Outfit', sans-serif">
-            Pentest your AI, code,<br/>and supply chain<br/>
-            <span class="text-crimson">with autonomous agents</span>
+            Open-source<br/><span class="text-crimson">agentic security</span><br/>research automation
           </h1>
           <p class="text-lg sm:text-xl text-smoke max-w-2xl mx-auto mb-10 leading-relaxed">
-            Five commands. Four AI agents. Scan LLM endpoints, audit npm packages, review source code, test MCP servers &mdash; then prove every finding is exploitable.
+            Four autonomous AI agents scan your endpoints, audit your packages, and review your code &mdash; then prove every finding is exploitable.
           </p>
         </div>
 
@@ -377,7 +376,7 @@ import DataGridBackground from '../components/DataGridBackground';
             <div class="mt-4 pt-4 border-t border-white/5 text-xs text-ash space-y-1" style="font-family: 'Space Mono', monospace">
               <div>&#8226; 42+ attack templates</div>
               <div>&#8226; Adaptive multi-turn</div>
-              <div>&#8226; OWASP LLM Top 10</div>
+              <div>&#8226; AI attack coverage</div>
               <div>&#8226; Response-aware pivoting</div>
               <div>&#8226; Encoding bypass chains</div>
             </div>
@@ -412,38 +411,30 @@ import DataGridBackground from '../components/DataGridBackground';
       </div>
     </section>
 
-    <!-- OWASP Coverage -->
+    <!-- Attack Coverage -->
     <section class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
         <div class="text-center mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">OWASP LLM Top 10 coverage</h2>
-          <p class="text-smoke text-lg">8 out of 10 categories covered. The most comprehensive open-source coverage available.</p>
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">What it tests for</h2>
+          <p class="text-smoke text-lg">30+ attack templates across 7 categories. Every finding verified with a working exploit.</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { id: "LLM01", name: "Prompt Injection", covered: true, detail: "Direct + indirect + encoding" },
-            { id: "LLM02", name: "Insecure Output Handling", covered: true, detail: "XSS, code exec" },
-            { id: "LLM03", name: "Training Data Poisoning", covered: false, detail: "Detection only" },
-            { id: "LLM04", name: "Model Denial of Service", covered: true, detail: "Resource exhaustion" },
-            { id: "LLM05", name: "Supply Chain Vulns", covered: true, detail: "MCP + npm audit" },
-            { id: "LLM06", name: "Sensitive Info Disclosure", covered: true, detail: "PII/secret extraction" },
-            { id: "LLM07", name: "Insecure Plugin Design", covered: true, detail: "Tool schema abuse, SSRF" },
-            { id: "LLM08", name: "Excessive Agency", covered: true, detail: "Privilege escalation" },
-            { id: "LLM09", name: "Overreliance", covered: false, detail: "Coming soon" },
-            { id: "LLM10", name: "Model Theft", covered: true, detail: "Extraction, prompt theft" },
+            { name: "Prompt Injection", detail: "Direct, indirect, multi-turn, encoding bypass", count: "8" },
+            { name: "System Prompt Extraction", detail: "5 techniques including completion traps", count: "5" },
+            { name: "Jailbreak Resistance", detail: "DAN, base64 encoding, multilingual, few-shot", count: "5" },
+            { name: "Data Exfiltration", detail: "PII leakage, credential extraction", count: "3" },
+            { name: "MCP / Tool Security", detail: "Tool enumeration, unauthorized calls, SSRF", count: "3" },
+            { name: "npm Package Audit", detail: "Dependency vulnerabilities, supply chain", count: "CLI" },
+            { name: "Source Code Review", detail: "AI-powered deep analysis with semgrep", count: "CLI" },
           ].map((item) => (
-            <div class={`flex items-center gap-3 px-4 py-3 rounded-lg border ${item.covered ? 'border-white/5 bg-night-lighter' : 'border-white/5 bg-night-light opacity-50'}`}>
-              <span class={`text-sm ${item.covered ? 'text-emerald-400' : 'text-ash'}`}>
-                {item.covered ? '\u2713' : '\u2022'}
-              </span>
+            <div class="flex items-center gap-3 px-4 py-3 rounded-lg border border-white/5 bg-night-lighter">
+              <span class="text-xs text-crimson font-bold w-6 text-center" style="font-family: 'Space Mono', monospace">{item.count}</span>
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-2">
-                  <span class="text-xs font-["Space_Mono"] text-ash">{item.id}</span>
-                  <span class="text-sm font-medium text-white truncate">{item.name}</span>
-                </div>
+                <div class="text-sm font-medium text-white">{item.name}</div>
+                <div class="text-xs text-ash">{item.detail}</div>
               </div>
-              <span class="text-xs text-ash hidden sm:block">{item.detail}</span>
             </div>
           ))}
         </div>
@@ -528,8 +519,8 @@ import DataGridBackground from '../components/DataGridBackground';
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
-                <td class="py-3 pr-4">OWASP LLM Top 10</td>
-                <td class="py-3 px-3 text-center text-emerald-400">8/10</td>
+                <td class="py-3 pr-4">AI attack coverage</td>
+                <td class="py-3 px-3 text-center text-emerald-400">30+ templates</td>
                 <td class="py-3 px-3 text-center text-ash">Partial</td>
                 <td class="py-3 px-3 text-center text-ash">Partial</td>
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
