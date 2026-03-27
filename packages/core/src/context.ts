@@ -15,6 +15,7 @@ export function createScanContext(config: ScanConfig): ScanContext {
     },
     findings: [],
     attacks: [],
+    warnings: [],
     startedAt: Date.now(),
   };
 }

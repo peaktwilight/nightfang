@@ -27,3 +27,6 @@ detection:
     - "(?i)i don't have.*previous"
     - "(?i)cannot verify"
     - "(?i)no record of"
+    - "(?i)not able to reveal"
+    - "(?i)can't share|cannot share"
+    - "(?i)internal instructions"

@@ -1,10 +1,11 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
 
-// ── Finding status pipeline: discovered → verified → scored → reported ──
+// ── Finding status pipeline: discovered → verified → confirmed → scored → reported ──
 
 export const findingStatuses = [
   "discovered",
   "verified",
+  "confirmed",
   "scored",
   "reported",
   "false-positive",
@@ -56,6 +57,9 @@ export const findings = sqliteTable(
     category: text("category").notNull(),
     status: text("status").notNull().default("discovered"),
     score: integer("score"), // CVSS-like 0-100 score, set during "scored" stage
+    confidence: real("confidence"), // 0.0-1.0 agent-assessed confidence
+    cvssVector: text("cvssVector"), // CVSS vector string
+    cvssScore: real("cvssScore"), // CVSS numeric score (0-10)
     evidenceRequest: text("evidenceRequest").notNull(),
     evidenceResponse: text("evidenceResponse").notNull(),
     evidenceAnalysis: text("evidenceAnalysis"),
@@ -86,4 +90,69 @@ export const attackResults = sqliteTable(
     error: text("error"),
   },
   (table) => [index("idx_attack_results_scanId").on(table.scanId)]
+);
+
+// ── Verdicts (multi-agent consensus on findings) ──
+
+export const verdicts = sqliteTable(
+  "verdicts",
+  {
+    id: text("id").primaryKey(),
+    findingId: text("findingId")
+      .notNull()
+      .references(() => findings.id),
+    agentRole: text("agentRole").notNull(),
+    model: text("model").notNull().default(""),
+    verdict: text("verdict").notNull(), // TRUE_POSITIVE | FALSE_POSITIVE | UNSURE
+    confidence: real("confidence").notNull().default(0),
+    reasoning: text("reasoning").notNull().default(""),
+    timestamp: integer("timestamp").notNull(),
+  },
+  (table) => [index("idx_verdicts_findingId").on(table.findingId)]
+);
+
+// ── Pipeline Events (immutable audit trail) ──
+
+export const pipelineEvents = sqliteTable(
+  "pipeline_events",
+  {
+    id: text("id").primaryKey(),
+    scanId: text("scanId")
+      .notNull()
+      .references(() => scans.id),
+    stage: text("stage").notNull(),
+    eventType: text("eventType").notNull(),
+    findingId: text("findingId"),
+    agentRole: text("agentRole"),
+    payload: text("payload").notNull().default("{}"), // JSON
+    timestamp: integer("timestamp").notNull(),
+  },
+  (table) => [
+    index("idx_events_scanId").on(table.scanId),
+    index("idx_events_stage").on(table.stage),
+    index("idx_events_findingId").on(table.findingId),
+  ]
+);
+
+// ── Agent Sessions (resumable agent state) ──
+
+export const agentSessions = sqliteTable(
+  "agent_sessions",
+  {
+    id: text("id").primaryKey(),
+    scanId: text("scanId")
+      .notNull()
+      .references(() => scans.id),
+    agentRole: text("agentRole").notNull(),
+    turnCount: integer("turnCount").notNull().default(0),
+    messages: text("messages").notNull().default("[]"), // JSON serialized conversation
+    toolContext: text("toolContext").notNull().default("{}"), // JSON serialized context
+    status: text("status").notNull().default("running"), // running | paused | completed | failed
+    createdAt: text("createdAt").notNull(),
+    updatedAt: text("updatedAt").notNull(),
+  },
+  (table) => [
+    index("idx_sessions_scanId").on(table.scanId),
+    index("idx_sessions_role").on(table.agentRole),
+  ]
 );

@@ -1,4 +1,15 @@
-export type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType } from "./types.js";
+export type {
+  Runtime,
+  RuntimeConfig,
+  RuntimeContext,
+  RuntimeResult,
+  RuntimeType,
+  NativeRuntime,
+  NativeMessage,
+  NativeContentBlock,
+  NativeToolDef,
+  NativeRuntimeResult,
+} from "./types.js";
 export { ApiRuntime } from "./api.js";
 export { ClaudeApiRuntime } from "./claude-api.js";
 export { ProcessRuntime } from "./process.js";

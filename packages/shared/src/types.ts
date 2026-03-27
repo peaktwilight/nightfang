@@ -78,6 +78,7 @@ export interface ScanContext {
   target: TargetInfo;
   findings: Finding[];
   attacks: AttackResult[];
+  warnings: ScanWarning[];
   startedAt: number;
   completedAt?: number;
 }
@@ -93,7 +94,7 @@ export interface TargetInfo {
 
 // ── Findings ──
 
-export type FindingStatus = "discovered" | "confirmed" | "false-positive";
+export type FindingStatus = "discovered" | "verified" | "confirmed" | "scored" | "reported" | "false-positive";
 
 export interface Finding {
   id: string;
@@ -104,7 +105,52 @@ export interface Finding {
   category: AttackCategory;
   status: FindingStatus;
   evidence: Evidence;
+  confidence?: number; // 0.0–1.0 agent-assessed confidence
+  cvssVector?: string; // CVSS vector string
+  cvssScore?: number; // CVSS numeric score (0–10)
   timestamp: number;
+}
+
+// ── Agent Verdicts (multi-agent consensus) ──
+
+export type VerdictType = "TRUE_POSITIVE" | "FALSE_POSITIVE" | "UNSURE";
+
+export interface AgentVerdict {
+  id: string;
+  findingId: string;
+  agentRole: string;
+  model: string;
+  verdict: VerdictType;
+  confidence: number; // 0.0–1.0
+  reasoning: string;
+  timestamp: number;
+}
+
+// ── Pipeline Events (audit trail) ──
+
+export interface PipelineEvent {
+  id: string;
+  scanId: string;
+  stage: string; // PipelineStage or agent role
+  eventType: string;
+  findingId?: string;
+  agentRole?: string;
+  payload: Record<string, unknown>;
+  timestamp: number;
+}
+
+// ── Agent Sessions (resumable state) ──
+
+export interface AgentSessionState {
+  id: string;
+  scanId: string;
+  agentRole: string;
+  turnCount: number;
+  messages: unknown[]; // serialized conversation
+  toolContext: Record<string, unknown>;
+  status: "running" | "paused" | "completed" | "failed";
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Evidence {
@@ -142,6 +188,11 @@ export interface StageResult<T = unknown> {
 
 // ── Report ──
 
+export interface ScanWarning {
+  stage: PipelineStage;
+  message: string;
+}
+
 export interface ScanReport {
   target: string;
   scanDepth: ScanDepth;
@@ -150,6 +201,7 @@ export interface ScanReport {
   durationMs: number;
   summary: ReportSummary;
   findings: Finding[];
+  warnings: ScanWarning[];
 }
 
 export interface ReportSummary {

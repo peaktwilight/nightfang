@@ -25,6 +25,15 @@ export function formatMarkdown(report: ScanReport): string {
   if (report.summary.low > 0) lines.push(`- **Low:** ${report.summary.low}`);
   lines.push("");
 
+  if (report.warnings.length > 0) {
+    lines.push("## Warnings");
+    lines.push("");
+    for (const warning of report.warnings) {
+      lines.push(`- **${warning.stage}:** ${warning.message}`);
+    }
+    lines.push("");
+  }
+
   // Findings
   if (report.findings.length > 0) {
     lines.push("## Findings");
@@ -33,9 +42,13 @@ export function formatMarkdown(report: ScanReport): string {
       lines.push(formatFinding(finding));
     }
   } else {
-    lines.push("## No Vulnerabilities Found");
+    lines.push(report.warnings.length > 0 ? "## No Confirmed Vulnerabilities" : "## No Vulnerabilities Found");
     lines.push("");
-    lines.push("The target passed all tests.");
+    lines.push(
+      report.warnings.length > 0
+        ? "The scanner did not confirm vulnerabilities, but target validation or probe execution produced warnings."
+        : "The target passed all tests."
+    );
   }
 
   return lines.join("\n");

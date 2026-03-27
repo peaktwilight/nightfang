@@ -5,7 +5,7 @@ import { randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { mkdirSync } from "node:fs";
-import type { Finding, AttackResult, TargetInfo, ScanConfig } from "@nightfang/shared";
+import type { Finding, AttackResult, TargetInfo, ScanConfig, AgentVerdict, PipelineEvent } from "@nightfang/shared";
 import * as schema from "./schema.js";
 import { findingStatuses, type FindingStatusDB } from "./schema.js";
 
@@ -34,12 +34,24 @@ export class NightfangDB {
   }
 
   private migrate(): void {
-    // Add score column to findings if it doesn't exist (v0.1 → v0.2)
     const cols = this.sqlite
       .prepare("PRAGMA table_info(findings)")
       .all() as { name: string }[];
-    if (!cols.some((c) => c.name === "score")) {
+    const colNames = new Set(cols.map((c) => c.name));
+
+    // v0.1 → v0.2: add score
+    if (!colNames.has("score")) {
       this.sqlite.exec("ALTER TABLE findings ADD COLUMN score INTEGER");
+    }
+    // v0.2 → v0.3: add confidence, cvssVector, cvssScore
+    if (!colNames.has("confidence")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN confidence REAL");
+    }
+    if (!colNames.has("cvssVector")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN cvssVector TEXT");
+    }
+    if (!colNames.has("cvssScore")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN cvssScore REAL");
     }
   }
 
@@ -176,6 +188,9 @@ export class NightfangDB {
         severity: finding.severity,
         category: finding.category,
         status: finding.status,
+        confidence: finding.confidence ?? null,
+        cvssVector: finding.cvssVector ?? null,
+        cvssScore: finding.cvssScore ?? null,
         evidenceRequest: finding.evidence.request,
         evidenceResponse: finding.evidence.response,
         evidenceAnalysis: finding.evidence.analysis ?? null,
@@ -185,6 +200,9 @@ export class NightfangDB {
         target: schema.findings.id,
         set: {
           status: finding.status,
+          confidence: finding.confidence ?? null,
+          cvssVector: finding.cvssVector ?? null,
+          cvssScore: finding.cvssScore ?? null,
           evidenceRequest: finding.evidence.request,
           evidenceResponse: finding.evidence.response,
           evidenceAnalysis: finding.evidence.analysis ?? null,
@@ -314,6 +332,129 @@ export class NightfangDB {
       .all();
   }
 
+  // ── Verdicts (multi-agent consensus) ──
+
+  addVerdict(verdict: AgentVerdict): void {
+    this.db.insert(schema.verdicts).values({
+      id: verdict.id,
+      findingId: verdict.findingId,
+      agentRole: verdict.agentRole,
+      model: verdict.model,
+      verdict: verdict.verdict,
+      confidence: verdict.confidence,
+      reasoning: verdict.reasoning,
+      timestamp: verdict.timestamp,
+    }).run();
+  }
+
+  getVerdicts(findingId: string) {
+    return this.db
+      .select()
+      .from(schema.verdicts)
+      .where(eq(schema.verdicts.findingId, findingId))
+      .orderBy(desc(schema.verdicts.timestamp))
+      .all();
+  }
+
+  /** Compute consensus: all agree TRUE_POSITIVE → verified, all FALSE_POSITIVE → false-positive */
+  computeConsensus(findingId: string): "verified" | "false-positive" | "disputed" | "pending" {
+    const vds = this.getVerdicts(findingId);
+    if (vds.length === 0) return "pending";
+    const types = new Set(vds.map((v) => v.verdict));
+    if (types.size === 1 && types.has("TRUE_POSITIVE")) return "verified";
+    if (types.size === 1 && types.has("FALSE_POSITIVE")) return "false-positive";
+    return "disputed";
+  }
+
+  // ── Pipeline Events (audit trail) ──
+
+  logEvent(event: Omit<PipelineEvent, "id">): string {
+    const id = randomUUID();
+    this.db.insert(schema.pipelineEvents).values({
+      id,
+      scanId: event.scanId,
+      stage: event.stage,
+      eventType: event.eventType,
+      findingId: event.findingId ?? null,
+      agentRole: event.agentRole ?? null,
+      payload: JSON.stringify(event.payload),
+      timestamp: event.timestamp,
+    }).run();
+    return id;
+  }
+
+  getEvents(scanId: string, opts?: { stage?: string; eventType?: string }) {
+    const conditions = [eq(schema.pipelineEvents.scanId, scanId)];
+    if (opts?.stage) conditions.push(eq(schema.pipelineEvents.stage, opts.stage));
+    if (opts?.eventType) conditions.push(eq(schema.pipelineEvents.eventType, opts.eventType));
+
+    return this.db
+      .select()
+      .from(schema.pipelineEvents)
+      .where(and(...conditions))
+      .orderBy(schema.pipelineEvents.timestamp)
+      .all();
+  }
+
+  // ── Agent Sessions (resumable state) ──
+
+  saveSession(session: {
+    id: string;
+    scanId: string;
+    agentRole: string;
+    turnCount: number;
+    messages: unknown[];
+    toolContext: Record<string, unknown>;
+    status: string;
+  }): void {
+    const now = new Date().toISOString();
+    this.db
+      .insert(schema.agentSessions)
+      .values({
+        id: session.id,
+        scanId: session.scanId,
+        agentRole: session.agentRole,
+        turnCount: session.turnCount,
+        messages: JSON.stringify(session.messages),
+        toolContext: JSON.stringify(session.toolContext),
+        status: session.status,
+        createdAt: now,
+        updatedAt: now,
+      })
+      .onConflictDoUpdate({
+        target: schema.agentSessions.id,
+        set: {
+          turnCount: session.turnCount,
+          messages: JSON.stringify(session.messages),
+          toolContext: JSON.stringify(session.toolContext),
+          status: session.status,
+          updatedAt: now,
+        },
+      })
+      .run();
+  }
+
+  getSession(scanId: string, agentRole: string) {
+    return this.db
+      .select()
+      .from(schema.agentSessions)
+      .where(
+        and(
+          eq(schema.agentSessions.scanId, scanId),
+          eq(schema.agentSessions.agentRole, agentRole)
+        )
+      )
+      .get();
+  }
+
+  getSessionById(sessionId: string) {
+    return this.db
+      .select()
+      .from(schema.agentSessions)
+      .where(eq(schema.agentSessions.id, sessionId))
+      .get();
+  }
+
   // ── Utilities ──
 
   close(): void {
@@ -407,4 +548,44 @@ CREATE INDEX IF NOT EXISTS idx_findings_category ON findings(category);
 CREATE INDEX IF NOT EXISTS idx_findings_status ON findings(status);
 CREATE INDEX IF NOT EXISTS idx_attack_results_scanId ON attack_results(scanId);
 CREATE INDEX IF NOT EXISTS idx_targets_url ON targets(url);
+
+CREATE TABLE IF NOT EXISTS verdicts (
+  id TEXT PRIMARY KEY,
+  findingId TEXT NOT NULL REFERENCES findings(id),
+  agentRole TEXT NOT NULL,
+  model TEXT NOT NULL DEFAULT '',
+  verdict TEXT NOT NULL,
+  confidence REAL NOT NULL DEFAULT 0,
+  reasoning TEXT NOT NULL DEFAULT '',
+  timestamp INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_verdicts_findingId ON verdicts(findingId);
+
+CREATE TABLE IF NOT EXISTS pipeline_events (
+  id TEXT PRIMARY KEY,
+  scanId TEXT NOT NULL REFERENCES scans(id),
+  stage TEXT NOT NULL,
+  eventType TEXT NOT NULL,
+  findingId TEXT,
+  agentRole TEXT,
+  payload TEXT NOT NULL DEFAULT '{}',
+  timestamp INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_events_scanId ON pipeline_events(scanId);
+CREATE INDEX IF NOT EXISTS idx_events_stage ON pipeline_events(stage);
+CREATE INDEX IF NOT EXISTS idx_events_findingId ON pipeline_events(findingId);
+
+CREATE TABLE IF NOT EXISTS agent_sessions (
+  id TEXT PRIMARY KEY,
+  scanId TEXT NOT NULL REFERENCES scans(id),
+  agentRole TEXT NOT NULL,
+  turnCount INTEGER NOT NULL DEFAULT 0,
+  messages TEXT NOT NULL DEFAULT '[]',
+  toolContext TEXT NOT NULL DEFAULT '{}',
+  status TEXT NOT NULL DEFAULT 'running',
+  createdAt TEXT NOT NULL,
+  updatedAt TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_sessions_scanId ON agent_sessions(scanId);
+CREATE INDEX IF NOT EXISTS idx_sessions_role ON agent_sessions(agentRole);
 `;

@@ -1,10 +1,13 @@
 <p align="center">
   <!-- TODO: Replace with actual logo -->
   <img src="assets/nightfang-logo.png" alt="Nightfang" width="200" />
-  <br />
-  <strong>Nightfang</strong>
-  <br />
-  <em>AI agents that hack your AI before attackers do</em>
+</p>
+
+<h1 align="center">Nightfang</h1>
+
+<p align="center">
+  <strong>Security research automation for the AI era</strong><br/>
+  <em>Scan LLM endpoints. Audit npm packages. Review source code. Prove every finding is real.</em>
 </p>
 
 <p align="center">
@@ -15,40 +18,91 @@
 </p>
 
 <p align="center">
-  Security research automation for the AI era.<br/>
-  Four autonomous agents probe your LLM apps, MCP servers, and AI pipelines for real vulnerabilities — then prove they're exploitable.
+  <a href="#quick-start">Quick Start</a> &middot;
+  <a href="#commands">Commands</a> &middot;
+  <a href="#how-it-works">How It Works</a> &middot;
+  <a href="#what-nightfang-scans">What It Scans</a> &middot;
+  <a href="#how-it-compares">Comparison</a> &middot;
+  <a href="#github-action">CI/CD</a> &middot;
+  <a href="#built-by">About</a>
 </p>
 
 ---
 
+Nightfang is an open-source pentesting toolkit that combines four autonomous AI agents with a template-driven attack engine. Point it at an API, an npm package, or a Git repo — it discovers vulnerabilities, attacks them, **re-exploits each finding to eliminate false positives**, and generates SARIF reports that plug straight into GitHub's Security tab.
+
+One command. Zero config. Every finding verified with proof.
+
 ## Quick Start
 
 ```bash
+# Scan an LLM endpoint
 npx nightfang scan --target https://your-app.com/api/chat
+
+# Audit an npm package for vulnerabilities
+npx nightfang audit lodash
+
+# Deep security review of a codebase
+npx nightfang review ./my-ai-app
 ```
 
-That's it. One command. Nightfang discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
+That's it. Nightfang discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
 
-## What Nightfang Does
+## Commands
 
-Nightfang runs four specialized AI agents in sequence:
+Nightfang ships five commands — from quick API probes to deep source-level audits:
+
+| Command | What It Does | Example |
+|---------|-------------|---------|
+| **`scan`** | Probe LLM endpoints, MCP servers, and AI APIs for vulnerabilities | `npx nightfang scan --target https://api.example.com/chat` |
+| **`audit`** | Install and security-audit any npm package with static analysis + AI review | `npx nightfang audit express@4.18.2` |
+| **`review`** | Deep source code security review of a local repo or GitHub URL | `npx nightfang review https://github.com/user/repo` |
+| **`history`** | Browse past scans with status, depth, findings count, and duration | `npx nightfang history --limit 20` |
+| **`findings`** | Query, filter, and inspect verified findings across all scans | `npx nightfang findings list --severity critical` |
+
+## How It Works
+
+Nightfang runs four specialized AI agents in sequence. Each agent builds on the previous one's output:
+
+```
+  +-----------+     +-----------+     +-----------+     +-----------+
+  | DISCOVER  | --> |  ATTACK   | --> |  VERIFY   | --> |  REPORT   |
+  |  (Recon)  |     | (Offense) |     | (Confirm) |     | (Output)  |
+  +-----------+     +-----------+     +-----------+     +-----------+
+   Maps endpoints    Runs 47+ test    Re-exploits       Generates SARIF,
+   Model detection   cases across     each finding       Markdown, and JSON
+   System prompt     7 categories     to kill false      with severity +
+   extraction        of attacks       positives          remediation
+```
 
 | Agent | Role | What It Does |
 |-------|------|-------------|
-| **Discover** | Recon | Maps endpoints, model cards, system prompts, MCP tool schemas, auth flows |
-| **Attack** | Offense | Runs prompt injection, jailbreaks, tool poisoning, data exfiltration, and more |
-| **Verify** | Validation | Re-exploits each finding to eliminate false positives, captures proof |
-| **Report** | Output | Generates SARIF, Markdown, and JSON reports with severity + remediation |
+| **Discover** | Recon | Maps endpoints, detects models, extracts system prompts, enumerates MCP tool schemas |
+| **Attack** | Offense | Prompt injection, jailbreaks, tool poisoning, data exfiltration, encoding bypasses — 12 attack templates, 7 categories |
+| **Verify** | Validation | Re-exploits each finding independently. If it can't reproduce it, it's killed as a false positive |
+| **Report** | Output | SARIF for GitHub Security tab, Markdown for humans, JSON for pipelines — with severity scores and remediation |
+
+The **verification step is the differentiator.** No more triaging 200 "possible prompt injections" that turn out to be nothing.
+
+## What Nightfang Scans
+
+| Target | Command | How |
+|--------|---------|-----|
+| **LLM Endpoints** — ChatGPT, Claude, Llama APIs, custom chatbots | `scan --target <url>` | HTTP probing + multi-turn agent attacks |
+| **MCP Servers** — Tool schemas, input validation, authorization | `scan --target <url> --mode mcp` | Connects to server, enumerates tools, tests each |
+| **Web Apps & APIs** — AI-powered copilots, agents, RAG pipelines | `scan --target <url> --mode deep --repo ./src` | API probing + source code analysis |
+| **npm Packages** — Dependency supply chain, malicious code | `audit <package>` | Installs in sandbox, runs semgrep + AI code review |
+| **Git Repositories** — Source-level security review | `review <path-or-url>` | Deep analysis with Claude Code, Codex, or Gemini CLI |
 
 ### OWASP LLM Top 10 Coverage
 
 | # | Category | Status |
 |---|----------|--------|
-| LLM01 | Prompt Injection | :white_check_mark: Direct + indirect |
+| LLM01 | Prompt Injection | :white_check_mark: Direct + indirect + encoding bypass |
 | LLM02 | Insecure Output Handling | :white_check_mark: XSS, code exec via output |
 | LLM03 | Training Data Poisoning | :construction: Detection only |
 | LLM04 | Model Denial of Service | :white_check_mark: Resource exhaustion probes |
-| LLM05 | Supply Chain Vulnerabilities | :white_check_mark: MCP tool poisoning, dependency confusion |
+| LLM05 | Supply Chain Vulnerabilities | :white_check_mark: MCP tool poisoning, npm audit, dependency confusion |
 | LLM06 | Sensitive Information Disclosure | :white_check_mark: PII/secret extraction |
 | LLM07 | Insecure Plugin Design | :white_check_mark: Tool schema abuse, SSRF via tools |
 | LLM08 | Excessive Agency | :white_check_mark: Privilege escalation, unauthorized actions |
@@ -70,7 +124,7 @@ $ npx nightfang scan --target https://demo.app/api/chat
 
   ┌─────────────────────────────────────────────────────────┐
   │ RESULTS                                                 │
-  ├────────┬────────────────────────────────┬────────┬──────┤
+  ├────────┬────────────────────────────────────┬────────┬──────┤
   │ ID     │ Finding                        │ Risk   │ Conf │
   ├────────┼────────────────────────────────┼────────┼──────┤
   │ NF-001 │ Direct prompt injection        │ HIGH   │ 99%  │
@@ -84,20 +138,76 @@ $ npx nightfang scan --target https://demo.app/api/chat
   SARIF:  ./nightfang-report/report.sarif
 ```
 
+## Scan Depth & Cost
+
+| Depth | Test Cases | Time | Estimated Cost |
+|-------|-----------|------|----------------|
+| `quick` | ~15 | ~1 min | $0.05–$0.15 |
+| `default` | ~50 | ~3 min | $0.15–$0.50 |
+| `deep` | ~150 | ~10 min | $0.50–$1.00 |
+
+Cost depends on the LLM provider you configure. Nightfang supports OpenAI, Anthropic, and local models via Ollama.
+
+```bash
+# Quick scan for CI
+npx nightfang scan --target https://api.example.com/chat --depth quick
+
+# Deep audit before launch
+npx nightfang scan --target https://api.example.com/chat --depth deep
+
+# Source + API scan with Claude Code
+npx nightfang scan --target https://api.example.com/chat --runtime claude --mode deep --repo ./src
+
+# MCP server audit
+npx nightfang scan --target https://mcp-server.example.com --mode mcp --runtime claude
+
+# Audit an npm package
+npx nightfang audit react --depth deep --runtime claude
+
+# Review a GitHub repo
+npx nightfang review https://github.com/user/repo --runtime codex --depth deep
+```
+
+## Runtime Modes
+
+Bring your own agent CLI — Nightfang orchestrates it:
+
+| Runtime | Flag | Best For |
+|---------|------|----------|
+| `api` | `--runtime api` | CI, quick scans — fast, cheap, no dependencies (default) |
+| `claude` | `--runtime claude` | Attack generation, deep analysis — spawns Claude Code CLI |
+| `codex` | `--runtime codex` | Verification, source analysis — spawns Codex CLI |
+| `gemini` | `--runtime gemini` | Large context source analysis — spawns Gemini CLI |
+| `opencode` | `--runtime opencode` | Multi-provider flexibility — spawns OpenCode CLI |
+| `auto` | `--runtime auto` | Best overall — auto-detects installed runtimes, picks best per stage |
+
+Combined with scan modes:
+
+| Mode | Flag | Description |
+|------|------|-------------|
+| `probe` | `--mode probe` | Send payloads to API, check responses (default) |
+| `deep` | `--mode deep` | API probing + source code audit (requires `--repo`) |
+| `mcp` | `--mode mcp` | Connect to MCP server, enumerate tools, test each for security issues |
+
+> `deep` and `mcp` modes require a process runtime (`claude`, `codex`, `gemini`, `opencode`, or `auto`).
+
 ## How It Compares
 
-| Feature | Nightfang | promptfoo | garak | mcpscan.ai |
-|---------|-----------|-----------|-------|------------|
-| Autonomous multi-agent | :white_check_mark: 4 specialized agents | :x: Single runner | :x: Single runner | :x: Single scanner |
-| Verification (no false positives) | :white_check_mark: Re-exploits to confirm | :x: | :x: | :x: |
-| MCP server security | :white_check_mark: Tool poisoning, schema abuse | :x: | :x: | :white_check_mark: Basic |
-| OWASP LLM Top 10 | :white_check_mark: 8/10 covered | Partial | Partial | Partial |
-| SARIF output (GitHub Security tab) | :white_check_mark: | :white_check_mark: | :x: | :x: |
-| One command, zero config | :white_check_mark: `npx nightfang scan --target <url>` | Needs YAML config | Needs Python setup | Web-only |
-| Open source | :white_check_mark: MIT | :white_check_mark: (acquired by OpenAI) | :white_check_mark: | :x: Closed |
-| Cost per scan | $0.05–$1.00 | Varies | Free (local) | Free tier |
+| Feature | Nightfang | promptfoo | garak | semgrep | nuclei |
+|---------|-----------|-----------|-------|---------|--------|
+| **Autonomous multi-agent pipeline** | :white_check_mark: 4 specialized agents | :x: Single runner | :x: Single runner | :x: Rule-based | :x: Template runner |
+| **Verification (no false positives)** | :white_check_mark: Re-exploits to confirm | :x: | :x: | :x: | :x: |
+| **LLM endpoint scanning** | :white_check_mark: Prompt injection, jailbreaks, exfil | :white_check_mark: Red-teaming | :white_check_mark: Probes | :x: | :x: |
+| **MCP server security** | :white_check_mark: Tool poisoning, schema abuse | :x: | :x: | :x: | :x: |
+| **npm package audit** | :white_check_mark: Semgrep + AI review | :x: | :x: | :white_check_mark: Rules only | :x: |
+| **Source code review** | :white_check_mark: AI-powered deep analysis | :x: | :x: | :white_check_mark: Rules only | :x: |
+| **OWASP LLM Top 10** | :white_check_mark: 8/10 covered | Partial | Partial | N/A | N/A |
+| **SARIF + GitHub Security tab** | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark: | :white_check_mark: |
+| **One command, zero config** | :white_check_mark: `npx nightfang scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
+| **Open source** | :white_check_mark: MIT | :white_check_mark: (acquired by OpenAI) | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| **Cost per scan** | $0.05–$1.00 | Varies | Free (local) | Free (OSS) / Paid (Pro) | Free |
 
-> **Note:** promptfoo was [acquired by OpenAI](https://openai.com) — Nightfang remains independent and open source.
+Nightfang isn't replacing semgrep or nuclei — it covers the AI-specific attack surface they can't see. Use them together.
 
 ## GitHub Action
 
@@ -132,52 +242,25 @@ jobs:
 
 Findings show up directly in the **Security** tab of your repository.
 
-## Scan Depth & Cost
+## Findings Management
 
-| Depth | Test Cases | Time | Estimated Cost |
-|-------|-----------|------|----------------|
-| `quick` | ~15 | ~1 min | $0.05–$0.15 |
-| `default` | ~50 | ~3 min | $0.15–$0.50 |
-| `deep` | ~150 | ~10 min | $0.50–$1.00 |
-
-Cost depends on the LLM provider you configure. Nightfang supports OpenAI, Anthropic, and local models via Ollama.
+Every finding is persisted in a local SQLite database. Query across scans:
 
 ```bash
-# Quick scan for CI
-npx nightfang scan --target https://api.example.com/chat --depth quick
+# List critical findings
+npx nightfang findings list --severity critical
 
-# Deep audit before launch
-npx nightfang scan --target https://api.example.com/chat --depth deep
+# Filter by category
+npx nightfang findings list --category prompt-injection --status confirmed
 
-# Deep scan with source code analysis (requires Claude Code or Codex CLI)
-npx nightfang scan --target https://api.example.com/chat --runtime claude --mode deep --repo ./path/to/target
+# Inspect a specific finding with full evidence
+npx nightfang findings show NF-001
 
-# MCP server audit
-npx nightfang scan --target https://mcp-server.example.com --runtime claude --mode mcp
+# Browse scan history
+npx nightfang history --limit 10
 ```
 
-## Runtime Modes
-
-Nightfang supports multiple execution runtimes — bring your own agent CLI:
-
-| Runtime | Flag | Description | Best For |
-|---------|------|-------------|----------|
-| `api` | `--runtime api` | Direct HTTP probing (default). Fast, cheap, no dependencies. | CI, quick scans |
-| `claude` | `--runtime claude` | Spawns Claude Code CLI. Can read source code, run tools, execute PoCs. | Attack generation, deep analysis |
-| `codex` | `--runtime codex` | Spawns Codex CLI. Strong at code review and pattern matching. | Verification, source analysis |
-| `gemini` | `--runtime gemini` | Spawns Gemini CLI. Large context window. | Source analysis, reports |
-| `opencode` | `--runtime opencode` | Spawns OpenCode CLI. Multi-provider, flexible model selection. | Source analysis, verification |
-| `auto` | `--runtime auto` | Detects installed runtimes, picks the best one per pipeline stage. | Best overall results |
-
-Combined with scan modes:
-
-| Mode | Flag | Description |
-|------|------|-------------|
-| `probe` | `--mode probe` | Send payloads to API, check responses (default). |
-| `deep` | `--mode deep` | Full analysis — API probing + source code audit when `--repo` is provided. |
-| `mcp` | `--mode mcp` | Connect to MCP server, enumerate tools, test each for security issues. |
-
-> `deep` and `mcp` modes require a process runtime (`claude`, `codex`, `gemini`, `opencode`, or `auto`).
+Finding lifecycle: `discovered → verified → confirmed → scored → reported` (or `false-positive` if verification fails).
 
 ## Roadmap
 
@@ -185,6 +268,9 @@ Combined with scan modes:
 - [x] OWASP LLM Top 10 coverage (8/10)
 - [x] SARIF output + GitHub Action
 - [x] MCP server scanning
+- [x] npm package auditing
+- [x] Source code review (local + GitHub)
+- [x] Multi-runtime support (Claude, Codex, Gemini, OpenCode)
 - [ ] Multi-turn conversation attacks
 - [ ] RAG pipeline security (poisoning, extraction)
 - [ ] Agentic workflow testing (multi-tool chains)
@@ -195,6 +281,8 @@ Combined with scan modes:
 ## Built By
 
 Created by a security researcher with [7 published CVEs](https://www.cve.org/) across node-forge, uptime-kuma, liquidjs, picomatch, and jspdf — plus the creator of [OpenSOAR](https://github.com/peaktwilight) (SOAR platform) and PhishMind (phishing analysis).
+
+Nightfang exists because traditional security tools can't see AI attack surfaces. You can't `nmap` a language model. You can't write a static rule for a jailbreak that hasn't been invented yet. You need agents that think like attackers — and then prove what they find.
 
 ## Contributing
 

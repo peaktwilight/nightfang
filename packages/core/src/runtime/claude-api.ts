@@ -1,25 +1,42 @@
-import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult } from "./types.js";
+import type {
+  Runtime,
+  NativeRuntime,
+  RuntimeConfig,
+  RuntimeContext,
+  RuntimeResult,
+  NativeMessage,
+  NativeToolDef,
+  NativeRuntimeResult,
+  NativeContentBlock,
+} from "./types.js";
+
+const DEFAULT_MODEL = "claude-sonnet-4-6";
 
 /**
  * Runtime that calls the Anthropic Claude Messages API directly.
  *
- * Used by the audit agent loop — the agent needs Claude to *analyze* code,
- * not to send prompts to a target LLM endpoint (that's what ApiRuntime does).
+ * Supports two modes:
+ * - Legacy: single-prompt execute() for backward compat with existing agent loop
+ * - Native: structured multi-turn messages with tool_use for the new agent loop
  *
  * Requires ANTHROPIC_API_KEY env var.
  */
-export class ClaudeApiRuntime implements Runtime {
+export class ClaudeApiRuntime implements Runtime, NativeRuntime {
   readonly type = "api" as const;
   private config: RuntimeConfig;
   private apiKey: string;
   private baseUrl: string;
+  private model: string;
 
   constructor(config: RuntimeConfig) {
     this.config = config;
-    this.apiKey = process.env.ANTHROPIC_API_KEY ?? "";
+    this.apiKey = config.apiKey ?? process.env.ANTHROPIC_API_KEY ?? "";
     this.baseUrl =
       process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com";
+    this.model = config.model ?? DEFAULT_MODEL;
   }
+
+  // ── Legacy Runtime interface (single-prompt) ──
 
   async execute(
     prompt: string,
@@ -38,7 +55,6 @@ export class ClaudeApiRuntime implements Runtime {
       };
     }
 
-    // Extract system prompt from conversation if present
     const systemPrompt = context?.systemPrompt ?? "";
 
     const controller = new AbortController();
@@ -56,7 +72,7 @@ export class ClaudeApiRuntime implements Runtime {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-6",
+          model: this.model,
           max_tokens: 8192,
           ...(systemPrompt ? { system: systemPrompt } : {}),
           messages: [{ role: "user", content: prompt }],
@@ -99,6 +115,136 @@ export class ClaudeApiRuntime implements Runtime {
         output: "",
         exitCode: 1,
         timedOut,
+        durationMs: Date.now() - start,
+        error: timedOut
+          ? "Claude API request timed out"
+          : `Claude API error: ${msg}`,
+      };
+    }
+  }
+
+  // ── Native Runtime interface (structured messages + tool_use) ──
+
+  async executeNative(
+    system: string,
+    messages: NativeMessage[],
+    tools: NativeToolDef[],
+  ): Promise<NativeRuntimeResult> {
+    const start = Date.now();
+
+    if (!this.apiKey) {
+      return {
+        content: [{ type: "text", text: "" }],
+        stopReason: "error",
+        durationMs: Date.now() - start,
+        error: "ANTHROPIC_API_KEY not set.",
+      };
+    }
+
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => controller.abort(),
+      this.config.timeout || 120_000,
+    );
+
+    try {
+      // Convert messages to API format
+      const apiMessages = messages.map((m) => ({
+        role: m.role,
+        content: m.content.map((block) => {
+          if (block.type === "text") return { type: "text", text: block.text };
+          if (block.type === "tool_use") {
+            return { type: "tool_use", id: block.id, name: block.name, input: block.input };
+          }
+          if (block.type === "tool_result") {
+            return {
+              type: "tool_result",
+              tool_use_id: block.tool_use_id,
+              content: block.content,
+              ...(block.is_error ? { is_error: true } : {}),
+            };
+          }
+          return block;
+        }),
+      }));
+
+      const body: Record<string, unknown> = {
+        model: this.model,
+        max_tokens: 8192,
+        system,
+        messages: apiMessages,
+      };
+
+      if (tools.length > 0) {
+        body.tools = tools;
+      }
+
+      const res = await fetch(`${this.baseUrl}/v1/messages`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": this.apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timer);
+
+      const responseText = await res.text();
+
+      if (!res.ok) {
+        return {
+          content: [{ type: "text", text: "" }],
+          stopReason: "error",
+          durationMs: Date.now() - start,
+          error: `Anthropic API error ${res.status}: ${responseText.slice(0, 500)}`,
+        };
+      }
+
+      const json = JSON.parse(responseText);
+
+      // Parse content blocks
+      const content: NativeContentBlock[] = (json.content ?? []).map(
+        (block: Record<string, unknown>) => {
+          if (block.type === "text") {
+            return { type: "text", text: block.text as string };
+          }
+          if (block.type === "tool_use") {
+            return {
+              type: "tool_use",
+              id: block.id as string,
+              name: block.name as string,
+              input: block.input as Record<string, unknown>,
+            };
+          }
+          return { type: "text", text: JSON.stringify(block) };
+        },
+      );
+
+      const stopReason = json.stop_reason === "tool_use" ? "tool_use" as const
+        : json.stop_reason === "max_tokens" ? "max_tokens" as const
+        : "end_turn" as const;
+
+      return {
+        content,
+        stopReason,
+        usage: json.usage
+          ? {
+              inputTokens: json.usage.input_tokens ?? 0,
+              outputTokens: json.usage.output_tokens ?? 0,
+            }
+          : undefined,
+        durationMs: Date.now() - start,
+      };
+    } catch (err) {
+      clearTimeout(timer);
+      const msg = err instanceof Error ? err.message : String(err);
+      const timedOut = msg.includes("abort") || msg.includes("timeout");
+      return {
+        content: [{ type: "text", text: "" }],
+        stopReason: "error",
         durationMs: Date.now() - start,
         error: timedOut
           ? "Claude API request timed out"

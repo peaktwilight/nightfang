@@ -36,6 +36,9 @@ export interface DBFinding {
   severity: Severity;
   category: AttackCategory;
   status: FindingStatus;
+  confidence: number | null;
+  cvssVector: string | null;
+  cvssScore: number | null;
   evidenceRequest: string;
   evidenceResponse: string;
   evidenceAnalysis: string | null;

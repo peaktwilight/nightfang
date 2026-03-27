@@ -31,6 +31,7 @@ export function formatAuditReport(
     durationMs: report.durationMs,
     summary: report.summary,
     findings: report.findings,
+    warnings: [],
   };
 
   if (format === "json") {
@@ -56,6 +57,7 @@ export function formatReviewReport(
     durationMs: report.durationMs,
     summary: report.summary,
     findings: report.findings,
+    warnings: [],
   };
 
   if (format === "json") {

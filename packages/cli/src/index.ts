@@ -147,6 +147,14 @@ program
                   `  ${chalk.gray("Attacks complete")} ${renderProgressBar(attackTotal, attackTotal)}`
                 );
               } else if (
+                event.stage === "discovery" &&
+                typeof event.data === "object" &&
+                event.data !== null &&
+                "success" in event.data &&
+                event.data.success === false
+              ) {
+                spinner?.warn(`  ${chalk.yellow("!")} ${chalk.yellow(event.message)}`);
+              } else if (
                 event.stage === "discovery" ||
                 event.stage === "verify"
               ) {
@@ -185,6 +193,9 @@ program
       // Exit with non-zero if critical/high findings
       if (report.summary.critical > 0 || report.summary.high > 0) {
         process.exit(1);
+      }
+      if (report.warnings.length > 0) {
+        process.exit(2);
       }
     } catch (err) {
       spinner?.fail(`  ${chalk.red("✗ Scan failed")}`);
@@ -235,64 +246,86 @@ program
   });
 
 // ── Findings commands ──
-const findingsCmd = program
-  .command("findings")
-  .description("Browse and manage persisted findings");
+type FindingsListOptions = {
+  dbPath?: string;
+  scan?: string;
+  severity?: string;
+  category?: string;
+  status?: string;
+  limit?: string;
+};
 
-findingsCmd
-  .command("list")
-  .description("List findings from the database")
+function withFindingsListOptions(command: Command): Command {
+  return command
   .option("--db-path <path>", "Path to SQLite database")
   .option("--scan <scanId>", "Filter by scan ID")
   .option("--severity <severity>", "Filter by severity: critical, high, medium, low, info")
   .option("--category <category>", "Filter by attack category")
-  .option("--status <status>", "Filter by status: discovered, verified, scored, reported, false-positive")
-  .option("--limit <n>", "Max findings to show", "50")
-  .action(async (opts) => {
-    const { NightfangDB } = await import("@nightfang/db");
-    const db = new NightfangDB(opts.dbPath);
-    const rows = db.listFindings({
-      scanId: opts.scan,
-      severity: opts.severity,
-      category: opts.category,
-      status: opts.status,
-      limit: parseInt(opts.limit, 10),
-    });
-    db.close();
+  .option("--status <status>", "Filter by status: discovered, verified, confirmed, scored, reported, false-positive")
+  .option("--limit <n>", "Max findings to show", "50");
+}
 
-    if (rows.length === 0) {
-      console.log(chalk.gray("No findings found."));
-      return;
-    }
-
-    console.log("");
-    console.log(chalk.red.bold("  ◆ nightfang") + chalk.gray(` findings (${rows.length})`));
-    console.log("");
-
-    for (const f of rows) {
-      const sevColor =
-        f.severity === "critical" ? chalk.red.bold :
-        f.severity === "high" ? chalk.redBright :
-        f.severity === "medium" ? chalk.yellow :
-        f.severity === "low" ? chalk.blue :
-        chalk.gray;
-
-      const statusColor =
-        f.status === "reported" ? chalk.green :
-        f.status === "scored" ? chalk.cyan :
-        f.status === "verified" ? chalk.yellow :
-        f.status === "false-positive" ? chalk.strikethrough.gray :
-        chalk.white;
-
-      console.log(
-        `  ${sevColor(f.severity.padEnd(8))} ${statusColor(f.status.padEnd(14))} ${chalk.white(f.title)}`
-      );
-      console.log(
-        `  ${chalk.gray(f.id.slice(0, 8))}  ${chalk.gray(f.category)}  ${chalk.gray(`scan:${f.scanId.slice(0, 8)}`)}`
-      );
-      console.log("");
-    }
+async function renderFindingsList(opts: FindingsListOptions): Promise<void> {
+  const { NightfangDB } = await import("@nightfang/db");
+  const db = new NightfangDB(opts.dbPath);
+  const rows = db.listFindings({
+    scanId: opts.scan,
+    severity: opts.severity,
+    category: opts.category,
+    status: opts.status,
+    limit: parseInt(opts.limit ?? "50", 10),
   });
+  db.close();
+
+  if (rows.length === 0) {
+    console.log(chalk.gray("No findings found."));
+    return;
+  }
+
+  console.log("");
+  console.log(chalk.red.bold("  ◆ nightfang") + chalk.gray(` findings (${rows.length})`));
+  console.log("");
+
+  for (const f of rows) {
+    const sevColor =
+      f.severity === "critical" ? chalk.red.bold :
+      f.severity === "high" ? chalk.redBright :
+      f.severity === "medium" ? chalk.yellow :
+      f.severity === "low" ? chalk.blue :
+      chalk.gray;
+
+    const statusColor =
+      f.status === "reported" ? chalk.green :
+      f.status === "scored" ? chalk.cyan :
+      f.status === "verified" ? chalk.yellow :
+      f.status === "false-positive" ? chalk.strikethrough.gray :
+      chalk.white;
+
+    console.log(
+      `  ${sevColor(f.severity.padEnd(8))} ${statusColor(f.status.padEnd(14))} ${chalk.white(f.title)}`
+    );
+    console.log(
+      `  ${chalk.gray(f.id.slice(0, 8))}  ${chalk.gray(f.category)}  ${chalk.gray(`scan:${f.scanId.slice(0, 8)}`)}`
+    );
+    console.log("");
+  }
+}
+
+const findingsCmd = withFindingsListOptions(
+  program
+    .command("findings")
+    .description("Browse and manage persisted findings")
+).action(async (opts: FindingsListOptions) => {
+  await renderFindingsList(opts);
+});
+
+withFindingsListOptions(
+  findingsCmd
+    .command("list")
+    .description("List findings from the database")
+).action(async (opts: FindingsListOptions) => {
+  await renderFindingsList(opts);
+});
 
 findingsCmd
   .command("show")
@@ -455,13 +488,39 @@ program
   .option("--version <version>", "Specific version to audit (default: latest)")
   .option("--depth <depth>", "Audit depth: quick, default, deep", "default")
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
+  .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, opencode, auto", "api")
   .option("--db-path <path>", "Path to SQLite database")
   .option("--verbose", "Show detailed output", false)
   .option("--timeout <ms>", "AI agent timeout in milliseconds", "60000")
   .action(async (packageName: string, opts: Record<string, string | boolean>) => {
     const depth = (opts.depth as ScanDepth) ?? "default";
     const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
+    const runtime = opts.runtime as RuntimeMode;
     const verbose = opts.verbose as boolean;
+
+    const validRuntimes = ["api", "claude", "codex", "gemini", "opencode", "auto"];
+    if (!validRuntimes.includes(runtime)) {
+      console.error(
+        chalk.red(`Unknown runtime '${runtime}'. Valid: ${validRuntimes.join(", ")}`)
+      );
+      process.exit(2);
+    }
+
+    if (runtime !== "api" && runtime !== "auto") {
+      const rt = createRuntime({
+        type: runtime,
+        timeout: parseInt(opts.timeout as string, 10),
+      });
+      const available = await rt.isAvailable();
+      if (!available) {
+        console.error(
+          chalk.red(
+            `Runtime '${runtime}' not available. Is ${runtime} installed?`
+          )
+        );
+        process.exit(2);
+      }
+    }
 
     // ── Banner ──
     if (format === "terminal") {
@@ -476,6 +535,11 @@ program
       console.log(
         `  ${chalk.gray("Depth:")}   ${chalk.white(depth)}`
       );
+      if (runtime !== "api") {
+        console.log(
+          `  ${chalk.gray("Runtime:")} ${chalk.white(runtime)}`
+        );
+      }
       console.log("");
     }
 
@@ -511,6 +575,7 @@ program
           version: opts.version as string | undefined,
           depth,
           format,
+          runtime,
           timeout: parseInt(opts.timeout as string, 10),
           verbose,
           dbPath: opts.dbPath as string | undefined,

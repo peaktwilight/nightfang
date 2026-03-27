@@ -24,6 +24,7 @@ export async function generateReport(
     durationMs: completedAt - ctx.startedAt,
     summary,
     findings: ctx.findings,
+    warnings: ctx.warnings,
   };
 
   return {

@@ -71,6 +71,12 @@ export async function scan(
       : `Discovery failed: ${discovery.error}`,
     data: discovery,
   });
+  if (!discovery.success && discovery.error) {
+    ctx.warnings.push({
+      stage: "discovery",
+      message: `Initial target validation failed: ${discovery.error}`,
+    });
+  }
 
   // Stage 1.5: Source Analysis (when --repo is provided with a process runtime)
   const templates = loadTemplates(config.depth);
@@ -107,6 +113,19 @@ export async function scan(
     message: `Executed ${attackResult.data.payloadsRun} payloads across ${attackResult.data.templatesRun} templates (${attackResult.durationMs}ms)`,
     data: attackResult,
   });
+  if (
+    attackResult.data.payloadsRun > 0 &&
+    attackResult.data.results.length > 0 &&
+    attackResult.data.results.every((result) => result.outcome === "error")
+  ) {
+    const firstError = attackResult.data.results.find((result) => result.error)?.error;
+    ctx.warnings.push({
+      stage: "attack",
+      message: firstError
+        ? `All attack probes failed: ${firstError}`
+        : "All attack probes failed before the target could be validated.",
+    });
+  }
 
   // Stage 3: Verify
   emit({ type: "stage:start", stage: "verify", message: "Verifying findings..." });

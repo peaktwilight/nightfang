@@ -4,8 +4,8 @@ export { agenticScan } from "./agentic-scanner.js";
 export type { AgenticScanOptions } from "./agentic-scanner.js";
 export { createScanContext, addFinding, addAttackResult, finalize } from "./context.js";
 export { sendPrompt, extractResponseText } from "./http.js";
-export { createRuntime, ApiRuntime, ProcessRuntime, RUNTIME_REGISTRY, pickRuntimeForStage, detectAvailableRuntimes, getRuntimeInfo } from "./runtime/index.js";
-export type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType } from "./runtime/index.js";
+export { createRuntime, ApiRuntime, ProcessRuntime, ClaudeApiRuntime, RUNTIME_REGISTRY, pickRuntimeForStage, detectAvailableRuntimes, getRuntimeInfo } from "./runtime/index.js";
+export type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType, NativeRuntime, NativeMessage, NativeContentBlock, NativeToolDef, NativeRuntimeResult } from "./runtime/index.js";
 export { buildDeepScanPrompt, buildMcpAuditPrompt, buildSourceAnalysisPrompt } from "./prompts.js";
 
 // Package audit
@@ -19,7 +19,7 @@ export type { SourceReviewOptions } from "./review.js";
 export { reviewAgentPrompt } from "./review-prompt.js";
 
 // Agent system
-export { runAgentLoop, ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./agent/index.js";
+export { runAgentLoop, runNativeAgentLoop, ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./agent/index.js";
 export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt } from "./agent/prompts.js";
 export type {
   AgentRole,
@@ -31,6 +31,9 @@ export type {
   ToolResult,
   ToolContext,
   AgentLoopOptions,
+  NativeAgentConfig,
+  NativeAgentLoopOptions,
+  NativeAgentState,
 } from "./agent/index.js";
 
 // Database (re-exported from @nightfang/db)

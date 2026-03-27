@@ -5,6 +5,8 @@ export interface RuntimeConfig {
   timeout: number;
   cwd?: string;
   env?: Record<string, string>;
+  model?: string;
+  apiKey?: string;
 }
 
 export interface RuntimeResult {
@@ -26,4 +28,44 @@ export interface RuntimeContext {
   findings?: string;
   templateId?: string;
   systemPrompt?: string;
+}
+
+// ── Native Runtime (structured messages + tool_use) ──
+
+export interface NativeMessage {
+  role: "user" | "assistant";
+  content: NativeContentBlock[];
+}
+
+export type NativeContentBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: Record<string, unknown> }
+  | { type: "tool_result"; tool_use_id: string; content: string; is_error?: boolean };
+
+export interface NativeToolDef {
+  name: string;
+  description: string;
+  input_schema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+  };
+}
+
+export interface NativeRuntimeResult {
+  content: NativeContentBlock[];
+  stopReason: "end_turn" | "tool_use" | "max_tokens" | "error";
+  usage?: { inputTokens: number; outputTokens: number };
+  durationMs: number;
+  error?: string;
+}
+
+export interface NativeRuntime {
+  readonly type: RuntimeType;
+  executeNative(
+    system: string,
+    messages: NativeMessage[],
+    tools: NativeToolDef[],
+  ): Promise<NativeRuntimeResult>;
+  isAvailable(): Promise<boolean>;
 }

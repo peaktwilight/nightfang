@@ -91,10 +91,27 @@ export function formatTerminal(report: ScanReport): string {
 
   lines.push("");
 
+  if (report.warnings.length > 0) {
+    lines.push(`  ${chalk.yellow.bold("WARNINGS")}`);
+    lines.push("");
+    for (const warning of report.warnings) {
+      lines.push(
+        `  ${chalk.yellow.bold("!")} ${chalk.yellow(`[${warning.stage}] ${warning.message}`)}`
+      );
+    }
+    lines.push("");
+  }
+
   // ── Findings Section ──
   if (report.findings.length === 0) {
     lines.push("");
-    lines.push(`  ${chalk.green.bold("✓")} ${chalk.green("No vulnerabilities found.")}`);
+    if (report.warnings.length > 0) {
+      lines.push(
+        `  ${chalk.yellow.bold("!")} ${chalk.yellow("No vulnerabilities confirmed. Scan finished with warnings.")}`
+      );
+    } else {
+      lines.push(`  ${chalk.green.bold("✓")} ${chalk.green("No vulnerabilities found.")}`);
+    }
   } else {
     lines.push(`  ${chalk.bold.white("FINDINGS")}`);
     lines.push("");

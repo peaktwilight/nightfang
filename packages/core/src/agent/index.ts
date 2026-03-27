@@ -1,4 +1,5 @@
 export { runAgentLoop, parseToolCalls } from "./loop.js";
+export { runNativeAgentLoop } from "./native-loop.js";
 export { ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./tools.js";
 export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt } from "./prompts.js";
 export type {
@@ -13,3 +14,4 @@ export type {
   MessageRole,
 } from "./types.js";
 export type { AgentLoopOptions } from "./loop.js";
+export type { NativeAgentConfig, NativeAgentLoopOptions, NativeAgentState } from "./native-loop.js";
