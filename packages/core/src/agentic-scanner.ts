@@ -1,7 +1,7 @@
 import type { ScanConfig, ScanReport, Finding } from "@nightfang/shared";
 import { loadTemplates } from "@nightfang/templates";
 import { createRuntime } from "./runtime/index.js";
-import { NightfangDB } from "./db/database.js";
+import { NightfangDB } from "@nightfang/db";
 import { runAgentLoop } from "./agent/loop.js";
 import { getToolsForRole } from "./agent/tools.js";
 import {
@@ -36,8 +36,9 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
   const db = new NightfangDB(dbPath);
   const scanId = db.createScan(config);
 
+  const runtimeMode = config.runtime ?? "api";
   const runtime = createRuntime({
-    type: config.runtime ?? "api",
+    type: runtimeMode === "auto" ? "api" : runtimeMode,
     timeout: config.timeout ?? 60_000,
   });
 
@@ -157,9 +158,9 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
         templateId: dbf.templateId,
         title: dbf.title,
         description: dbf.description,
-        severity: dbf.severity,
-        category: dbf.category,
-        status: dbf.status,
+        severity: dbf.severity as Finding["severity"],
+        category: dbf.category as Finding["category"],
+        status: dbf.status as Finding["status"],
         evidence: {
           request: dbf.evidenceRequest,
           response: dbf.evidenceResponse,

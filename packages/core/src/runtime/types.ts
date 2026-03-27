@@ -1,4 +1,4 @@
-export type RuntimeType = "api" | "claude" | "codex";
+export type RuntimeType = "api" | "claude" | "codex" | "gemini" | "opencode";
 
 export interface RuntimeConfig {
   type: RuntimeType;

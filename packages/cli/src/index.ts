@@ -10,8 +10,8 @@ import type {
   RuntimeMode,
   ScanMode,
 } from "@nightfang/shared";
-import { scan, agenticScan, createRuntime } from "@nightfang/core";
-import { formatReport } from "./formatters/index.js";
+import { scan, agenticScan, createRuntime, packageAudit, sourceReview } from "@nightfang/core";
+import { formatReport, formatAuditReport, formatReviewReport } from "./formatters/index.js";
 import { renderProgressBar } from "./formatters/terminal.js";
 
 const program = new Command();
@@ -27,7 +27,7 @@ program
   .requiredOption("--target <url>", "Target API endpoint URL")
   .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
-  .option("--runtime <runtime>", "Runtime: api, claude, codex", "api")
+  .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, opencode, auto", "api")
   .option("--mode <mode>", "Scan mode: probe, deep, mcp", "probe")
   .option("--repo <path>", "Path to target repo for deep scan source analysis")
   .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
@@ -41,16 +41,25 @@ program
     const mode = opts.mode as ScanMode;
     const verbose = opts.verbose as boolean;
 
-    // Deep and MCP modes require a process runtime
-    if (mode !== "probe" && runtime === "api") {
+    // Validate runtime value
+    const validRuntimes = ["api", "claude", "codex", "gemini", "opencode", "auto"];
+    if (!validRuntimes.includes(runtime)) {
       console.error(
-        chalk.red(`Mode '${mode}' requires --runtime claude or --runtime codex`)
+        chalk.red(`Unknown runtime '${runtime}'. Valid: ${validRuntimes.join(", ")}`)
       );
       process.exit(2);
     }
 
-    // Check runtime availability
-    if (runtime !== "api") {
+    // Deep and MCP modes require a process runtime
+    if (mode !== "probe" && runtime === "api") {
+      console.error(
+        chalk.red(`Mode '${mode}' requires a process runtime (claude, codex, gemini, opencode, or auto)`)
+      );
+      process.exit(2);
+    }
+
+    // Check runtime availability (auto mode checks at scan time)
+    if (runtime !== "api" && runtime !== "auto") {
       const rt = createRuntime({
         type: runtime,
         timeout: parseInt(opts.timeout, 10),
@@ -168,7 +177,7 @@ program
             dbPath: opts.dbPath,
             onEvent: eventHandler,
           })
-        : await scan(scanConfig, eventHandler);
+        : await scan(scanConfig, eventHandler, opts.dbPath);
 
       const output = formatReport(report, format);
       console.log(output);
@@ -193,7 +202,7 @@ program
   .option("--db-path <path>", "Path to SQLite database")
   .option("--limit <n>", "Number of scans to show", "10")
   .action(async (opts) => {
-    const { NightfangDB } = await import("@nightfang/core");
+    const { NightfangDB } = await import("@nightfang/db");
     const db = new NightfangDB(opts.dbPath);
     const scans = db.listScans(parseInt(opts.limit, 10));
     db.close();
@@ -223,6 +232,306 @@ program
       );
     }
     console.log("");
+  });
+
+// ── Findings commands ──
+const findingsCmd = program
+  .command("findings")
+  .description("Browse and manage persisted findings");
+
+findingsCmd
+  .command("list")
+  .description("List findings from the database")
+  .option("--db-path <path>", "Path to SQLite database")
+  .option("--scan <scanId>", "Filter by scan ID")
+  .option("--severity <severity>", "Filter by severity: critical, high, medium, low, info")
+  .option("--category <category>", "Filter by attack category")
+  .option("--status <status>", "Filter by status: discovered, verified, scored, reported, false-positive")
+  .option("--limit <n>", "Max findings to show", "50")
+  .action(async (opts) => {
+    const { NightfangDB } = await import("@nightfang/db");
+    const db = new NightfangDB(opts.dbPath);
+    const rows = db.listFindings({
+      scanId: opts.scan,
+      severity: opts.severity,
+      category: opts.category,
+      status: opts.status,
+      limit: parseInt(opts.limit, 10),
+    });
+    db.close();
+
+    if (rows.length === 0) {
+      console.log(chalk.gray("No findings found."));
+      return;
+    }
+
+    console.log("");
+    console.log(chalk.red.bold("  ◆ nightfang") + chalk.gray(` findings (${rows.length})`));
+    console.log("");
+
+    for (const f of rows) {
+      const sevColor =
+        f.severity === "critical" ? chalk.red.bold :
+        f.severity === "high" ? chalk.redBright :
+        f.severity === "medium" ? chalk.yellow :
+        f.severity === "low" ? chalk.blue :
+        chalk.gray;
+
+      const statusColor =
+        f.status === "reported" ? chalk.green :
+        f.status === "scored" ? chalk.cyan :
+        f.status === "verified" ? chalk.yellow :
+        f.status === "false-positive" ? chalk.strikethrough.gray :
+        chalk.white;
+
+      console.log(
+        `  ${sevColor(f.severity.padEnd(8))} ${statusColor(f.status.padEnd(14))} ${chalk.white(f.title)}`
+      );
+      console.log(
+        `  ${chalk.gray(f.id.slice(0, 8))}  ${chalk.gray(f.category)}  ${chalk.gray(`scan:${f.scanId.slice(0, 8)}`)}`
+      );
+      console.log("");
+    }
+  });
+
+findingsCmd
+  .command("show")
+  .description("Show detailed information about a finding")
+  .argument("<id>", "Finding ID (full or prefix)")
+  .option("--db-path <path>", "Path to SQLite database")
+  .action(async (id: string, opts) => {
+    const { NightfangDB } = await import("@nightfang/db");
+    const db = new NightfangDB(opts.dbPath);
+
+    // Support prefix matching
+    let finding = db.getFinding(id);
+    if (!finding) {
+      const all = db.listFindings({ limit: 1000 });
+      finding = all.find((f) => f.id.startsWith(id));
+    }
+    db.close();
+
+    if (!finding) {
+      console.error(chalk.red(`Finding '${id}' not found.`));
+      process.exit(1);
+    }
+
+    console.log("");
+    console.log(chalk.red.bold("  ◆ nightfang") + chalk.gray(" finding detail"));
+    console.log("");
+
+    const sevColor =
+      finding.severity === "critical" ? chalk.red.bold :
+      finding.severity === "high" ? chalk.redBright :
+      finding.severity === "medium" ? chalk.yellow :
+      finding.severity === "low" ? chalk.blue :
+      chalk.gray;
+
+    console.log(`  ${chalk.white.bold(finding.title)}`);
+    console.log(`  ${sevColor(finding.severity.toUpperCase())} ${chalk.gray("│")} ${chalk.white(finding.status)} ${chalk.gray("│")} ${chalk.gray(finding.category)}`);
+    if (finding.score != null) {
+      console.log(`  ${chalk.gray("Score:")} ${chalk.cyan(String(finding.score) + "/100")}`);
+    }
+    console.log("");
+    console.log(`  ${chalk.gray("ID:")}       ${finding.id}`);
+    console.log(`  ${chalk.gray("Scan:")}     ${finding.scanId}`);
+    console.log(`  ${chalk.gray("Template:")} ${finding.templateId}`);
+    console.log(`  ${chalk.gray("Time:")}     ${new Date(finding.timestamp).toISOString()}`);
+    console.log("");
+    console.log(`  ${chalk.gray("Description:")}`);
+    console.log(`  ${finding.description}`);
+    console.log("");
+    console.log(`  ${chalk.gray("Evidence — Request:")}`);
+    console.log(`  ${chalk.dim(finding.evidenceRequest)}`);
+    console.log("");
+    console.log(`  ${chalk.gray("Evidence — Response:")}`);
+    console.log(`  ${chalk.dim(finding.evidenceResponse)}`);
+    if (finding.evidenceAnalysis) {
+      console.log("");
+      console.log(`  ${chalk.gray("Evidence — Analysis:")}`);
+      console.log(`  ${chalk.dim(finding.evidenceAnalysis)}`);
+    }
+    console.log("");
+  });
+
+// ── Review command ──
+program
+  .command("review")
+  .description("Deep source code security review of a repository")
+  .argument("<repo>", "Local path or git URL to review")
+  .option("--depth <depth>", "Review depth: quick, default, deep", "default")
+  .option("--format <format>", "Output format: terminal, json, md", "terminal")
+  .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, opencode, auto", "api")
+  .option("--db-path <path>", "Path to SQLite database")
+  .option("--verbose", "Show detailed output", false)
+  .option("--timeout <ms>", "AI agent timeout in milliseconds", "120000")
+  .action(async (repo: string, opts: Record<string, string | boolean>) => {
+    const depth = (opts.depth as ScanDepth) ?? "default";
+    const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
+    const runtime = opts.runtime as RuntimeMode;
+    const verbose = opts.verbose as boolean;
+
+    // ── Banner ──
+    if (format === "terminal") {
+      console.log("");
+      console.log(
+        chalk.red.bold("  ◆ nightfang review") + chalk.gray(` v${VERSION}`)
+      );
+      console.log("");
+      console.log(
+        `  ${chalk.gray("Repo:")}    ${chalk.white.bold(repo)}`
+      );
+      console.log(
+        `  ${chalk.gray("Depth:")}   ${chalk.white(depth)}`
+      );
+      if (runtime !== "api") {
+        console.log(
+          `  ${chalk.gray("Runtime:")} ${chalk.white(runtime)}`
+        );
+      }
+      console.log("");
+    }
+
+    const spinner = format === "terminal" ? ora({ spinner: "dots" }) : null;
+
+    const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
+      if (format !== "terminal") return;
+
+      switch (event.type) {
+        case "stage:start":
+          spinner?.start(`  ${chalk.gray(event.message)}`);
+          break;
+        case "stage:end":
+          spinner?.succeed(`  ${chalk.green("✓")} ${chalk.gray(event.message)}`);
+          break;
+        case "finding":
+          if (verbose) {
+            console.log(
+              `    ${chalk.yellow("⚡")} ${chalk.yellow(event.message)}`
+            );
+          }
+          break;
+        case "error":
+          spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
+          break;
+      }
+    };
+
+    try {
+      const report = await sourceReview({
+        config: {
+          repo,
+          depth,
+          format,
+          runtime,
+          timeout: parseInt(opts.timeout as string, 10),
+          verbose,
+          dbPath: opts.dbPath as string | undefined,
+        },
+        onEvent: eventHandler,
+      });
+
+      const output = formatReviewReport(report, format);
+      console.log(output);
+
+      // Exit with non-zero if critical/high findings
+      if (report.summary.critical > 0 || report.summary.high > 0) {
+        process.exit(1);
+      }
+    } catch (err) {
+      spinner?.fail(`  ${chalk.red("✗ Review failed")}`);
+      console.error(
+        chalk.red(err instanceof Error ? err.message : String(err))
+      );
+      process.exit(2);
+    }
+  });
+
+// ── Audit command ──
+program
+  .command("audit")
+  .description("Audit an npm package for security vulnerabilities")
+  .argument("<package>", "npm package name (e.g. lodash, express)")
+  .option("--version <version>", "Specific version to audit (default: latest)")
+  .option("--depth <depth>", "Audit depth: quick, default, deep", "default")
+  .option("--format <format>", "Output format: terminal, json, md", "terminal")
+  .option("--db-path <path>", "Path to SQLite database")
+  .option("--verbose", "Show detailed output", false)
+  .option("--timeout <ms>", "AI agent timeout in milliseconds", "60000")
+  .action(async (packageName: string, opts: Record<string, string | boolean>) => {
+    const depth = (opts.depth as ScanDepth) ?? "default";
+    const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
+    const verbose = opts.verbose as boolean;
+
+    // ── Banner ──
+    if (format === "terminal") {
+      console.log("");
+      console.log(
+        chalk.red.bold("  ◆ nightfang audit") + chalk.gray(` v${VERSION}`)
+      );
+      console.log("");
+      console.log(
+        `  ${chalk.gray("Package:")} ${chalk.white.bold(packageName)}${opts.version ? chalk.gray(`@${opts.version}`) : ""}`
+      );
+      console.log(
+        `  ${chalk.gray("Depth:")}   ${chalk.white(depth)}`
+      );
+      console.log("");
+    }
+
+    const spinner = format === "terminal" ? ora({ spinner: "dots" }) : null;
+
+    const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
+      if (format !== "terminal") return;
+
+      switch (event.type) {
+        case "stage:start":
+          spinner?.start(`  ${chalk.gray(event.message)}`);
+          break;
+        case "stage:end":
+          spinner?.succeed(`  ${chalk.green("✓")} ${chalk.gray(event.message)}`);
+          break;
+        case "finding":
+          if (verbose) {
+            console.log(
+              `    ${chalk.yellow("⚡")} ${chalk.yellow(event.message)}`
+            );
+          }
+          break;
+        case "error":
+          spinner?.fail(`  ${chalk.red("✗")} ${chalk.red(event.message)}`);
+          break;
+      }
+    };
+
+    try {
+      const report = await packageAudit({
+        config: {
+          package: packageName,
+          version: opts.version as string | undefined,
+          depth,
+          format,
+          timeout: parseInt(opts.timeout as string, 10),
+          verbose,
+          dbPath: opts.dbPath as string | undefined,
+        },
+        onEvent: eventHandler,
+      });
+
+      const output = formatAuditReport(report, format);
+      console.log(output);
+
+      // Exit with non-zero if critical/high findings
+      if (report.summary.critical > 0 || report.summary.high > 0) {
+        process.exit(1);
+      }
+    } catch (err) {
+      spinner?.fail(`  ${chalk.red("✗ Audit failed")}`);
+      console.error(
+        chalk.red(err instanceof Error ? err.message : String(err))
+      );
+      process.exit(2);
+    }
   });
 
 function depthLabel(depth: ScanDepth): string {

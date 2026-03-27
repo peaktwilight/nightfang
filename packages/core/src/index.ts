@@ -4,9 +4,19 @@ export { agenticScan } from "./agentic-scanner.js";
 export type { AgenticScanOptions } from "./agentic-scanner.js";
 export { createScanContext, addFinding, addAttackResult, finalize } from "./context.js";
 export { sendPrompt, extractResponseText } from "./http.js";
-export { createRuntime, ApiRuntime, ProcessRuntime } from "./runtime/index.js";
+export { createRuntime, ApiRuntime, ProcessRuntime, RUNTIME_REGISTRY, pickRuntimeForStage, detectAvailableRuntimes, getRuntimeInfo } from "./runtime/index.js";
 export type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType } from "./runtime/index.js";
 export { buildDeepScanPrompt, buildMcpAuditPrompt, buildSourceAnalysisPrompt } from "./prompts.js";
+
+// Package audit
+export { packageAudit } from "./audit.js";
+export type { PackageAuditOptions } from "./audit.js";
+export { auditAgentPrompt } from "./audit-prompt.js";
+
+// Source code review
+export { sourceReview } from "./review.js";
+export type { SourceReviewOptions } from "./review.js";
+export { reviewAgentPrompt } from "./review-prompt.js";
 
 // Agent system
 export { runAgentLoop, ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./agent/index.js";
@@ -23,6 +33,6 @@ export type {
   AgentLoopOptions,
 } from "./agent/index.js";
 
-// Database
-export { NightfangDB } from "./db/index.js";
-export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./db/index.js";
+// Database (re-exported from @nightfang/db)
+export { NightfangDB } from "@nightfang/db";
+export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./db/schema.js";

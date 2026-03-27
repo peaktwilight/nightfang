@@ -107,6 +107,10 @@ Add Nightfang to your CI/CD pipeline:
 name: AI Security Scan
 on: [push, pull_request]
 
+permissions:
+  contents: read
+  security-events: write
+
 jobs:
   nightfang:
     runs-on: ubuntu-latest
@@ -114,12 +118,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Run Nightfang
-        uses: peaktwilight/nightfang-action@v1
+        uses: peaktwilight/nightfang/action@v1
         with:
           target: ${{ secrets.STAGING_API_URL }}
           depth: default  # quick | default | deep
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # or ANTHROPIC_API_KEY
+          fail-on-severity: high  # critical | high | medium | low | info | none
 
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
@@ -155,13 +158,16 @@ npx nightfang scan --target https://mcp-server.example.com --runtime claude --mo
 
 ## Runtime Modes
 
-Nightfang supports three execution runtimes:
+Nightfang supports multiple execution runtimes — bring your own agent CLI:
 
-| Runtime | Flag | Description |
-|---------|------|-------------|
-| `api` | `--runtime api` | Direct HTTP probing (default). Fast, cheap, no dependencies. |
-| `claude` | `--runtime claude` | Spawns Claude Code as subprocess. Can read source code, run tools, execute PoCs. |
-| `codex` | `--runtime codex` | Spawns Codex CLI as subprocess. Same capabilities as Claude runtime. |
+| Runtime | Flag | Description | Best For |
+|---------|------|-------------|----------|
+| `api` | `--runtime api` | Direct HTTP probing (default). Fast, cheap, no dependencies. | CI, quick scans |
+| `claude` | `--runtime claude` | Spawns Claude Code CLI. Can read source code, run tools, execute PoCs. | Attack generation, deep analysis |
+| `codex` | `--runtime codex` | Spawns Codex CLI. Strong at code review and pattern matching. | Verification, source analysis |
+| `gemini` | `--runtime gemini` | Spawns Gemini CLI. Large context window. | Source analysis, reports |
+| `opencode` | `--runtime opencode` | Spawns OpenCode CLI. Multi-provider, flexible model selection. | Source analysis, verification |
+| `auto` | `--runtime auto` | Detects installed runtimes, picks the best one per pipeline stage. | Best overall results |
 
 Combined with scan modes:
 
@@ -171,7 +177,7 @@ Combined with scan modes:
 | `deep` | `--mode deep` | Full analysis — API probing + source code audit when `--repo` is provided. |
 | `mcp` | `--mode mcp` | Connect to MCP server, enumerate tools, test each for security issues. |
 
-> `deep` and `mcp` modes require `--runtime claude` or `--runtime codex`.
+> `deep` and `mcp` modes require a process runtime (`claude`, `codex`, `gemini`, `opencode`, or `auto`).
 
 ## Roadmap
 

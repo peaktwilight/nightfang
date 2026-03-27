@@ -6,7 +6,7 @@ import type {
 } from "./types.js";
 import { ToolExecutor, getToolsForRole } from "./tools.js";
 import type { ToolContext } from "./types.js";
-import type { NightfangDB } from "../db/database.js";
+import type { NightfangDB } from "@nightfang/db";
 import type { Runtime } from "../runtime/types.js";
 import type { Finding, TargetInfo } from "@nightfang/shared";
 

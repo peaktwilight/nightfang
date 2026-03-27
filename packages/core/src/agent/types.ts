@@ -2,7 +2,7 @@ import type { Finding, AttackResult, TargetInfo } from "@nightfang/shared";
 
 // ── Agent Roles ──
 
-export type AgentRole = "discovery" | "attack" | "verify" | "report";
+export type AgentRole = "discovery" | "attack" | "verify" | "report" | "audit" | "review";
 
 // ── Tool Definitions ──
 

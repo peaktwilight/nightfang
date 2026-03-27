@@ -4,7 +4,7 @@ import { execSync } from "node:child_process";
 import type { Finding, AttackResult, TargetInfo } from "@nightfang/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
-import type { NightfangDB } from "../db/database.js";
+import type { NightfangDB } from "@nightfang/db";
 
 // ── Tool Registry ──
 
@@ -64,6 +64,16 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
           "output-manipulation",
           "encoding-bypass",
           "multi-turn",
+          "prototype-pollution",
+          "path-traversal",
+          "command-injection",
+          "code-injection",
+          "regex-dos",
+          "unsafe-deserialization",
+          "information-disclosure",
+          "ssrf",
+          "sql-injection",
+          "xss",
         ],
       },
       template_id: { type: "string", description: "ID of the attack template used" },
@@ -176,6 +186,7 @@ const ALLOWED_COMMAND_PREFIXES = [
   "jq",
   "file",
   "stat",
+  "npm",
 ];
 
 function isCommandAllowed(cmd: string): boolean {
@@ -421,6 +432,8 @@ export function getToolsForRole(role: string): ToolDefinition[] {
     attack: ["send_prompt", "http_request", "save_finding", "read_file", "run_command", ...common],
     verify: ["send_prompt", "http_request", "update_finding", ...common],
     report: [...common],
+    audit: ["read_file", "run_command", "save_finding", ...common],
+    review: ["read_file", "run_command", "save_finding", "update_finding", ...common],
   };
 
   const toolNames = roleTools[role] ?? Object.keys(TOOL_DEFINITIONS);

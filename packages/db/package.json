@@ -1,5 +1,5 @@
 {
-  "name": "@nightfang/core",
+  "name": "@nightfang/db",
   "version": "0.1.0",
   "type": "module",
   "main": "dist/index.js",
@@ -10,10 +10,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@nightfang/db": "workspace:*",
     "@nightfang/shared": "workspace:*",
-    "@nightfang/templates": "workspace:*",
-    "better-sqlite3": "^12.8.0"
+    "better-sqlite3": "^12.8.0",
+    "drizzle-orm": "^0.44.0"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --color-night: #0a0a0a;
+  --color-night-light: #141414;
+  --color-night-lighter: #1e1e1e;
+  --color-crimson: #DC2626;
+  --color-crimson-dark: #991B1B;
+  --color-crimson-light: #EF4444;
+  --color-smoke: #a3a3a3;
+  --color-ash: #737373;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, monospace;
+}
+
+/* Terminal typing animation */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes typeIn {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.cursor-blink::after {
+  content: "█";
+  animation: blink 1s step-end infinite;
+  color: var(--color-crimson);
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.6s ease-out both;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.4s ease-out both;
+}
+
+/* Terminal line reveal */
+.terminal-line {
+  opacity: 0;
+  animation: slideIn 0.3s ease-out forwards;
+}
+
+/* Stagger delays for terminal lines */
+.terminal-line:nth-child(1) { animation-delay: 0.8s; }
+.terminal-line:nth-child(2) { animation-delay: 1.6s; }
+.terminal-line:nth-child(3) { animation-delay: 2.4s; }
+.terminal-line:nth-child(4) { animation-delay: 3.2s; }
+.terminal-line:nth-child(5) { animation-delay: 4.0s; }
+.terminal-line:nth-child(6) { animation-delay: 4.8s; }
+.terminal-line:nth-child(7) { animation-delay: 5.6s; }
+.terminal-line:nth-child(8) { animation-delay: 6.4s; }
+.terminal-line:nth-child(9) { animation-delay: 7.0s; }
+.terminal-line:nth-child(10) { animation-delay: 7.4s; }
+.terminal-line:nth-child(11) { animation-delay: 7.8s; }
+.terminal-line:nth-child(12) { animation-delay: 8.2s; }
+.terminal-line:nth-child(13) { animation-delay: 8.6s; }
+
+/* Glow effect for crimson accent */
+.glow-crimson {
+  box-shadow: 0 0 20px rgba(220, 38, 38, 0.15), 0 0 60px rgba(220, 38, 38, 0.05);
+}
+
+/* Pipeline connector line */
+.pipeline-connector {
+  position: relative;
+}
+.pipeline-connector::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: -1.5rem;
+  width: 1.5rem;
+  height: 2px;
+  background: linear-gradient(to right, var(--color-crimson), transparent);
+}
+.pipeline-connector:last-child::after {
+  display: none;
+}

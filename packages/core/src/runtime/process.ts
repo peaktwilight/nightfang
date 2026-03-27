@@ -1,15 +1,22 @@
 import { spawn } from "node:child_process";
 import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult } from "./types.js";
 
+const RUNTIME_COMMANDS: Record<string, string> = {
+  claude: "claude",
+  codex: "codex",
+  gemini: "gemini",
+  opencode: "opencode",
+};
+
 export class ProcessRuntime implements Runtime {
-  readonly type: "claude" | "codex";
+  readonly type: "claude" | "codex" | "gemini" | "opencode";
   private config: RuntimeConfig;
   private command: string;
 
   constructor(config: RuntimeConfig) {
-    this.type = config.type as "claude" | "codex";
+    this.type = config.type as "claude" | "codex" | "gemini" | "opencode";
     this.config = config;
-    this.command = config.type === "claude" ? "claude" : "codex";
+    this.command = RUNTIME_COMMANDS[config.type] ?? config.type;
   }
 
   async execute(prompt: string, context?: RuntimeContext): Promise<RuntimeResult> {
@@ -81,16 +88,23 @@ export class ProcessRuntime implements Runtime {
   }
 
   private buildArgs(prompt: string, context?: RuntimeContext): string[] {
-    if (this.type === "claude") {
-      const args = ["-p", prompt, "--output-format", "text"];
-      if (context?.systemPrompt) {
-        args.push("--system-prompt", context.systemPrompt);
+    switch (this.type) {
+      case "claude": {
+        const args = ["-p", prompt, "--output-format", "text"];
+        if (context?.systemPrompt) {
+          args.push("--system-prompt", context.systemPrompt);
+        }
+        return args;
       }
-      return args;
+      case "codex":
+        return ["-q", prompt];
+      case "gemini":
+        return ["-p", prompt];
+      case "opencode":
+        return ["-p", prompt, "--output", "text"];
+      default:
+        return ["-p", prompt];
     }
-
-    // Codex
-    return ["-q", prompt];
   }
 
   private buildEnv(context?: RuntimeContext): Record<string, string> {

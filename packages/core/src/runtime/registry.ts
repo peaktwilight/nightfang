@@ -1,0 +1,95 @@
+import type { RuntimeType } from "./types.js";
+import type { PipelineStage } from "@nightfang/shared";
+
+export interface RuntimeInfo {
+  type: RuntimeType;
+  command: string;
+  description: string;
+  /** Stages this runtime excels at, ordered by preference. */
+  strengths: PipelineStage[];
+  /** Whether this runtime supports system prompts. */
+  supportsSystemPrompt: boolean;
+}
+
+/**
+ * Registry of all supported runtimes and their characteristics.
+ * Used by `--runtime auto` to pick the best runtime per pipeline stage.
+ */
+export const RUNTIME_REGISTRY: readonly RuntimeInfo[] = [
+  {
+    type: "claude",
+    command: "claude",
+    description: "Claude Code CLI — best for creative attack generation and deep analysis",
+    strengths: ["attack", "source-analysis", "report"],
+    supportsSystemPrompt: true,
+  },
+  {
+    type: "codex",
+    command: "codex",
+    description: "Codex CLI — strong at code review, pattern matching, and verification",
+    strengths: ["verify", "source-analysis", "discovery"],
+    supportsSystemPrompt: false,
+  },
+  {
+    type: "gemini",
+    command: "gemini",
+    description: "Gemini CLI — large context window, good for source analysis",
+    strengths: ["source-analysis", "report", "discovery"],
+    supportsSystemPrompt: false,
+  },
+  {
+    type: "opencode",
+    command: "opencode",
+    description: "OpenCode CLI — multi-provider runtime with flexible model selection",
+    strengths: ["source-analysis", "verify", "attack"],
+    supportsSystemPrompt: false,
+  },
+] as const;
+
+/** Default stage-to-runtime preferences for `--runtime auto`. */
+const STAGE_PREFERENCES: Record<PipelineStage, RuntimeType[]> = {
+  "discovery": ["claude", "codex", "gemini", "opencode"],
+  "source-analysis": ["claude", "gemini", "codex", "opencode"],
+  "attack": ["claude", "codex", "gemini", "opencode"],
+  "verify": ["codex", "claude", "gemini", "opencode"],
+  "report": ["claude", "gemini", "codex", "opencode"],
+};
+
+/**
+ * Pick the best available runtime for a given pipeline stage.
+ * Falls back through the preference list until one is available.
+ */
+export function pickRuntimeForStage(
+  stage: PipelineStage,
+  availableRuntimes: Set<RuntimeType>,
+): RuntimeType {
+  const prefs = STAGE_PREFERENCES[stage];
+  for (const rt of prefs) {
+    if (availableRuntimes.has(rt)) return rt;
+  }
+  // Fallback: return whatever is available
+  const first = availableRuntimes.values().next();
+  return first.done ? "claude" : first.value;
+}
+
+/**
+ * Detect which process-based runtimes are installed on this machine.
+ */
+export async function detectAvailableRuntimes(): Promise<Set<RuntimeType>> {
+  const { ProcessRuntime } = await import("./process.js");
+  const available = new Set<RuntimeType>();
+
+  const checks = RUNTIME_REGISTRY.map(async (info) => {
+    const rt = new ProcessRuntime({ type: info.type, timeout: 5_000 });
+    if (await rt.isAvailable()) {
+      available.add(info.type);
+    }
+  });
+
+  await Promise.all(checks);
+  return available;
+}
+
+export function getRuntimeInfo(type: RuntimeType): RuntimeInfo | undefined {
+  return RUNTIME_REGISTRY.find((r) => r.type === type);
+}

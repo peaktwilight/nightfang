@@ -1,12 +1,15 @@
-import type { ScanConfig, ScanContext, ScanReport } from "@nightfang/shared";
+import type { ScanConfig, ScanContext, ScanReport, PipelineStage } from "@nightfang/shared";
 import { loadTemplates } from "@nightfang/templates";
 import { createScanContext, finalize } from "./context.js";
 import { createRuntime } from "./runtime/index.js";
+import type { Runtime, RuntimeType } from "./runtime/index.js";
+import { pickRuntimeForStage, detectAvailableRuntimes } from "./runtime/registry.js";
 import { runDiscovery } from "./stages/discovery.js";
 import { runSourceAnalysis } from "./stages/source-analysis.js";
 import { runAttacks } from "./stages/attack.js";
 import { runVerification } from "./stages/verify.js";
 import { generateReport } from "./stages/report.js";
+import { NightfangDB } from "@nightfang/db";
 
 export type ScanEventType =
   | "stage:start"
@@ -27,16 +30,35 @@ export type ScanListener = (event: ScanEvent) => void;
 
 export async function scan(
   config: ScanConfig,
-  onEvent?: ScanListener
+  onEvent?: ScanListener,
+  dbPath?: string
 ): Promise<ScanReport> {
   const emit = onEvent ?? (() => {});
   const ctx: ScanContext = createScanContext(config);
 
-  // Create runtime based on config
-  const runtime = createRuntime({
-    type: config.runtime ?? "api",
-    timeout: config.timeout ?? 30_000,
-  });
+  // Initialize DB for persistence (always persist, even without --agentic)
+  const db = new NightfangDB(dbPath);
+  const scanId = db.createScan(config);
+
+  // For --runtime auto, detect available runtimes and pick per-stage
+  const isAuto = config.runtime === "auto";
+  let availableRuntimes: Set<RuntimeType> | undefined;
+  if (isAuto) {
+    availableRuntimes = await detectAvailableRuntimes();
+    if (availableRuntimes.size === 0) {
+      throw new Error("--runtime auto: no CLI runtimes (claude, codex, gemini, opencode) detected. Install at least one or use --runtime api.");
+    }
+  }
+
+  function getRuntimeForStage(stage: PipelineStage): Runtime {
+    const type = isAuto
+      ? pickRuntimeForStage(stage, availableRuntimes!)
+      : (config.runtime ?? "api") as RuntimeType;
+    return createRuntime({ type, timeout: config.timeout ?? 30_000 });
+  }
+
+  // Default runtime for non-auto mode (and stages that don't need per-stage selection)
+  const runtime = getRuntimeForStage("attack");
 
   // Stage 1: Discovery
   emit({ type: "stage:start", stage: "discovery", message: "Probing target..." });
@@ -52,13 +74,14 @@ export async function scan(
 
   // Stage 1.5: Source Analysis (when --repo is provided with a process runtime)
   const templates = loadTemplates(config.depth);
-  if (config.repoPath && runtime.type !== "api") {
+  const sourceRuntime = isAuto ? getRuntimeForStage("source-analysis") : runtime;
+  if (config.repoPath && sourceRuntime.type !== "api") {
     emit({
       type: "stage:start",
       stage: "source-analysis",
-      message: `Analyzing source code in ${config.repoPath}...`,
+      message: `Analyzing source code in ${config.repoPath}${isAuto ? ` (runtime: ${sourceRuntime.type})` : ""}...`,
     });
-    const sourceResult = await runSourceAnalysis(ctx, templates, runtime, config.repoPath);
+    const sourceResult = await runSourceAnalysis(ctx, templates, sourceRuntime, config.repoPath);
     emit({
       type: "stage:end",
       stage: "source-analysis",
@@ -70,13 +93,14 @@ export async function scan(
   }
 
   // Stage 2: Attack
+  const attackRuntime = isAuto ? getRuntimeForStage("attack") : runtime;
   emit({
     type: "stage:start",
     stage: "attack",
-    message: `Running ${templates.length} templates...`,
+    message: `Running ${templates.length} templates${isAuto ? ` (runtime: ${attackRuntime.type})` : ""}...`,
   });
 
-  const attackResult = await runAttacks(ctx, templates, runtime);
+  const attackResult = await runAttacks(ctx, templates, attackRuntime);
   emit({
     type: "stage:end",
     stage: "attack",
@@ -92,6 +116,17 @@ export async function scan(
     stage: "verify",
     message: `${verifyResult.data.confirmed} confirmed, ${verifyResult.data.findings.length} total findings (${verifyResult.durationMs}ms)`,
     data: verifyResult,
+  });
+
+  // Persist findings to DB after verification
+  db.transaction(() => {
+    db.upsertTarget(ctx.target);
+    for (const finding of verifyResult.data.findings) {
+      db.saveFinding(scanId, finding);
+    }
+    for (const result of ctx.attacks) {
+      db.saveAttackResult(scanId, result);
+    }
   });
 
   // Emit individual findings
@@ -113,6 +148,10 @@ export async function scan(
     message: `Report generated (${reportResult.durationMs}ms)`,
     data: reportResult,
   });
+
+  // Mark scan complete in DB
+  db.completeScan(scanId, reportResult.data.summary as unknown as Record<string, unknown>);
+  db.close();
 
   return reportResult.data;
 }

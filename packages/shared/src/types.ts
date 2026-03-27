@@ -2,7 +2,7 @@
 
 export type ScanDepth = "quick" | "default" | "deep";
 export type OutputFormat = "terminal" | "json" | "markdown";
-export type RuntimeMode = "api" | "claude" | "codex";
+export type RuntimeMode = "api" | "claude" | "codex" | "gemini" | "opencode" | "auto";
 export type ScanMode = "probe" | "deep" | "mcp";
 
 export interface ScanConfig {
@@ -31,7 +31,18 @@ export type AttackCategory =
   | "tool-misuse"
   | "output-manipulation"
   | "encoding-bypass"
-  | "multi-turn";
+  | "multi-turn"
+  // Source-code audit categories (nightfang audit)
+  | "prototype-pollution"
+  | "path-traversal"
+  | "command-injection"
+  | "code-injection"
+  | "regex-dos"
+  | "unsafe-deserialization"
+  | "information-disclosure"
+  | "ssrf"
+  | "sql-injection"
+  | "xss";
 
 export interface AttackTemplate {
   id: string;
@@ -149,4 +160,73 @@ export interface ReportSummary {
   medium: number;
   low: number;
   info: number;
+}
+
+// ── Package Audit (nightfang audit) ──
+
+export interface AuditConfig {
+  package: string;
+  version?: string;
+  depth: ScanDepth;
+  format: OutputFormat;
+  runtime?: RuntimeMode;
+  timeout?: number;
+  verbose?: boolean;
+  dbPath?: string;
+}
+
+export interface SemgrepFinding {
+  ruleId: string;
+  message: string;
+  severity: string;
+  path: string;
+  startLine: number;
+  endLine: number;
+  snippet: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface NpmAuditFinding {
+  name: string;
+  severity: Severity;
+  title: string;
+  range?: string;
+  source?: number | string;
+  url?: string;
+  via: string[];
+  fixAvailable: boolean | string;
+}
+
+export interface AuditReport {
+  package: string;
+  version: string;
+  startedAt: string;
+  completedAt: string;
+  durationMs: number;
+  semgrepFindings: number;
+  npmAuditFindings: NpmAuditFinding[];
+  summary: ReportSummary;
+  findings: Finding[];
+}
+
+// ── Source Code Review (nightfang review) ──
+
+export interface ReviewConfig {
+  repo: string;
+  depth: ScanDepth;
+  format: OutputFormat;
+  runtime?: RuntimeMode;
+  timeout?: number;
+  verbose?: boolean;
+  dbPath?: string;
+}
+
+export interface ReviewReport {
+  repo: string;
+  startedAt: string;
+  completedAt: string;
+  durationMs: number;
+  semgrepFindings: number;
+  summary: ReportSummary;
+  findings: Finding[];
 }

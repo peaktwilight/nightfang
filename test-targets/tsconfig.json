@@ -9,5 +9,6 @@
     "rootDir": "src",
     "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src"],
+  "exclude": ["src/scan.test.ts"]
 }
