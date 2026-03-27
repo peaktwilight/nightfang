@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/nightfang-logo.svg" alt="Nightfang" width="120" />
+  <img src="assets/nightfang-icon.gif" alt="Nightfang" width="80" />
 </p>
 
 <h1 align="center">Nightfang</h1>
