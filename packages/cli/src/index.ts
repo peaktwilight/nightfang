@@ -636,10 +636,10 @@ program
   .argument("<repo>", "Local path or git URL to review")
   .option("--depth <depth>", "Review depth: quick, default, deep", "default")
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
-  .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, opencode, auto", "api")
+  .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, opencode, api", "auto")
   .option("--db-path <path>", "Path to SQLite database")
   .option("--verbose", "Show detailed output", false)
-  .option("--timeout <ms>", "AI agent timeout in milliseconds", "120000")
+  .option("--timeout <ms>", "AI agent timeout in milliseconds", "600000")
   .action(async (repo: string, opts: Record<string, string | boolean>) => {
     const depth = (opts.depth as ScanDepth) ?? "default";
     const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
@@ -731,10 +731,10 @@ program
   .option("--version <version>", "Specific version to audit (default: latest)")
   .option("--depth <depth>", "Audit depth: quick, default, deep", "default")
   .option("--format <format>", "Output format: terminal, json, md", "terminal")
-  .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, opencode, auto", "api")
+  .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, opencode, api", "auto")
   .option("--db-path <path>", "Path to SQLite database")
   .option("--verbose", "Show detailed output", false)
-  .option("--timeout <ms>", "AI agent timeout in milliseconds", "60000")
+  .option("--timeout <ms>", "AI agent timeout in milliseconds", "600000")
   .action(async (packageName: string, opts: Record<string, string | boolean>) => {
     const depth = (opts.depth as ScanDepth) ?? "default";
     const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;

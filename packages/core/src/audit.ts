@@ -342,6 +342,93 @@ function mapSemgrepSeverity(level: string): string {
 }
 
 /**
+ * CLI runtimes (claude, codex, etc.) are full agents — they can read files,
+ * run commands, and do multi-turn analysis natively. We bypass our own agent
+ * loop and let the CLI handle everything, then parse findings from its output.
+ */
+const CLI_RUNTIME_TYPES = new Set<RuntimeType>(["claude", "codex", "gemini", "opencode"]);
+
+function buildCliAuditPrompt(
+  pkg: InstalledPackage,
+  semgrepFindings: SemgrepFinding[],
+  npmAuditFindings: NpmAuditFinding[],
+): string {
+  const semgrepContext = semgrepFindings.length > 0
+    ? semgrepFindings
+        .slice(0, 30)
+        .map((f, i) => `  ${i + 1}. [${f.severity}] ${f.ruleId} — ${f.path}:${f.startLine}: ${f.message}`)
+        .join("\n")
+    : "  None.";
+
+  const npmContext = npmAuditFindings.length > 0
+    ? npmAuditFindings
+        .slice(0, 30)
+        .map((f, i) => `  ${i + 1}. [${f.severity}] ${f.name}: ${f.title}`)
+        .join("\n")
+    : "  None.";
+
+  return `Audit the npm package at ${pkg.path} (${pkg.name}@${pkg.version}).
+
+Read the source code, look for: prototype pollution, ReDoS, path traversal, injection, unsafe deserialization, missing validation. Map data flow from untrusted input to sensitive operations. Report any security findings with severity and PoC suggestions.
+
+Semgrep already found these leads:
+${semgrepContext}
+
+npm audit found these advisories:
+${npmContext}
+
+For EACH confirmed vulnerability, output a block in this exact format:
+
+---FINDING---
+title: <clear title>
+severity: <critical|high|medium|low|info>
+category: <prototype-pollution|redos|path-traversal|command-injection|code-injection|unsafe-deserialization|ssrf|information-disclosure|missing-validation|other>
+description: <detailed description of the vulnerability, how to exploit it, and suggested PoC>
+file: <path/to/file.js:lineNumber>
+---END---
+
+Output as many ---FINDING--- blocks as needed. Be precise and honest about severity.`;
+}
+
+function parseFindingsFromCliOutput(output: string, scanId: string): Finding[] {
+  const findings: Finding[] = [];
+  const blocks = output.split("---FINDING---").slice(1);
+
+  for (const block of blocks) {
+    const endIdx = block.indexOf("---END---");
+    const content = endIdx >= 0 ? block.slice(0, endIdx) : block;
+
+    const title = content.match(/^title:\s*(.+)$/m)?.[1]?.trim() ?? "Untitled finding";
+    const severity = content.match(/^severity:\s*(.+)$/m)?.[1]?.trim()?.toLowerCase() ?? "info";
+    const category = content.match(/^category:\s*(.+)$/m)?.[1]?.trim() ?? "other";
+    const description = content.match(/^description:\s*([\s\S]*?)(?=^(?:file|---)|$)/m)?.[1]?.trim() ?? "";
+    const file = content.match(/^file:\s*(.+)$/m)?.[1]?.trim() ?? "";
+
+    const validSeverities = new Set(["critical", "high", "medium", "low", "info"]);
+    const normalizedSeverity = validSeverities.has(severity) ? severity as Severity : "info";
+
+    findings.push({
+      id: randomUUID(),
+      templateId: `cli-audit-${Date.now()}`,
+      title,
+      description,
+      severity: normalizedSeverity,
+      category: category as Finding["category"],
+      status: "discovered",
+      evidence: {
+        request: `Audit of source at ${file}`,
+        response: description,
+        analysis: `Found by CLI agent during automated audit`,
+      },
+      confidence: undefined,
+      timestamp: Date.now(),
+    });
+  }
+
+  return findings;
+}
+
+/**
  * Run an AI agent to analyze semgrep findings and hunt for additional
  * vulnerabilities in the package source code.
  */
@@ -360,13 +447,12 @@ async function runAuditAgent(
     message: "AI agent analyzing source code...",
   });
 
-  const maxTurns =
-    config.depth === "deep" ? 25 : config.depth === "default" ? 15 : 8;
+  // Detect available CLI runtimes
+  const available = await detectAvailableRuntimes();
 
-  // Resolve runtime type: auto picks best for source analysis, otherwise use configured or default to api
+  // Determine runtime: prefer CLI runtimes, fall back to API agent loop
   let runtimeType: RuntimeType;
   if (config.runtime === "auto") {
-    const available = await detectAvailableRuntimes();
     runtimeType = available.size > 0
       ? pickRuntimeForStage("source-analysis", available)
       : "api";
@@ -374,11 +460,69 @@ async function runAuditAgent(
     runtimeType = (config.runtime ?? "api") as RuntimeType;
   }
 
-  // For audit, "api" means call Claude API directly to analyze code —
-  // NOT send HTTP to a target URL (that's what ApiRuntime does for scan mode).
-  const runtimeConfig = { type: runtimeType, timeout: config.timeout ?? 120_000 };
+  // ── Fast path: use CLI runtime (claude/codex/etc.) as a full agent ──
+  if (CLI_RUNTIME_TYPES.has(runtimeType) && available.has(runtimeType)) {
+    emit({
+      type: "stage:start",
+      stage: "attack",
+      message: `Using ${runtimeType} CLI for deep AI analysis...`,
+    });
+
+    const { ProcessRuntime } = await import("./runtime/process.js");
+    const cliRuntime = new ProcessRuntime({
+      type: runtimeType,
+      timeout: config.timeout ?? 600_000, // 10 min for deep analysis
+      cwd: pkg.path,
+    });
+
+    const prompt = buildCliAuditPrompt(pkg, semgrepFindings, npmAuditFindings);
+    const result = await cliRuntime.execute(prompt, {
+      systemPrompt: "You are a security researcher performing an authorized npm package audit. Be thorough and precise. Only report real, exploitable vulnerabilities.",
+    });
+
+    if (result.error && !result.output) {
+      emit({
+        type: "stage:end",
+        stage: "attack",
+        message: `CLI agent error: ${result.error}`,
+      });
+      // Fall through to basic mode
+    } else {
+      const findings = parseFindingsFromCliOutput(result.output, scanId);
+
+      for (const f of findings) {
+        emit({
+          type: "finding",
+          message: `[${f.severity}] ${f.title}`,
+          data: f,
+        });
+      }
+
+      emit({
+        type: "stage:end",
+        stage: "attack",
+        message: `CLI agent complete: ${findings.length} findings (${result.durationMs}ms)`,
+      });
+
+      return findings;
+    }
+  }
+
+  // ── Fallback: basic API agent loop ──
+  if (runtimeType === "api" || !available.has(runtimeType)) {
+    emit({
+      type: "stage:start",
+      stage: "attack",
+      message: "⚠ Install Claude Code or Codex for deep AI analysis. Running basic mode only.",
+    });
+  }
+
+  const maxTurns =
+    config.depth === "deep" ? 50 : config.depth === "default" ? 30 : 15;
+
+  const runtimeConfig = { type: runtimeType as RuntimeType, timeout: config.timeout ?? 120_000 };
   const runtime =
-    runtimeType === "api"
+    runtimeType === "api" || !available.has(runtimeType)
       ? new ClaudeApiRuntime(runtimeConfig)
       : createRuntime(runtimeConfig);
 

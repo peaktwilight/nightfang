@@ -3,27 +3,35 @@ import { motion } from "framer-motion";
 export default function FluidBackground() {
   return (
     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-      {/* Animated gradient orbs */}
+      {/* Main crimson orb — clearly visible, slow moving */}
       <motion.div
         animate={{
-          x: [0, 30, -20, 0],
-          y: [0, -30, 20, 0],
-          scale: [1, 1.1, 0.95, 1],
+          x: [0, 50, -30, 0],
+          y: [0, -40, 30, 0],
+          scale: [1, 1.15, 0.9, 1],
         }}
-        transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full bg-[#DC2626]/[0.04] blur-[120px]"
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[10%] left-[20%] w-[700px] h-[700px] rounded-full bg-[#DC2626]/[0.12] blur-[150px]"
       />
+      {/* Secondary orb — offset timing */}
       <motion.div
         animate={{
-          x: [0, -40, 20, 0],
-          y: [0, 20, -40, 0],
-          scale: [1, 0.9, 1.1, 1],
+          x: [0, -60, 30, 0],
+          y: [0, 30, -50, 0],
+          scale: [1, 0.85, 1.1, 1],
         }}
-        transition={{ duration: 25, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] rounded-full bg-[#DC2626]/[0.03] blur-[100px]"
+        transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute bottom-[10%] right-[15%] w-[500px] h-[500px] rounded-full bg-[#DC2626]/[0.08] blur-[130px]"
       />
-      {/* Grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(rgba(220,38,38,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(220,38,38,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
+      {/* Subtle white orb for depth */}
+      <motion.div
+        animate={{
+          x: [0, 20, -20, 0],
+          y: [0, -20, 20, 0],
+        }}
+        transition={{ duration: 30, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-[40%] right-[30%] w-[400px] h-[400px] rounded-full bg-white/[0.02] blur-[100px]"
+      />
     </div>
   );
 }
