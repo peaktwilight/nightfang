@@ -196,8 +196,8 @@ function buildReplayLines(data: ReplayData): ReplayLine[] {
   if (vulnerableFindings.length > 0) {
     for (const finding of vulnerableFindings.slice(0, 8)) {
       const truncTitle =
-        finding.title.length > 35
-          ? finding.title.slice(0, 32) + "..."
+        finding.title.length > 30
+          ? finding.title.slice(0, 27) + "..."
           : finding.title;
 
       let outcome = "VULNERABLE";
