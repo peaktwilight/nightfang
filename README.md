@@ -24,7 +24,7 @@
 ## Quick Start
 
 ```bash
-npx nightfang scan https://your-app.com/api/chat
+npx nightfang scan --target https://your-app.com/api/chat
 ```
 
 That's it. One command. Nightfang discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
@@ -58,7 +58,7 @@ Nightfang runs four specialized AI agents in sequence:
 ## Example Output
 
 ```
-$ npx nightfang scan https://demo.app/api/chat
+$ npx nightfang scan --target https://demo.app/api/chat
 
   ◼ nightfang v0.1.0
   ◼ Target: https://demo.app/api/chat
@@ -93,7 +93,7 @@ $ npx nightfang scan https://demo.app/api/chat
 | MCP server security | :white_check_mark: Tool poisoning, schema abuse | :x: | :x: | :white_check_mark: Basic |
 | OWASP LLM Top 10 | :white_check_mark: 8/10 covered | Partial | Partial | Partial |
 | SARIF output (GitHub Security tab) | :white_check_mark: | :white_check_mark: | :x: | :x: |
-| One command, zero config | :white_check_mark: `npx nightfang scan` | Needs YAML config | Needs Python setup | Web-only |
+| One command, zero config | :white_check_mark: `npx nightfang scan --target <url>` | Needs YAML config | Needs Python setup | Web-only |
 | Open source | :white_check_mark: MIT | :white_check_mark: (acquired by OpenAI) | :white_check_mark: | :x: Closed |
 | Cost per scan | $0.05–$1.00 | Varies | Free (local) | Free tier |
 
@@ -117,7 +117,7 @@ jobs:
         uses: peaktwilight/nightfang-action@v1
         with:
           target: ${{ secrets.STAGING_API_URL }}
-          depth: standard  # quick | standard | deep
+          depth: default  # quick | default | deep
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}  # or ANTHROPIC_API_KEY
 
@@ -134,17 +134,17 @@ Findings show up directly in the **Security** tab of your repository.
 | Depth | Test Cases | Time | Estimated Cost |
 |-------|-----------|------|----------------|
 | `quick` | ~15 | ~1 min | $0.05–$0.15 |
-| `standard` | ~50 | ~3 min | $0.15–$0.50 |
+| `default` | ~50 | ~3 min | $0.15–$0.50 |
 | `deep` | ~150 | ~10 min | $0.50–$1.00 |
 
 Cost depends on the LLM provider you configure. Nightfang supports OpenAI, Anthropic, and local models via Ollama.
 
 ```bash
 # Quick scan for CI
-npx nightfang scan https://api.example.com/chat --depth quick
+npx nightfang scan --target https://api.example.com/chat --depth quick
 
 # Deep audit before launch
-npx nightfang scan https://api.example.com/chat --depth deep
+npx nightfang scan --target https://api.example.com/chat --depth deep
 ```
 
 ## Roadmap
@@ -171,8 +171,8 @@ Contributions welcome! See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 ```bash
 git clone https://github.com/peaktwilight/nightfang.git
 cd nightfang
-npm install
-npm test
+pnpm install
+pnpm test
 ```
 
 ## License

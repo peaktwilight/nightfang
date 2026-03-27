@@ -137,25 +137,37 @@ function evaluateResponse(
 
   // Check for vulnerable patterns
   for (const pattern of detection.vulnerablePatterns) {
-    try {
-      const re = new RegExp(pattern, "i");
-      if (re.test(response)) return "vulnerable";
-    } catch {
-      // Invalid regex, skip
-    }
+    const re = compileDetectionPattern(pattern);
+    if (re && re.test(response)) return "vulnerable";
   }
 
   // Check for safe patterns
   if (detection.safePatterns) {
     for (const pattern of detection.safePatterns) {
-      try {
-        const re = new RegExp(pattern, "i");
-        if (re.test(response)) return "safe";
-      } catch {
-        // Invalid regex, skip
-      }
+      const re = compileDetectionPattern(pattern);
+      if (re && re.test(response)) return "safe";
     }
   }
 
   return "inconclusive";
+}
+
+function compileDetectionPattern(pattern: string): RegExp | null {
+  let source = pattern;
+  const flags = new Set<string>(["i"]);
+
+  // Support YAML patterns that use PCRE-style inline flags, e.g. "(?i)foo".
+  const inlineFlags = source.match(/^\(\?([a-z]+)\)/i);
+  if (inlineFlags) {
+    source = source.slice(inlineFlags[0].length);
+    for (const flag of inlineFlags[1].toLowerCase()) {
+      if ("imsu".includes(flag)) flags.add(flag);
+    }
+  }
+
+  try {
+    return new RegExp(source, [...flags].join(""));
+  } catch {
+    return null;
+  }
 }
