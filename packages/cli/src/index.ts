@@ -23,7 +23,7 @@ async function showInteractiveMenu(): Promise<void> {
   console.log(
     chalk.red.bold("  nightfang") +
     chalk.gray(` v${VERSION}`) +
-    chalk.gray(" — AI-Powered Security Scanner")
+    chalk.gray(" — AI-Powered Agentic Security Scanner")
   );
   console.log("");
 
@@ -31,7 +31,9 @@ async function showInteractiveMenu(): Promise<void> {
     message: "What would you like to do?",
     options: [
       { value: "demo",   label: "Scan demo target (30 sec)" },
-      { value: "custom", label: "Scan my target" },
+      { value: "scan",   label: "Scan an endpoint" },
+      { value: "audit",  label: "Audit an npm package" },
+      { value: "review", label: "Review a repository" },
       { value: "docs",   label: "Read docs" },
     ],
   });
@@ -53,7 +55,7 @@ async function showInteractiveMenu(): Promise<void> {
     return;
   }
 
-  if (action === "custom") {
+  if (action === "scan") {
     const target = await text({
       message: "Target URL:",
       placeholder: "http://localhost:4100/v1/chat/completions",
@@ -69,6 +71,44 @@ async function showInteractiveMenu(): Promise<void> {
     }
 
     process.argv = [process.argv[0], process.argv[1], "scan", "--target", (target as string).trim(), "--depth", "quick"];
+    await program.parseAsync();
+    return;
+  }
+
+  if (action === "audit") {
+    const pkg = await text({
+      message: "npm package name:",
+      placeholder: "express",
+      validate: (v) => {
+        if (!v || v.trim().length === 0) return "Package name is required";
+      },
+    });
+
+    if (isCancel(pkg)) {
+      outro(chalk.gray("Goodbye."));
+      process.exit(0);
+    }
+
+    process.argv = [process.argv[0], process.argv[1], "audit", (pkg as string).trim()];
+    await program.parseAsync();
+    return;
+  }
+
+  if (action === "review") {
+    const repo = await text({
+      message: "Repository path:",
+      placeholder: "./my-project",
+      validate: (v) => {
+        if (!v || v.trim().length === 0) return "Repository path is required";
+      },
+    });
+
+    if (isCancel(repo)) {
+      outro(chalk.gray("Goodbye."));
+      process.exit(0);
+    }
+
+    process.argv = [process.argv[0], process.argv[1], "review", (repo as string).trim()];
     await program.parseAsync();
     return;
   }
