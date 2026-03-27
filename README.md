@@ -1,6 +1,5 @@
 <p align="center">
-  <!-- TODO: Replace with actual logo -->
-  <img src="assets/nightfang-logo.png" alt="Nightfang" width="200" />
+  <img src="assets/nightfang-logo.svg" alt="Nightfang" width="120" />
 </p>
 
 <h1 align="center">Nightfang</h1>

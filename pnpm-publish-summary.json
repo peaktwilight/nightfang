@@ -1,6 +1,10 @@
 {
 	"publishedPackages": [
 		{
+			"name": "nightfang",
+			"version": "0.1.0"
+		},
+		{
 			"name": "@nightfang/shared",
 			"version": "0.1.0"
 		},
