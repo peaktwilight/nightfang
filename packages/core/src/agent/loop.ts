@@ -36,6 +36,7 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
     findings: [],
     attackResults: [],
     targetInfo: {},
+    scopePath: config.scopePath,
   };
 
   const executor = new ToolExecutor(toolCtx, db);

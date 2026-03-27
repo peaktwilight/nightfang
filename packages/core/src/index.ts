@@ -36,6 +36,4 @@ export type {
   NativeAgentState,
 } from "./agent/index.js";
 
-// Database (re-exported from @nightfang/db)
-export { NightfangDB } from "@nightfang/db";
 export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./db/schema.js";

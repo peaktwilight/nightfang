@@ -11,7 +11,7 @@ import type {
   ScanConfig,
 } from "@nightfang/shared";
 import type { ScanEvent, ScanListener } from "./scanner.js";
-import { NightfangDB } from "@nightfang/db";
+// DB lazy-loaded to avoid native module issues
 import { createRuntime } from "./runtime/index.js";
 import type { RuntimeType } from "./runtime/index.js";
 import { ClaudeApiRuntime } from "./runtime/claude-api.js";
@@ -176,7 +176,7 @@ function mapSemgrepSeverity(level: string): string {
 async function runReviewAgent(
   repoPath: string,
   semgrepFindings: SemgrepFinding[],
-  db: NightfangDB,
+  db: any,
   scanId: string,
   config: ReviewConfig,
   emit: ScanListener,
@@ -262,7 +262,7 @@ export async function sourceReview(
   const { repoPath, cloned, tempDir } = resolveRepo(config.repo, emit);
 
   // Initialize DB and create scan record
-  const db = new NightfangDB(config.dbPath);
+  const db = await (async () => { try { const { NightfangDB } = await import("@nightfang/db"); return new NightfangDB(config.dbPath); } catch { return null as any; } })() as any;
   const scanConfig: ScanConfig = {
     target: `repo:${config.repo}`,
     depth: config.depth,

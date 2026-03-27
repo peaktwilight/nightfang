@@ -20,6 +20,7 @@ export interface NativeAgentConfig {
   maxTurns: number;
   target: string;
   scanId: string;
+  scopePath?: string;
   sessionId?: string; // Resume from existing session
 }
 
@@ -65,6 +66,7 @@ export async function runNativeAgentLoop(
     findings: [],
     attackResults: [],
     targetInfo: {},
+    scopePath: config.scopePath,
   };
 
   const executor = new ToolExecutor(toolCtx, db);

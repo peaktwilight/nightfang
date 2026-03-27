@@ -50,6 +50,7 @@ export interface AgentConfig {
   maxTurns: number;
   target: string;
   scanId: string;
+  scopePath?: string;
 }
 
 // ── Agent State ──
@@ -72,4 +73,5 @@ export interface ToolContext {
   findings: Finding[];
   attackResults: AttackResult[];
   targetInfo: Partial<TargetInfo>;
+  scopePath?: string;
 }

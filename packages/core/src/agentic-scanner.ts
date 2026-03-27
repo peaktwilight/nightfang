@@ -2,7 +2,7 @@ import type { ScanConfig, ScanReport, Finding } from "@nightfang/shared";
 import { loadTemplates } from "@nightfang/templates";
 import { createRuntime } from "./runtime/index.js";
 import { ClaudeApiRuntime } from "./runtime/claude-api.js";
-import { NightfangDB } from "@nightfang/db";
+// DB lazy-loaded to avoid native module issues
 import { runAgentLoop } from "./agent/loop.js";
 import { runNativeAgentLoop } from "./agent/native-loop.js";
 import { getToolsForRole } from "./agent/tools.js";
@@ -43,7 +43,7 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
   const { config, dbPath, onEvent, resumeScanId } = opts;
   const emit = onEvent ?? (() => {});
 
-  const db = new NightfangDB(dbPath);
+  const db = await (async () => { try { const { NightfangDB } = await import("@nightfang/db"); return new NightfangDB(dbPath); } catch { return null as any; } })() as any;
 
   // Resume or create new scan
   const scanId = resumeScanId ?? db.createScan(config);
@@ -302,7 +302,7 @@ interface AgentOutput {
 
 async function runNativeDiscovery(
   runtime: NativeRuntime,
-  db: NightfangDB,
+  db: any,
   config: ScanConfig,
   scanId: string,
   emit: ScanListener,
@@ -333,7 +333,7 @@ async function runNativeDiscovery(
 
 async function runNativeAttack(
   runtime: NativeRuntime,
-  db: NightfangDB,
+  db: any,
   config: ScanConfig,
   scanId: string,
   targetInfo: Partial<import("@nightfang/shared").TargetInfo>,
@@ -375,7 +375,7 @@ async function runNativeAttack(
 
 async function runNativeVerify(
   runtime: NativeRuntime,
-  db: NightfangDB,
+  db: any,
   config: ScanConfig,
   scanId: string,
   findings: Finding[],
@@ -400,7 +400,7 @@ async function runNativeVerify(
 
 async function runLegacyDiscovery(
   runtime: import("./runtime/types.js").Runtime,
-  db: NightfangDB,
+  db: any,
   config: ScanConfig,
   scanId: string,
   emit: ScanListener,
@@ -434,7 +434,7 @@ async function runLegacyDiscovery(
 
 async function runLegacyAttack(
   runtime: import("./runtime/types.js").Runtime,
-  db: NightfangDB,
+  db: any,
   config: ScanConfig,
   scanId: string,
   targetInfo: Partial<import("@nightfang/shared").TargetInfo>,
@@ -476,7 +476,7 @@ async function runLegacyAttack(
 
 async function runLegacyVerify(
   runtime: import("./runtime/types.js").Runtime,
-  db: NightfangDB,
+  db: any,
   config: ScanConfig,
   scanId: string,
   findings: Finding[],

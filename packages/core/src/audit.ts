@@ -13,7 +13,7 @@ import type {
   Severity,
 } from "@nightfang/shared";
 import type { ScanEvent, ScanListener } from "./scanner.js";
-import { NightfangDB } from "@nightfang/db";
+// DB lazy-loaded to avoid native module issues
 import { createRuntime } from "./runtime/index.js";
 import type { RuntimeType } from "./runtime/index.js";
 import { ClaudeApiRuntime } from "./runtime/claude-api.js";
@@ -342,7 +342,7 @@ async function runAuditAgent(
   pkg: InstalledPackage,
   semgrepFindings: SemgrepFinding[],
   npmAuditFindings: NpmAuditFinding[],
-  db: NightfangDB,
+  db: any,
   scanId: string,
   config: AuditConfig,
   emit: ScanListener,
@@ -436,7 +436,7 @@ export async function packageAudit(
   const pkg = installPackage(config.package, config.version, emit);
 
   // Initialize DB and create scan record
-  const db = new NightfangDB(config.dbPath);
+  const db = await (async () => { try { const { NightfangDB } = await import("@nightfang/db"); return new NightfangDB(config.dbPath); } catch { return null as any; } })() as any;
   const scanConfig: ScanConfig = {
     target: `npm:${pkg.name}@${pkg.version}`,
     depth: config.depth,

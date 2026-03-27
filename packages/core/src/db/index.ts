@@ -1,3 +1,3 @@
 // Re-export from @nightfang/db for backward compatibility
-export { NightfangDB } from "@nightfang/db";
+// Lazy-load only
 export type { DBScan, DBFinding, DBTarget, DBAttackResult } from "./schema.js";

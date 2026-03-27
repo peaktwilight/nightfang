@@ -9,7 +9,20 @@ import { runSourceAnalysis } from "./stages/source-analysis.js";
 import { runAttacks } from "./stages/attack.js";
 import { runVerification } from "./stages/verify.js";
 import { generateReport } from "./stages/report.js";
-import { NightfangDB } from "@nightfang/db";
+// Lazy-load DB to avoid native module issues when DB isn't needed
+let _db: any = null;
+async function getDB(dbPath?: string) {
+  if (!_db) {
+    try {
+      const { NightfangDB } = await import("@nightfang/db");
+      _db = new NightfangDB(dbPath);
+    } catch {
+      // DB unavailable (native module issue) — continue without persistence
+      _db = null;
+    }
+  }
+  return _db;
+}
 
 export type ScanEventType =
   | "stage:start"
@@ -36,9 +49,9 @@ export async function scan(
   const emit = onEvent ?? (() => {});
   const ctx: ScanContext = createScanContext(config);
 
-  // Initialize DB for persistence (always persist, even without --agentic)
-  const db = new NightfangDB(dbPath);
-  const scanId = db.createScan(config);
+  // Initialize DB for persistence (optional — graceful fallback if native module unavailable)
+  const db = await getDB(dbPath);
+  const scanId = db?.createScan(config) ?? "no-db";
 
   // For --runtime auto, detect available runtimes and pick per-stage
   const isAuto = config.runtime === "auto";
@@ -137,16 +150,18 @@ export async function scan(
     data: verifyResult,
   });
 
-  // Persist findings to DB after verification
-  db.transaction(() => {
-    db.upsertTarget(ctx.target);
-    for (const finding of verifyResult.data.findings) {
-      db.saveFinding(scanId, finding);
-    }
-    for (const result of ctx.attacks) {
-      db.saveAttackResult(scanId, result);
-    }
-  });
+  // Persist findings to DB after verification (if DB available)
+  if (db) {
+    db.transaction(() => {
+      db.upsertTarget(ctx.target);
+      for (const finding of verifyResult.data.findings) {
+        db.saveFinding(scanId, finding);
+      }
+      for (const result of ctx.attacks) {
+        db.saveAttackResult(scanId, result);
+      }
+    });
+  }
 
   // Emit individual findings
   for (const finding of verifyResult.data.findings) {
@@ -168,9 +183,11 @@ export async function scan(
     data: reportResult,
   });
 
-  // Mark scan complete in DB
-  db.completeScan(scanId, reportResult.data.summary as unknown as Record<string, unknown>);
-  db.close();
+  // Mark scan complete in DB (if available)
+  if (db) {
+    db.completeScan(scanId, reportResult.data.summary as unknown as Record<string, unknown>);
+    db.close();
+  }
 
   return reportResult.data;
 }
