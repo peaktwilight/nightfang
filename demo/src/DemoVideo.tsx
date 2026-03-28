@@ -9,7 +9,7 @@ import {
 } from "remotion";
 import { loadFont as loadSpaceMono } from "@remotion/google-fonts/SpaceMono";
 import { loadFont as loadOutfit } from "@remotion/google-fonts/Outfit";
-import { pwnkitIcon as PwnkitIcon } from "./NightfangIcon";
+import { pwnkitIcon as PwnkitIcon } from "./PwnkitIcon";
 
 const { fontFamily: spaceMono } = loadSpaceMono("normal", {
   weights: ["400", "700"],

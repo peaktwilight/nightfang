@@ -1,6 +1,6 @@
-# Nightfang GitHub Action
+# pwnkit GitHub Action
 
-Run Nightfang in CI, generate JSON + SARIF artifacts, and fail builds on a configurable severity threshold.
+Run pwnkit in CI, generate JSON + SARIF artifacts, and fail builds on a configurable severity threshold.
 
 ## Usage
 
@@ -13,13 +13,13 @@ permissions:
   security-events: write
 
 jobs:
-  nightfang:
+  pwnkit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Nightfang
-        uses: peaktwilight/nightfang/action@v1
+      - name: Run pwnkit
+        uses: peaktwilight/pwnkit/action@v1
         with:
           target: ${{ secrets.STAGING_API_URL }}
           depth: default
@@ -30,7 +30,7 @@ jobs:
       - name: Upload SARIF
         uses: github/codeql-action/upload-sarif@v3
         with:
-          sarif_file: nightfang-report/report.sarif
+          sarif_file: pwnkit-report/report.sarif
 ```
 
 ## Deep Scan Example
@@ -39,7 +39,7 @@ jobs:
 
 ```yaml
 jobs:
-  nightfang-deep:
+  pwnkit-deep:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -47,8 +47,8 @@ jobs:
       - name: Install Claude Code CLI
         run: npm install --global @anthropic-ai/claude-code
 
-      - name: Run Nightfang deep scan
-        uses: peaktwilight/nightfang/action@v1
+      - name: Run pwnkit deep scan
+        uses: peaktwilight/pwnkit/action@v1
         with:
           target: ${{ secrets.STAGING_API_URL }}
           runtime: claude
@@ -67,8 +67,8 @@ jobs:
 - `repo-path` (optional): Local repo path to analyze during `deep` mode.
 - `timeout` (optional, default `30000`): Request/runtime timeout in milliseconds.
 - `fail-on-severity` (optional, default `high`): `critical`, `high`, `medium`, `low`, `info`, or `none`.
-- `report-dir` (optional, default `nightfang-report`): Output directory for reports.
-- `nightfang-version` (optional, default `latest`): npm version of the Nightfang CLI to install.
+- `report-dir` (optional, default `pwnkit-report`): Output directory for reports.
+- `pwnkit-version` (optional, default `latest`): npm version of the pwnkit CLI to install.
 
 ## Outputs
 

@@ -8,7 +8,7 @@ MODE="${INPUT_MODE:-probe}"
 REPO_PATH="${INPUT_REPO_PATH:-}"
 TIMEOUT="${INPUT_TIMEOUT:-30000}"
 FAIL_ON="${INPUT_FAIL_ON_SEVERITY:-high}"
-REPORT_DIR="${INPUT_REPORT_DIR:-nightfang-report}"
+REPORT_DIR="${INPUT_REPORT_DIR:-pwnkit-report}"
 
 if [[ -z "$TARGET" ]]; then
   echo "::error::Missing required input: target"
@@ -81,17 +81,17 @@ if [[ -n "$REPO_PATH" ]]; then
 fi
 
 set +e
-nightfang "${SCAN_ARGS[@]}" > "$JSON_REPORT"
+pwnkit "${SCAN_ARGS[@]}" > "$JSON_REPORT"
 SCAN_EXIT=$?
 set -e
 
 if [[ $SCAN_EXIT -eq 2 ]]; then
-  echo "::error::Nightfang scan failed to execute."
+  echo "::error::pwnkit scan failed to execute."
   exit 2
 fi
 
 if [[ ! -s "$JSON_REPORT" ]]; then
-  echo "::error::Nightfang scan did not produce a JSON report."
+  echo "::error::pwnkit scan did not produce a JSON report."
   exit 1
 fi
 
@@ -123,16 +123,16 @@ const findings = Array.isArray(report.findings) ? report.findings : [];
 
 const rulesById = new Map();
 for (const finding of findings) {
-  const ruleId = finding.templateId || finding.id || "nightfang-finding";
+  const ruleId = finding.templateId || finding.id || "pwnkit-finding";
   if (!rulesById.has(ruleId)) {
     rulesById.set(ruleId, {
       id: ruleId,
       name: finding.title || ruleId,
       shortDescription: {
-        text: finding.title || "Nightfang finding",
+        text: finding.title || "pwnkit finding",
       },
       fullDescription: {
-        text: finding.description || "Nightfang detected a potential security issue.",
+        text: finding.description || "pwnkit detected a potential security issue.",
       },
       properties: {
         category: finding.category || "unknown",
@@ -143,7 +143,7 @@ for (const finding of findings) {
 }
 
 const results = findings.map((finding) => {
-  const ruleId = finding.templateId || finding.id || "nightfang-finding";
+  const ruleId = finding.templateId || finding.id || "pwnkit-finding";
   const level = severityToSarifLevel(finding.severity);
   const parts = [finding.description, finding.evidence?.analysis].filter(Boolean);
 
@@ -151,7 +151,7 @@ const results = findings.map((finding) => {
     ruleId,
     level,
     message: {
-      text: parts.length > 0 ? parts.join("\n\n") : (finding.title || "Nightfang finding"),
+      text: parts.length > 0 ? parts.join("\n\n") : (finding.title || "pwnkit finding"),
     },
     properties: {
       severity: finding.severity || "info",
@@ -170,13 +170,13 @@ const sarif = {
     {
       tool: {
         driver: {
-          name: "nightfang",
-          informationUri: "https://github.com/peaktwilight/nightfang",
+          name: "pwnkit",
+          informationUri: "https://github.com/peaktwilight/pwnkit",
           rules: Array.from(rulesById.values()),
         },
       },
       automationDetails: {
-        id: `nightfang/${report.scanDepth || "default"}`,
+        id: `pwnkit/${report.scanDepth || "default"}`,
       },
       properties: {
         target: report.target || null,
@@ -218,7 +218,7 @@ if (githubOutput) {
 
 if (shouldFail) {
   console.error(
-    `Nightfang findings met fail-on-severity='${failOn}'. Summary: ` +
+    `pwnkit findings met fail-on-severity='${failOn}'. Summary: ` +
       JSON.stringify(counts)
   );
   process.exit(3);

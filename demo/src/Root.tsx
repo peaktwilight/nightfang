@@ -1,6 +1,6 @@
 import { Composition } from "remotion";
 import { DemoVideo } from "./DemoVideo";
-import { pwnkitIcon as PwnkitIcon } from "./NightfangIcon";
+import { pwnkitIcon as PwnkitIcon } from "./PwnkitIcon";
 
 export const RemotionRoot = () => {
   return (

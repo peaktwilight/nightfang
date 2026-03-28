@@ -2,9 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in Nightfang, please report it responsibly.
-
-**Email:** security@nightfang.dev
+If you discover a security vulnerability in pwnkit, please report it via [GitHub Security Advisories](https://github.com/peaktwilight/pwnkit/security/advisories/new).
 
 Please include:
 - Description of the vulnerability
