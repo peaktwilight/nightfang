@@ -1,6 +1,7 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import PipelineViz from '../components/PipelineViz';
+import AgentPipeline from '../components/AgentPipeline';
 import DockNav from '../components/DockNav';
 import DataGridBackground from '../components/DataGridBackground';
 ---
@@ -359,7 +360,11 @@ import DataGridBackground from '../components/DataGridBackground';
         </div>
 
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
+          <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
+            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-emerald-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">01 &middot; Discover</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Map the attack surface</h3>
             <p class="text-smoke text-sm leading-relaxed">Maps endpoints, extracts system prompts, detects models, enumerates tools.</p>
@@ -370,7 +375,11 @@ import DataGridBackground from '../components/DataGridBackground';
             </div>
           </div>
 
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
+          <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
+            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-amber-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">02 &middot; Attack</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Agentic multi-turn attacks</h3>
             <p class="text-smoke text-sm leading-relaxed">AI agent crafts and adapts payloads across injection, jailbreaks, exfiltration, tool poisoning.</p>
@@ -381,7 +390,11 @@ import DataGridBackground from '../components/DataGridBackground';
             </div>
           </div>
 
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
+          <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
+            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-blue-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">03 &middot; Verify</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Re-exploit. Kill false positives.</h3>
             <p class="text-smoke text-sm leading-relaxed">Every finding gets independently reproduced. If it can't be reproduced, it's dropped.</p>
@@ -392,7 +405,11 @@ import DataGridBackground from '../components/DataGridBackground';
             </div>
           </div>
 
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
+          <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
+            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
+            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-purple-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">04 &middot; Report</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">SARIF, JSON, Markdown</h3>
             <p class="text-smoke text-sm leading-relaxed">Plugs into GitHub Security tab, CI pipelines, and human review. Severity, remediation, full evidence.</p>
@@ -402,6 +419,12 @@ import DataGridBackground from '../components/DataGridBackground';
               <div>&#8226; Remediation guidance</div>
             </div>
           </div>
+        </div>
+
+        <!-- Animated agent pipeline visualization -->
+        <div class="mt-16">
+          <h3 class="text-center text-sm uppercase tracking-widest text-ash mb-2" style="font-family: 'Space Mono', monospace">Live agent execution</h3>
+          <AgentPipeline client:visible />
         </div>
       </div>
     </section>
