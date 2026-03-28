@@ -135,25 +135,24 @@ const VoxelCharacter = () => {
     };
   }, [bodyData]);
 
-  // Left leg voxels (rows LEG_START_ROW+, cols 0 to MID_COL)
-  const leftLegMeshes = useMemo(() => {
-    const { outline, fill } = buildVoxels(LEG_START_ROW, ROWS, 0, MID_COL, offX, offY);
-    return {
-      outline: createInstancedMesh(outline, CRIMSON),
-      fill: createInstancedMesh(fill, BODY_DARK, { roughness: 0.6, metalness: 0.1 }),
-    };
+  // All leg voxels with their row info for per-voxel shear animation
+  const legData = useMemo(() => {
+    const { outline, fill } = buildVoxels(LEG_START_ROW, ROWS, 0, COLS, offX, offY);
+    // Store original positions + which row each voxel is on (for shear amount)
+    const allPositions = [...outline, ...fill];
+    const outlineCount = outline.length;
+    return { outline, fill, allPositions, outlineCount };
   }, [offX, offY]);
 
-  // Right leg voxels (rows LEG_START_ROW+, cols MID_COL to COLS)
-  const rightLegMeshes = useMemo(() => {
-    const { outline, fill } = buildVoxels(LEG_START_ROW, ROWS, MID_COL, COLS, offX, offY);
+  const legMeshes = useMemo(() => {
     return {
-      outline: createInstancedMesh(outline, CRIMSON),
-      fill: createInstancedMesh(fill, BODY_DARK, { roughness: 0.6, metalness: 0.1 }),
+      outline: createInstancedMesh(legData.outline, CRIMSON),
+      fill: createInstancedMesh(legData.fill, BODY_DARK, { roughness: 0.6, metalness: 0.1 }),
     };
-  }, [offX, offY]);
+  }, [legData]);
 
-  // Pivot point for legs (where they connect to body)
+  // Store original leg positions for animation
+  const legOrigPositions = useRef(legData.allPositions.map(p => p.clone()));
   const legPivotY = -LEG_START_ROW * VS + offY;
 
   useFrame(({ clock }) => {
@@ -174,20 +173,43 @@ const VoxelCharacter = () => {
       wholeRef.current.position.y = Math.sin(t * 0.6) * 0.02;
     }
 
-    // Leg sway based on mouse X + subtle idle animation
-    const idleSway = Math.sin(t * 1.5) * 0.06;
-    const mouseSway = mx * 0.15;
+    // Leg shear: shift each voxel's X based on how far down it is
+    const idleSway = Math.sin(t * 1.5) * 0.5;
+    const mouseSway = mx * 1.2;
     const sway = idleSway + mouseSway;
 
-    if (leftLegRef.current) {
-      const targetRot = sway + Math.sin(t * 2) * 0.03;
-      leftLegRef.current.rotation.z += (targetRot - leftLegRef.current.rotation.z) * 0.08;
+    const dummy = new THREE.Object3D();
+    const maxRowDist = ROWS - LEG_START_ROW;
+
+    // Update outline voxels
+    if (legMeshes.outline) {
+      legData.outline.forEach((origPos, i) => {
+        // Figure out which row this voxel is on from its Y position
+        const rowFromTop = Math.round((-origPos.y + offY - VS / 2) / VS);
+        const rowDist = Math.max(0, rowFromTop - LEG_START_ROW);
+        const shearAmount = (rowDist / maxRowDist) * sway * VS * 0.4;
+
+        dummy.position.set(origPos.x + shearAmount, origPos.y, origPos.z);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        legMeshes.outline!.setMatrixAt(i, dummy.matrix);
+      });
+      legMeshes.outline.instanceMatrix.needsUpdate = true;
     }
 
-    if (rightLegRef.current) {
-      // Same direction, slightly delayed for natural feel
-      const targetRot = sway + Math.sin(t * 2 + 0.3) * 0.03;
-      rightLegRef.current.rotation.z += (targetRot - rightLegRef.current.rotation.z) * 0.07;
+    // Update fill voxels
+    if (legMeshes.fill) {
+      legData.fill.forEach((origPos, i) => {
+        const rowFromTop = Math.round((-origPos.y + offY - VS / 2) / VS);
+        const rowDist = Math.max(0, rowFromTop - LEG_START_ROW);
+        const shearAmount = (rowDist / maxRowDist) * sway * VS * 0.4;
+
+        dummy.position.set(origPos.x + shearAmount, origPos.y, origPos.z);
+        dummy.scale.set(1, 1, 1);
+        dummy.updateMatrix();
+        legMeshes.fill!.setMatrixAt(i, dummy.matrix);
+      });
+      legMeshes.fill.instanceMatrix.needsUpdate = true;
     }
 
     // Eye blink — squash Y scale of eye voxels
