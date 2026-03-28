@@ -1,6 +1,6 @@
 import { Composition } from "remotion";
 import { DemoVideo } from "./DemoVideo";
-import { pwnkitIcon } from "./NightfangIcon";
+import { pwnkitIcon as PwnkitIcon } from "./NightfangIcon";
 
 export const RemotionRoot = () => {
   return (
@@ -15,7 +15,7 @@ export const RemotionRoot = () => {
       />
       <Composition
         id="pwnkitIcon"
-        component={pwnkitIcon}
+        component={PwnkitIcon}
         durationInFrames={180}
         fps={60}
         width={320}

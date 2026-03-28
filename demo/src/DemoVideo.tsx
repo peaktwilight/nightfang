@@ -9,7 +9,7 @@ import {
 } from "remotion";
 import { loadFont as loadSpaceMono } from "@remotion/google-fonts/SpaceMono";
 import { loadFont as loadOutfit } from "@remotion/google-fonts/Outfit";
-import { pwnkitIcon } from "./NightfangIcon";
+import { pwnkitIcon as PwnkitIcon } from "./NightfangIcon";
 
 const { fontFamily: spaceMono } = loadSpaceMono("normal", {
   weights: ["400", "700"],
@@ -204,7 +204,7 @@ const IntroScene = () => {
           position: "relative",
         }}
       >
-        <pwnkitIcon />
+        <PwnkitIcon />
       </div>
 
       {/* Title */}
@@ -958,7 +958,7 @@ const CTAScene = () => {
           position: "relative",
         }}
       >
-        <pwnkitIcon />
+        <PwnkitIcon />
       </div>
 
       {/* Command */}
