@@ -102,8 +102,9 @@ export default function DockNav() {
         })}
 
         <div className="h-5 w-px bg-white/10 ml-0.5 hidden sm:block" />
+        <div className="flex-1 sm:hidden" />
 
-        <div className="flex items-center gap-1 ml-auto sm:ml-0">
+        <div className="flex items-center gap-1 sm:ml-0">
           <a href="/blog" className={`flex items-center h-9 rounded-lg px-3 text-[11px] font-medium transition-colors ${
             isBlogPage ? "text-white/70 bg-white/[0.08]" : "text-white/35 hover:text-white/70"
           }`}>Blog</a>

@@ -29,11 +29,13 @@ import DataGridBackground from '../components/DataGridBackground';
         </div>
 
         <!-- CTA -->
-        <div class="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 animate-fade-up" style="animation-delay: 0.2s">
-          <div class="group relative">
-            <code class="block bg-night-lighter border border-white/10 rounded-lg px-4 sm:px-6 py-3 font-mono text-xs sm:text-base text-white select-all cursor-pointer hover:border-crimson/30 transition-colors overflow-x-auto whitespace-nowrap">npx pwnkit-cli scan --target &lt;url&gt;</code>
+        <div class="flex flex-col items-center gap-4 mb-16 animate-fade-up" style="animation-delay: 0.2s">
+          <div class="flex flex-col sm:flex-row items-center gap-3 text-sm font-mono">
+            <code class="bg-night-lighter border border-white/10 rounded-lg px-4 py-2.5 text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">npx pwnkit-cli audit express</code>
+            <span class="text-ash hidden sm:inline">or</span>
+            <code class="bg-night-lighter border border-white/10 rounded-lg px-4 py-2.5 text-white select-all cursor-pointer hover:border-crimson/30 transition-colors">npx pwnkit-cli review ./my-repo</code>
           </div>
-          <a href="https://github.com/peaktwilight/pwnkit" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white hover:bg-white/90 text-black font-medium rounded-lg px-6 py-3 transition-colors text-sm sm:text-base">
+          <a href="https://github.com/peaktwilight/pwnkit" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white hover:bg-white/90 text-black font-medium rounded-lg px-6 py-3 transition-colors text-sm">
             View on GitHub
             <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </a>
@@ -493,9 +495,16 @@ import DataGridBackground from '../components/DataGridBackground';
             </a>
           </div>
 
-          <div class="border-t border-white/5 pt-5">
-            <p class="text-smoke text-sm mb-3">Add this badge to your repo — it links back to pwnkit.com:</p>
-            <code class="block bg-night border border-white/5 rounded-lg px-4 py-2.5 text-xs text-smoke select-all font-mono overflow-x-auto">[![pwnkit](https://pwnkit.com/badge/ORG/REPO)](https://pwnkit.com)</code>
+          <div class="border-t border-white/5 pt-5 space-y-4">
+            <p class="text-smoke text-sm font-medium">Set it up on your repo in 2 minutes:</p>
+            <div class="space-y-2">
+              <p class="text-xs text-ash">1. Add to your GitHub Actions workflow:</p>
+              <code class="block bg-night border border-white/5 rounded-lg px-4 py-2.5 text-xs text-smoke select-all font-mono overflow-x-auto">- run: npx pwnkit-cli review . --format json > pwnkit-report.json</code>
+            </div>
+            <div class="space-y-2">
+              <p class="text-xs text-ash">2. Add the badge to your README:</p>
+              <code class="block bg-night border border-white/5 rounded-lg px-4 py-2.5 text-xs text-smoke select-all font-mono overflow-x-auto">[![pwnkit](https://pwnkit.com/badge/ORG/REPO)](https://pwnkit.com)</code>
+            </div>
           </div>
         </div>
       </div>
