@@ -98,21 +98,6 @@ The **verification step is the differentiator.** No more triaging 200 "possible 
 | **npm Packages** — Dependency supply chain, malicious code | `audit <package>` | Installs in sandbox, runs semgrep + AI code review |
 | **Git Repositories** — Source-level security review | `review <path-or-url>` | Deep analysis with Claude Code, Codex, or Gemini CLI |
 
-### OWASP LLM Top 10 Coverage
-
-| # | Category | Status |
-|---|----------|--------|
-| LLM01 | Prompt Injection | Yes — Direct + indirect + encoding bypass |
-| LLM02 | Insecure Output Handling | Yes — XSS, code exec via output |
-| LLM03 | Training Data Poisoning | Partial — Detection only |
-| LLM04 | Model Denial of Service | Yes — Resource exhaustion probes |
-| LLM05 | Supply Chain Vulnerabilities | Yes — MCP tool poisoning, npm audit, dependency confusion |
-| LLM06 | Sensitive Information Disclosure | Yes — PII/secret extraction |
-| LLM07 | Insecure Plugin Design | Yes — Tool schema abuse, SSRF via tools |
-| LLM08 | Excessive Agency | Yes — Privilege escalation, unauthorized actions |
-| LLM09 | Overreliance | Partial — Hallucination-based trust attacks |
-| LLM10 | Model Theft | Yes — Model extraction, prompt theft |
-
 ## Example Output
 
 See the [demo GIF above](#) for real scan output, or run it yourself:
