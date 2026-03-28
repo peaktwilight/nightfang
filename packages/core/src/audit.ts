@@ -1,6 +1,6 @@
 import { execFileSync, execSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { existsSync, mkdirSync, rmSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
 import { randomUUID } from "node:crypto";
 import { tmpdir } from "node:os";
 import type {
@@ -429,6 +429,127 @@ function parseFindingsFromCliOutput(output: string, scanId: string): Finding[] {
 }
 
 /**
+ * Recursively collect source file paths from a directory.
+ * Skips node_modules, .git, and binary/image files.
+ */
+function collectSourceFiles(dir: string, maxFiles = 50): string[] {
+  const files: string[] = [];
+  const SOURCE_EXTS = new Set([
+    ".js", ".mjs", ".cjs", ".ts", ".mts", ".cts",
+    ".jsx", ".tsx", ".json", ".yml", ".yaml",
+  ]);
+
+  function walk(d: string) {
+    if (files.length >= maxFiles) return;
+    let entries: string[];
+    try {
+      entries = readdirSync(d);
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (files.length >= maxFiles) return;
+      if (entry === "node_modules" || entry === ".git") continue;
+      const full = join(d, entry);
+      try {
+        const st = statSync(full);
+        if (st.isDirectory()) {
+          walk(full);
+        } else if (st.isFile() && st.size < 200_000) {
+          const ext = full.slice(full.lastIndexOf("."));
+          if (SOURCE_EXTS.has(ext)) {
+            files.push(full);
+          }
+        }
+      } catch {
+        // skip unreadable
+      }
+    }
+  }
+
+  walk(dir);
+  return files;
+}
+
+/**
+ * Build a prompt that includes the actual source code for direct API analysis.
+ */
+function buildDirectApiAuditPrompt(
+  pkg: InstalledPackage,
+  semgrepFindings: SemgrepFinding[],
+  npmAuditFindings: NpmAuditFinding[],
+): string {
+  const sourceFiles = collectSourceFiles(pkg.path);
+  const sourceBlocks: string[] = [];
+  let totalChars = 0;
+  const MAX_CHARS = 150_000; // stay well within context window
+
+  for (const filePath of sourceFiles) {
+    if (totalChars >= MAX_CHARS) break;
+    try {
+      const content = readFileSync(filePath, "utf-8");
+      const rel = relative(pkg.path, filePath);
+      const block = `--- FILE: ${rel} ---\n${content}\n--- END FILE ---`;
+      totalChars += block.length;
+      sourceBlocks.push(block);
+    } catch {
+      // skip unreadable files
+    }
+  }
+
+  const semgrepContext = semgrepFindings.length > 0
+    ? semgrepFindings
+        .slice(0, 30)
+        .map((f, i) => `  ${i + 1}. [${f.severity}] ${f.ruleId} — ${f.path}:${f.startLine}: ${f.message}`)
+        .join("\n")
+    : "  None.";
+
+  const npmContext = npmAuditFindings.length > 0
+    ? npmAuditFindings
+        .slice(0, 30)
+        .map((f, i) => `  ${i + 1}. [${f.severity}] ${f.name}: ${f.title}`)
+        .join("\n")
+    : "  None.";
+
+  return `You are a security researcher performing an authorized source code audit of the npm package "${pkg.name}@${pkg.version}".
+
+## Semgrep findings:
+${semgrepContext}
+
+## npm audit advisories:
+${npmContext}
+
+## Source code:
+
+${sourceBlocks.join("\n\n")}
+
+## Instructions
+
+Analyze the source code above for security vulnerabilities. Look for:
+- Prototype pollution (object merge/extend without hasOwnProperty checks, __proto__ access)
+- ReDoS (regex with nested quantifiers, user input in new RegExp())
+- Path traversal (user-supplied paths without normalization)
+- Command/code injection (exec/eval with user input)
+- Unsafe deserialization
+- SSRF (HTTP requests with user-controlled URLs)
+- Information disclosure (hardcoded credentials, debug modes)
+- Missing input validation
+
+For EACH confirmed vulnerability, output a block in this exact format:
+
+---FINDING---
+title: <clear title>
+severity: <critical|high|medium|low|info>
+category: <prototype-pollution|redos|path-traversal|command-injection|code-injection|unsafe-deserialization|ssrf|information-disclosure|missing-validation|other>
+description: <detailed description of the vulnerability, how to exploit it, and suggested PoC>
+file: <path/to/file.js:lineNumber>
+---END---
+
+Output as many ---FINDING--- blocks as needed. If there are no real vulnerabilities, output none.
+Be precise and honest about severity — only report real, exploitable issues.`;
+}
+
+/**
  * Run an AI agent to analyze semgrep findings and hunt for additional
  * vulnerabilities in the package source code.
  */
@@ -508,17 +629,57 @@ async function runAuditAgent(
     }
   }
 
-  // ── Fallback: basic API agent loop ──
+  // ── API runtime: direct single-shot LLM call with source code in prompt ──
   if (runtimeType === "api" || !available.has(runtimeType)) {
     emit({
       type: "stage:start",
       stage: "attack",
-      message: "⚠ Install Claude Code or Codex for deep AI analysis. Running basic mode only.",
+      message: "Running AI source code analysis via API...",
     });
+
+    const apiRuntime = new ClaudeApiRuntime({
+      type: "api" as RuntimeType,
+      timeout: config.timeout ?? 120_000,
+      apiKey: config.apiKey,
+      model: config.model,
+    });
+
+    const prompt = buildDirectApiAuditPrompt(pkg, semgrepFindings, npmAuditFindings);
+    const result = await apiRuntime.execute(prompt, {
+      systemPrompt: "You are a security researcher performing an authorized npm package audit. Be thorough and precise. Only report real, exploitable vulnerabilities. Use the ---FINDING--- format specified.",
+    });
+
+    if (result.error && !result.output) {
+      emit({
+        type: "stage:end",
+        stage: "attack",
+        message: `API analysis error: ${result.error}`,
+      });
+      return [];
+    }
+
+    const findings = parseFindingsFromCliOutput(result.output, scanId);
+
+    for (const f of findings) {
+      emit({
+        type: "finding",
+        message: `[${f.severity}] ${f.title}`,
+        data: f,
+      });
+    }
+
+    emit({
+      type: "stage:end",
+      stage: "attack",
+      message: `API analysis complete: ${findings.length} findings (${result.durationMs}ms)`,
+    });
+
+    return findings;
   }
 
+  // ── Fallback: multi-turn agent loop for non-CLI, non-API runtimes ──
   const maxTurns =
-    config.depth === "deep" ? 50 : config.depth === "default" ? 30 : 15;
+    config.depth === "deep" ? 50 : config.depth === "default" ? 50 : 15;
 
   const runtimeConfig = {
     type: runtimeType as RuntimeType,
@@ -526,10 +687,7 @@ async function runAuditAgent(
     apiKey: config.apiKey,
     model: config.model,
   };
-  const runtime =
-    runtimeType === "api" || !available.has(runtimeType)
-      ? new ClaudeApiRuntime(runtimeConfig)
-      : createRuntime(runtimeConfig);
+  const runtime = createRuntime(runtimeConfig);
 
   const agentState = await runAgentLoop({
     config: {
