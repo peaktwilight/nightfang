@@ -30,7 +30,9 @@ export class ProcessRuntime implements Runtime {
     return new Promise((resolve) => {
       let stdout = "";
       let stderr = "";
+      let resultText = "";
       let timedOut = false;
+      const isStreamJson = args.includes("stream-json");
 
       const proc = spawn(this.command, args, {
         cwd: this.config.cwd ?? process.cwd(),
@@ -39,16 +41,42 @@ export class ProcessRuntime implements Runtime {
       });
 
       proc.stdout.on("data", (chunk: Buffer) => {
-        stdout += chunk.toString();
+        const text = chunk.toString();
+        stdout += text;
+
+        if (isStreamJson) {
+          // Parse stream-json lines for live progress display
+          for (const line of text.split("\n")) {
+            if (!line.trim()) continue;
+            try {
+              const event = JSON.parse(line);
+              // Show assistant text as it streams
+              if (event.type === "assistant" && event.message?.content) {
+                for (const block of event.message.content) {
+                  if (block.type === "text") {
+                    resultText += block.text;
+                  } else if (block.type === "tool_use") {
+                    // Show tool calls live
+                    if (process.stderr.isTTY) {
+                      const name = block.name || "tool";
+                      const input = typeof block.input === "object" ? JSON.stringify(block.input).slice(0, 80) : "";
+                      process.stderr.write(dim(`    → ${name} ${input}\n`));
+                    }
+                  }
+                }
+              } else if (event.type === "result") {
+                resultText = event.result || resultText;
+              }
+            } catch {
+              // Not valid JSON line, skip
+            }
+          }
+        }
       });
 
       proc.stderr.on("data", (chunk: Buffer) => {
         const text = chunk.toString();
         stderr += text;
-        // Stream stderr to terminal so user sees live progress
-        if (process.stderr.isTTY) {
-          process.stderr.write(dim(text));
-        }
       });
 
       const timer = setTimeout(() => {
@@ -59,8 +87,10 @@ export class ProcessRuntime implements Runtime {
 
       proc.on("close", (code) => {
         clearTimeout(timer);
+        // For stream-json, use the parsed result text; otherwise raw stdout
+        const output = isStreamJson ? (resultText || stdout).trim() : stdout.trim();
         resolve({
-          output: stdout.trim(),
+          output,
           exitCode: code,
           timedOut,
           durationMs: Date.now() - start,
@@ -98,7 +128,7 @@ export class ProcessRuntime implements Runtime {
   private buildArgs(prompt: string, context?: RuntimeContext): string[] {
     switch (this.type) {
       case "claude": {
-        const args = ["-p", prompt, "--output-format", "text"];
+        const args = ["-p", prompt, "--verbose", "--output-format", "stream-json"];
         if (context?.systemPrompt) {
           args.push("--system-prompt", context.systemPrompt);
         }
