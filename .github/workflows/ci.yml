@@ -35,4 +35,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r build
-      - run: pnpm --filter @pwnkit/test-targets test
+      - name: Run scan + CLI E2E tests
+        run: pnpm --filter @pwnkit/test-targets test

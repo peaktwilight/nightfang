@@ -11,5 +11,5 @@
     "skipLibCheck": true
   },
   "include": ["src"],
-  "exclude": ["src/scan.test.ts"]
+  "exclude": ["src/scan.test.ts", "src/cli.test.ts"]
 }

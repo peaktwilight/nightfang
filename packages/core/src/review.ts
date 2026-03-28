@@ -163,7 +163,7 @@ export async function sourceReview(
     runtime: config.runtime ?? "api",
     mode: "deep",
   };
-  const scanId = db.createScan(scanConfig);
+  const scanId = db?.createScan(scanConfig) ?? "no-db";
 
   try {
     // Step 2: Semgrep scan
@@ -191,7 +191,7 @@ export async function sourceReview(
       info: findings.filter((f) => f.severity === "info").length,
     };
 
-    db.completeScan(scanId, summary);
+    db?.completeScan(scanId, summary);
 
     emit({
       type: "stage:end",
@@ -210,10 +210,10 @@ export async function sourceReview(
     };
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    db.failScan(scanId, msg);
+    db?.failScan(scanId, msg);
     throw err;
   } finally {
-    db.close();
+    db?.close();
     // Clean up cloned repos
     if (cloned && tempDir) {
       try {

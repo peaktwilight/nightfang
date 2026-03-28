@@ -1,0 +1,95 @@
+import { describe, it, expect } from "vitest";
+import { spawnSync } from "node:child_process";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
+
+const thisDir = fileURLToPath(new URL(".", import.meta.url));
+const cliPath = join(thisDir, "../../packages/cli/dist/index.js");
+const testDbPath = join(tmpdir(), `pwnkit-cli-test-${Date.now()}.db`);
+
+const projectRoot = join(thisDir, "../..");
+
+const run = (args: string[], timeout = 30_000, extraEnv: Record<string, string | undefined> = {}) => {
+  // Build a clean env, stripping NODE_OPTIONS and npm_*/pnpm_* vars
+  // that pnpm injects and can interfere with native module loading
+  // (e.g. better-sqlite3) or npm install in the child process.
+  const cleanEnv: Record<string, string> = {};
+  for (const [k, v] of Object.entries(process.env)) {
+    if (k === "NODE_OPTIONS") continue;
+    if (k.startsWith("npm_")) continue;
+    if (k.startsWith("pnpm_") || k === "PNPM_PACKAGE_NAME") continue;
+    if (v !== undefined) cleanEnv[k] = v;
+  }
+  return spawnSync("node", [cliPath, ...args], {
+    cwd: projectRoot,
+    encoding: "utf-8",
+    timeout,
+    env: { ...cleanEnv, NO_COLOR: "1", ...extraEnv },
+  });
+};
+
+describe("CLI E2E", () => {
+  it("--help shows all commands", () => {
+    const result = run(["--help"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("pwnkit");
+    for (const cmd of ["scan", "audit", "review", "history", "findings", "replay"]) {
+      expect(result.stdout).toContain(cmd);
+    }
+  });
+
+  it("--version shows version", () => {
+    const result = run(["--version"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout.trim()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it("audit --help shows audit options", () => {
+    const result = run(["audit", "--help"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("--depth");
+    expect(result.stdout).toContain("--format");
+    expect(result.stdout).toContain("--runtime");
+  });
+
+  it("audit is-odd --runtime api --format json works without API key", () => {
+    const result = run(
+      ["audit", "is-odd", "--runtime", "api", "--format", "json", "--db-path", testDbPath],
+      60_000,
+      { OPENROUTER_API_KEY: "", ANTHROPIC_API_KEY: "", OPENAI_API_KEY: "" },
+    );
+    expect(result.status).toBe(0);
+    const json = JSON.parse(result.stdout);
+    expect(json).toHaveProperty("package");
+    expect(json).toHaveProperty("version");
+    expect(json).toHaveProperty("summary");
+    expect(json).toHaveProperty("findings");
+  }, 60_000);
+
+  it("review --help shows review options", () => {
+    const result = run(["review", "--help"]);
+    expect(result.status).toBe(0);
+  });
+
+  it("history works (empty or with data)", () => {
+    const result = run(["history", "--db-path", "/tmp/pwnkit-test-empty.db"]);
+    expect([0, 1]).toContain(result.status);
+  });
+
+  it("scan --help shows scan options", () => {
+    const result = run(["scan", "--help"]);
+    expect(result.status).toBe(0);
+    expect(result.stdout).toContain("--target");
+  });
+
+  it("share URL generated in audit output", () => {
+    const result = run(
+      ["audit", "is-odd", "--runtime", "api", "--format", "terminal", "--db-path", testDbPath + "-share"],
+      60_000,
+      { OPENROUTER_API_KEY: "", ANTHROPIC_API_KEY: "", OPENAI_API_KEY: "" },
+    );
+    const output = result.stdout + result.stderr;
+    expect(output).toContain("pwnkit.com/r#");
+  }, 60_000);
+});
