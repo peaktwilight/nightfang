@@ -4,174 +4,195 @@ import { Canvas, useFrame } from '@react-three/fiber';
 import { useRef, useMemo } from 'react';
 import * as THREE from 'three';
 
-/**
- * The pwnkit fang character in 3D.
- * SVG path: M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z
- * Two eyes at (13,16) and (19,16), r=1.5
- * Normalized to center around origin.
- */
-
 const CRIMSON = '#DC2626';
 
-// Convert the SVG viewBox coords (6..26 x 5..27) to centered coords
-// SVG center is roughly (16, 16), so offset by that
-function svgToLocal(x: number, y: number): [number, number] {
-  // Normalize: SVG spans ~16 units wide, ~20 tall
-  // Center at (16, 16), flip Y, scale to ~2 units
-  const scale = 0.12;
-  return [(x - 16) * scale, -(y - 16) * scale];
+// SVG viewBox is 0 0 32 32, path centers around (16, 16)
+// Convert to Three.js coords: center at origin, flip Y, scale
+function svgPt(x: number, y: number): THREE.Vector2 {
+  const s = 0.065;
+  return new THREE.Vector2((x - 16) * s, -(y - 16) * s);
+}
+
+// Build a smooth rounded path through the fang vertices
+function createFangCurve(): THREE.CurvePath<THREE.Vector3> {
+  // M8,12 L16,6 L24,12 L24,22 L20,26 L16,22 L12,26 L8,22 Z
+  const pts = [
+    svgPt(8, 12),   // top-left
+    svgPt(16, 6),   // top-center (peak)
+    svgPt(24, 12),  // top-right
+    svgPt(24, 22),  // right side
+    svgPt(20, 26),  // right fang
+    svgPt(16, 22),  // center valley
+    svgPt(12, 26),  // left fang
+    svgPt(8, 22),   // left side
+  ];
+
+  // Create rounded corners using quadratic bezier at each vertex
+  const radius = 0.04; // corner rounding radius
+  const path = new THREE.CurvePath<THREE.Vector3>();
+
+  for (let i = 0; i < pts.length; i++) {
+    const curr = pts[i];
+    const next = pts[(i + 1) % pts.length];
+    const prev = pts[(i - 1 + pts.length) % pts.length];
+
+    // Direction vectors
+    const toNext = new THREE.Vector2().subVectors(next, curr).normalize();
+    const toPrev = new THREE.Vector2().subVectors(prev, curr).normalize();
+
+    // Points offset from corner
+    const edgeLen = curr.distanceTo(next);
+    const r = Math.min(radius, edgeLen * 0.3);
+
+    const startPt = new THREE.Vector2().addVectors(curr, toPrev.clone().multiplyScalar(r));
+    const endPt = new THREE.Vector2().addVectors(curr, toNext.clone().multiplyScalar(r));
+
+    // Rounded corner (quadratic bezier through the corner point)
+    path.add(new THREE.QuadraticBezierCurve3(
+      new THREE.Vector3(startPt.x, startPt.y, 0),
+      new THREE.Vector3(curr.x, curr.y, 0),
+      new THREE.Vector3(endPt.x, endPt.y, 0),
+    ));
+
+    // Straight line to the next corner's start
+    const nextPt = pts[(i + 1) % pts.length];
+    const nextNext = pts[(i + 2) % pts.length];
+    const toNextNext = new THREE.Vector2().subVectors(nextNext, nextPt).normalize();
+    const nextToCurr = new THREE.Vector2().subVectors(curr, nextPt).normalize();
+    const nextEdgeLen = nextPt.distanceTo(curr);
+    const nextR = Math.min(radius, nextEdgeLen * 0.3);
+    const lineEnd = new THREE.Vector2().addVectors(nextPt, nextToCurr.clone().multiplyScalar(nextR));
+
+    path.add(new THREE.LineCurve3(
+      new THREE.Vector3(endPt.x, endPt.y, 0),
+      new THREE.Vector3(lineEnd.x, lineEnd.y, 0),
+    ));
+  }
+
+  return path;
 }
 
 const Shield = () => {
   const groupRef = useRef<THREE.Group>(null);
   const leftEyeRef = useRef<THREE.Mesh>(null);
   const rightEyeRef = useRef<THREE.Mesh>(null);
-  const scanRef = useRef<THREE.Line>(null);
   const particlesRef = useRef<THREE.Points>(null);
 
-  // The fang outline as a line loop
-  const outlineGeo = useMemo(() => {
-    // M8,12 L16,6 L24,12 L24,22 L20,26 L16,22 L12,26 L8,22 Z
-    const svgPoints: [number, number][] = [
-      [8, 12], [16, 6], [24, 12], [24, 22],
-      [20, 26], [16, 22], [12, 26], [8, 22],
-      [8, 12], // close
-    ];
-    const points3d = svgPoints.map(([x, y]) => {
-      const [lx, ly] = svgToLocal(x, y);
-      return new THREE.Vector3(lx, ly, 0);
+  // Fang outline as a tube for smooth rounded look
+  const tubeGeo = useMemo(() => {
+    const curvePath = createFangCurve();
+    const allPoints: THREE.Vector3[] = [];
+    curvePath.curves.forEach(c => {
+      const pts = c.getPoints(8);
+      allPoints.push(...pts);
     });
-    return new THREE.BufferGeometry().setFromPoints(points3d);
+    // Close the loop
+    if (allPoints.length > 0) allPoints.push(allPoints[0].clone());
+    const curve = new THREE.CatmullRomCurve3(allPoints, false);
+    return new THREE.TubeGeometry(curve, 120, 0.006, 8, false);
   }, []);
 
-  // Inner outline (slightly smaller for depth)
-  const innerGeo = useMemo(() => {
-    const svgPoints: [number, number][] = [
-      [8, 12], [16, 6], [24, 12], [24, 22],
-      [20, 26], [16, 22], [12, 26], [8, 22],
-      [8, 12],
-    ];
-    const s = 0.85;
-    const points3d = svgPoints.map(([x, y]) => {
-      const [lx, ly] = svgToLocal(x, y);
-      return new THREE.Vector3(lx * s, ly * s, 0.05);
+  // Inner outline (slightly smaller)
+  const innerTubeGeo = useMemo(() => {
+    const curvePath = createFangCurve();
+    const allPoints: THREE.Vector3[] = [];
+    curvePath.curves.forEach(c => {
+      const pts = c.getPoints(8);
+      allPoints.push(...pts);
     });
-    return new THREE.BufferGeometry().setFromPoints(points3d);
+    if (allPoints.length > 0) allPoints.push(allPoints[0].clone());
+    // Scale down
+    const scaled = allPoints.map(p => p.clone().multiplyScalar(0.82));
+    const curve = new THREE.CatmullRomCurve3(scaled, false);
+    return new THREE.TubeGeometry(curve, 120, 0.003, 8, false);
   }, []);
 
   // Floating particles
   const particleGeo = useMemo(() => {
-    const count = 120;
+    const count = 80;
     const positions = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
       const theta = Math.random() * Math.PI * 2;
-      const phi = Math.acos(2 * Math.random() - 1);
-      const r = 1.5 + Math.random() * 2;
-      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-      positions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 0.5;
+      const r = 0.8 + Math.random() * 1.2;
+      positions[i * 3] = r * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.sin(theta);
+      positions[i * 3 + 2] = (Math.random() - 0.5) * 0.3;
     }
     const geo = new THREE.BufferGeometry();
     geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     return geo;
   }, []);
 
-  // Scan line
-  const scanGeo = useMemo(() => {
-    return new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-1.2, 0, 0.02),
-      new THREE.Vector3(1.2, 0, 0.02),
-    ]);
-  }, []);
-
   useFrame(({ clock, pointer }) => {
     const t = clock.getElapsedTime();
 
     if (groupRef.current) {
-      // Gentle float + mouse follow
-      groupRef.current.rotation.y = Math.sin(t * 0.3) * 0.12 + pointer.x * 0.08;
-      groupRef.current.rotation.x = Math.cos(t * 0.25) * 0.04 + pointer.y * -0.04;
-      groupRef.current.position.y = Math.sin(t * 0.5) * 0.03;
-      // Breathing scale
-      const breathe = 1 + Math.sin(t * 1.2) * 0.015;
-      groupRef.current.scale.setScalar(breathe * 1.8);
+      groupRef.current.rotation.y = Math.sin(t * 0.3) * 0.1 + pointer.x * 0.06;
+      groupRef.current.rotation.x = Math.cos(t * 0.25) * 0.03 + pointer.y * -0.03;
+      groupRef.current.position.y = Math.sin(t * 0.5) * 0.02;
+      const breathe = 1 + Math.sin(t * 1.2) * 0.012;
+      groupRef.current.scale.setScalar(breathe * 2.2);
     }
 
     // Eye blink
     const blinkCycle = 2.5;
-    const blinkPhase = t % blinkCycle;
     const blinkDur = 0.12;
-    let eyeScale = 1;
+    const blinkPhase = t % blinkCycle;
+    let ey1 = 1;
     if (blinkPhase < blinkDur) {
-      eyeScale = blinkPhase < blinkDur / 2
+      ey1 = blinkPhase < blinkDur / 2
         ? 1 - (blinkPhase / (blinkDur / 2))
         : (blinkPhase - blinkDur / 2) / (blinkDur / 2);
     }
-    if (leftEyeRef.current) leftEyeRef.current.scale.set(1, eyeScale, 1);
-    // Right eye blinks slightly after
     const blinkPhase2 = (t + 0.03) % blinkCycle;
-    let eyeScale2 = 1;
+    let ey2 = 1;
     if (blinkPhase2 < blinkDur) {
-      eyeScale2 = blinkPhase2 < blinkDur / 2
+      ey2 = blinkPhase2 < blinkDur / 2
         ? 1 - (blinkPhase2 / (blinkDur / 2))
         : (blinkPhase2 - blinkDur / 2) / (blinkDur / 2);
     }
-    if (rightEyeRef.current) rightEyeRef.current.scale.set(1, eyeScale2, 1);
+    if (leftEyeRef.current) leftEyeRef.current.scale.set(1, ey1, 1);
+    if (rightEyeRef.current) rightEyeRef.current.scale.set(1, ey2, 1);
 
-    // Scan line
-    if (scanRef.current) {
-      const scanY = Math.sin(t * 0.6) * 1.2;
-      scanRef.current.position.y = scanY;
-      const mat = scanRef.current.material as THREE.LineBasicMaterial;
-      mat.opacity = (1 - Math.abs(scanY) / 1.2) * 0.35;
-    }
-
-    // Particles
     if (particlesRef.current) {
-      particlesRef.current.rotation.y = t * 0.03;
+      particlesRef.current.rotation.z = t * 0.02;
     }
   });
 
-  // Eye positions in local coords
-  const [leftEyeX, leftEyeY] = svgToLocal(13, 16);
-  const [rightEyeX, rightEyeY] = svgToLocal(19, 16);
+  const leftEye = svgPt(13, 16);
+  const rightEye = svgPt(19, 16);
 
   return (
     <group ref={groupRef}>
-      {/* Main outline */}
-      <line geometry={outlineGeo}>
-        <lineBasicMaterial color={CRIMSON} transparent opacity={0.6} />
-      </line>
+      {/* Main outline — tube for smooth rounded corners */}
+      <mesh geometry={tubeGeo}>
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.85} />
+      </mesh>
 
       {/* Inner outline */}
-      <line geometry={innerGeo}>
-        <lineBasicMaterial color={CRIMSON} transparent opacity={0.15} />
-      </line>
+      <mesh geometry={innerTubeGeo} position-z={0.02}>
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.2} />
+      </mesh>
 
       {/* Left eye */}
-      <mesh ref={leftEyeRef} position={[leftEyeX, leftEyeY, 0.02]}>
-        <circleGeometry args={[0.018, 24]} />
-        <meshBasicMaterial color={CRIMSON} transparent opacity={0.8} />
+      <mesh ref={leftEyeRef} position={[leftEye.x, leftEye.y, 0.01]}>
+        <circleGeometry args={[0.012, 24]} />
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.9} />
       </mesh>
 
       {/* Right eye */}
-      <mesh ref={rightEyeRef} position={[rightEyeX, rightEyeY, 0.02]}>
-        <circleGeometry args={[0.018, 24]} />
-        <meshBasicMaterial color={CRIMSON} transparent opacity={0.8} />
+      <mesh ref={rightEyeRef} position={[rightEye.x, rightEye.y, 0.01]}>
+        <circleGeometry args={[0.012, 24]} />
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.9} />
       </mesh>
-
-      {/* Scan line */}
-      <line ref={scanRef} geometry={scanGeo}>
-        <lineBasicMaterial color={CRIMSON} transparent opacity={0.3} />
-      </line>
 
       {/* Particles */}
       <points ref={particlesRef} geometry={particleGeo}>
         <pointsMaterial
           color={CRIMSON}
-          size={0.015}
+          size={0.008}
           transparent
-          opacity={0.2}
+          opacity={0.15}
           sizeAttenuation
           depthWrite={false}
         />
@@ -182,12 +203,9 @@ const Shield = () => {
 
 export default function PwnkitHero3D() {
   return (
-    <div
-      className="mx-auto mb-6"
-      style={{ width: '180px', height: '180px' }}
-    >
+    <div className="mx-auto mb-6" style={{ width: '180px', height: '180px' }}>
       <Canvas
-        camera={{ position: [0, 0, 3], fov: 50 }}
+        camera={{ position: [0, 0, 2.5], fov: 50 }}
         dpr={[1, 1.5]}
         gl={{ antialias: true, alpha: true }}
         style={{ background: 'transparent' }}
