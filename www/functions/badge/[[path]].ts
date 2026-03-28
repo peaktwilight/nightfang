@@ -243,10 +243,12 @@ function makeUnknownBadge(): BadgeData {
 }
 
 function renderBadge(data: BadgeData): Response {
-  // Measure text widths (approximate: 6.5px per char at 11px font)
-  const labelWidth = data.label.length * 6.5 + 12;
+  const iconWidth = 14; // space for the fang icon + gap
+  const labelTextWidth = data.label.length * 6.5 + 10;
+  const labelWidth = iconWidth + labelTextWidth;
   const messageWidth = data.message.length * 6.5 + 12;
   const totalWidth = labelWidth + messageWidth;
+  const labelTextCenter = iconWidth + labelTextWidth / 2;
 
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${totalWidth}" height="20" role="img" aria-label="${data.label}: ${data.message}">
   <title>${data.label}: ${data.message}</title>
@@ -263,13 +265,13 @@ function renderBadge(data: BadgeData): Response {
     <rect width="${totalWidth}" height="20" fill="url(#s)"/>
   </g>
   <g fill="#fff" text-anchor="middle" font-family="Verdana,Geneva,DejaVu Sans,sans-serif" text-rendering="geometricPrecision" font-size="11">
-    <text aria-hidden="true" x="${labelWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(data.label)}</text>
-    <text x="${labelWidth / 2}" y="14">${escapeXml(data.label)}</text>
+    <text aria-hidden="true" x="${labelTextCenter}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(data.label)}</text>
+    <text x="${labelTextCenter}" y="14">${escapeXml(data.label)}</text>
     <text aria-hidden="true" x="${labelWidth + messageWidth / 2}" y="15" fill="#010101" fill-opacity=".3">${escapeXml(data.message)}</text>
     <text x="${labelWidth + messageWidth / 2}" y="14">${escapeXml(data.message)}</text>
   </g>
   <!-- nightfang fang icon -->
-  <g transform="translate(2, 2) scale(0.65)">
+  <g transform="translate(3, 3) scale(0.58)">
     <path d="M8 4 L12 1 L16 4 L16 10 L14 13 L12 10 L10 13 L8 10Z" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linejoin="round"/>
     <circle cx="10.5" cy="7" r="0.8" fill="#DC2626"/>
     <circle cx="13.5" cy="7" r="0.8" fill="#DC2626"/>
