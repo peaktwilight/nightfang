@@ -233,7 +233,7 @@ export default function AgentPipeline() {
                   <span
                     className="text-[10px] uppercase tracking-widest block"
                     style={{
-                      fontFamily: "'Space Mono', monospace",
+                      fontFamily: "'Outfit', sans-serif",
                       color: isActive || isDone ? phase.color : '#6b7280',
                     }}
                   >
@@ -281,7 +281,7 @@ export default function AgentPipeline() {
                         <span
                           className="text-xs"
                           style={{
-                            fontFamily: "'Space Mono', monospace",
+                            fontFamily: "'Outfit', sans-serif",
                             color:
                               taskStatus === 'active'
                                 ? '#ffffff'
