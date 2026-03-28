@@ -56,7 +56,7 @@ const S = {
   ctaEnd: 22,
 };
 
-const COMMAND = "npx pwnkit scan --target https://api.example.com";
+const COMMAND = "npx pwnkit-cli audit express";
 
 // ── Main Component ──
 export const DemoVideo = () => {
@@ -975,8 +975,8 @@ const CTAScene = () => {
         }}
       >
         <span style={{ color: C.green }}>{">"}</span>{" "}
-        npx pwnkit scan --target{" "}
-        <span style={{ color: C.crimson }}>{"<your-url>"}</span>
+        npx pwnkit-cli audit{" "}
+        <span style={{ color: C.crimson }}>{"<package>"}</span>
       </div>
 
       {/* URL */}
