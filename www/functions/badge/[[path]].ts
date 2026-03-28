@@ -243,7 +243,7 @@ function makeUnknownBadge(): BadgeData {
 }
 
 function renderBadge(data: BadgeData): Response {
-  const iconWidth = 14; // space for the fang icon + gap
+  const iconWidth = 18; // space for the fang icon + gap
   const labelTextWidth = data.label.length * 6.5 + 10;
   const labelWidth = iconWidth + labelTextWidth;
   const messageWidth = data.message.length * 6.5 + 12;
@@ -271,10 +271,10 @@ function renderBadge(data: BadgeData): Response {
     <text x="${labelWidth + messageWidth / 2}" y="14">${escapeXml(data.message)}</text>
   </g>
   <!-- nightfang fang icon -->
-  <g transform="translate(3, 3) scale(0.58)">
-    <path d="M8 4 L12 1 L16 4 L16 10 L14 13 L12 10 L10 13 L8 10Z" fill="none" stroke="#DC2626" stroke-width="1.5" stroke-linejoin="round"/>
-    <circle cx="10.5" cy="7" r="0.8" fill="#DC2626"/>
-    <circle cx="13.5" cy="7" r="0.8" fill="#DC2626"/>
+  <g transform="translate(1, 1) scale(0.9)">
+    <path d="M4 7 L10 2 L16 7 L16 14 L13 18 L10 14 L7 18 L4 14Z" fill="none" stroke="#DC2626" stroke-width="1.4" stroke-linejoin="round"/>
+    <circle cx="8" cy="10.5" r="1" fill="#DC2626"/>
+    <circle cx="12" cy="10.5" r="1" fill="#DC2626"/>
   </g>
 </svg>`;
 
