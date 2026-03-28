@@ -334,37 +334,8 @@ import DataGridBackground from '../components/DataGridBackground';
           <p class="text-smoke text-lg max-w-xl mx-auto">Each agent is specialized for a phase of the security audit. They work in sequence, building on each other's output.</p>
         </div>
 
-        <!-- Pipeline visual -->
-        <div class="flex items-center justify-center gap-2 sm:gap-4 mb-12 text-xs sm:text-sm overflow-x-auto px-4" style="font-family: 'Space Mono', monospace">
-          <div class="flex items-center gap-2 sm:gap-4">
-            <div class="bg-emerald-400/10 border border-emerald-400/20 text-emerald-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
-              <div class="font-bold">DISCOVER</div>
-              <div class="text-emerald-400/60 text-[10px] sm:text-xs mt-0.5">Recon</div>
-            </div>
-            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
-            <div class="bg-amber-400/10 border border-amber-400/20 text-amber-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
-              <div class="font-bold">ATTACK</div>
-              <div class="text-amber-400/60 text-[10px] sm:text-xs mt-0.5">Offense</div>
-            </div>
-            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
-            <div class="bg-blue-400/10 border border-blue-400/20 text-blue-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
-              <div class="font-bold">VERIFY</div>
-              <div class="text-blue-400/60 text-[10px] sm:text-xs mt-0.5">Validate</div>
-            </div>
-            <span class="text-white/20 text-lg shrink-0">&#8594;</span>
-            <div class="bg-purple-400/10 border border-purple-400/20 text-purple-400 rounded-lg px-3 sm:px-5 py-2 sm:py-3 text-center whitespace-nowrap">
-              <div class="font-bold">REPORT</div>
-              <div class="text-purple-400/60 text-[10px] sm:text-xs mt-0.5">Output</div>
-            </div>
-          </div>
-        </div>
-
         <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-emerald-500/30 transition-colors h-full">
-            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-emerald-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">01 &middot; Discover</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Map the attack surface</h3>
             <p class="text-smoke text-sm leading-relaxed">Maps endpoints, extracts system prompts, detects models, enumerates tools.</p>
@@ -376,10 +347,6 @@ import DataGridBackground from '../components/DataGridBackground';
           </div>
 
           <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-amber-500/30 transition-colors h-full">
-            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-amber-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">02 &middot; Attack</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Agentic multi-turn attacks</h3>
             <p class="text-smoke text-sm leading-relaxed">AI agent crafts and adapts payloads across injection, jailbreaks, exfiltration, tool poisoning.</p>
@@ -391,10 +358,6 @@ import DataGridBackground from '../components/DataGridBackground';
           </div>
 
           <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-blue-500/30 transition-colors h-full">
-            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-blue-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">03 &middot; Verify</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">Re-exploit. Kill false positives.</h3>
             <p class="text-smoke text-sm leading-relaxed">Every finding gets independently reproduced. If it can't be reproduced, it's dropped.</p>
@@ -406,10 +369,6 @@ import DataGridBackground from '../components/DataGridBackground';
           </div>
 
           <div class="relative bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-purple-500/30 transition-colors h-full">
-            <span class="absolute -left-px -top-px block w-2 h-2 border-l-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -right-px -top-px block w-2 h-2 border-r-2 border-t-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -left-px block w-2 h-2 border-b-2 border-l-2 border-[#DC2626]"></span>
-            <span class="absolute -bottom-px -right-px block w-2 h-2 border-b-2 border-r-2 border-[#DC2626]"></span>
             <div class="text-xs text-purple-400 mb-3 uppercase tracking-wider" style="font-family: 'Space Mono', monospace">04 &middot; Report</div>
             <h3 class="font-semibold text-lg mb-2" style="font-family: 'Outfit', sans-serif">SARIF, JSON, Markdown</h3>
             <p class="text-smoke text-sm leading-relaxed">Plugs into GitHub Security tab, CI pipelines, and human review. Severity, remediation, full evidence.</p>
@@ -421,9 +380,8 @@ import DataGridBackground from '../components/DataGridBackground';
           </div>
         </div>
 
-        <!-- Animated agent pipeline visualization -->
-        <div class="mt-16">
-          <h3 class="text-center text-sm uppercase tracking-widest text-ash mb-2" style="font-family: 'Space Mono', monospace">Live agent execution</h3>
+        <!-- Animated agent pipeline -->
+        <div class="mt-12">
           <AgentPipeline client:visible />
         </div>
       </div>
