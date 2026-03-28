@@ -102,16 +102,16 @@ The **verification step is the differentiator.** No more triaging 200 "possible 
 
 | # | Category | Status |
 |---|----------|--------|
-| LLM01 | Prompt Injection | :white_check_mark: Direct + indirect + encoding bypass |
-| LLM02 | Insecure Output Handling | :white_check_mark: XSS, code exec via output |
-| LLM03 | Training Data Poisoning | :construction: Detection only |
-| LLM04 | Model Denial of Service | :white_check_mark: Resource exhaustion probes |
-| LLM05 | Supply Chain Vulnerabilities | :white_check_mark: MCP tool poisoning, npm audit, dependency confusion |
-| LLM06 | Sensitive Information Disclosure | :white_check_mark: PII/secret extraction |
-| LLM07 | Insecure Plugin Design | :white_check_mark: Tool schema abuse, SSRF via tools |
-| LLM08 | Excessive Agency | :white_check_mark: Privilege escalation, unauthorized actions |
-| LLM09 | Overreliance | :construction: Hallucination-based trust attacks |
-| LLM10 | Model Theft | :white_check_mark: Model extraction, prompt theft |
+| LLM01 | Prompt Injection | Yes — Direct + indirect + encoding bypass |
+| LLM02 | Insecure Output Handling | Yes — XSS, code exec via output |
+| LLM03 | Training Data Poisoning | Partial — Detection only |
+| LLM04 | Model Denial of Service | Yes — Resource exhaustion probes |
+| LLM05 | Supply Chain Vulnerabilities | Yes — MCP tool poisoning, npm audit, dependency confusion |
+| LLM06 | Sensitive Information Disclosure | Yes — PII/secret extraction |
+| LLM07 | Insecure Plugin Design | Yes — Tool schema abuse, SSRF via tools |
+| LLM08 | Excessive Agency | Yes — Privilege escalation, unauthorized actions |
+| LLM09 | Overreliance | Partial — Hallucination-based trust attacks |
+| LLM10 | Model Theft | Yes — Model extraction, prompt theft |
 
 ## Example Output
 
@@ -184,16 +184,16 @@ Combined with scan modes:
 
 | Feature | Nightfang | promptfoo | garak | semgrep | nuclei |
 |---------|-----------|-----------|-------|---------|--------|
-| **Agentic multi-turn pipeline** | :white_check_mark: Autonomous agents with tool use | :x: Single runner | :x: Single runner | :x: Rule-based | :x: Template runner |
-| **Verification (no false positives)** | :white_check_mark: Re-exploits to confirm | :x: | :x: | :x: | :x: |
-| **LLM endpoint scanning** | :white_check_mark: Prompt injection, jailbreaks, exfil | :white_check_mark: Red-teaming | :white_check_mark: Probes | :x: | :x: |
-| **MCP server security** | :white_check_mark: Tool poisoning, schema abuse | :x: | :x: | :x: | :x: |
-| **npm package audit** | :white_check_mark: Semgrep + AI review | :x: | :x: | :white_check_mark: Rules only | :x: |
-| **Source code review** | :white_check_mark: AI-powered deep analysis | :x: | :x: | :white_check_mark: Rules only | :x: |
-| **OWASP LLM Top 10** | :white_check_mark: 8/10 covered | Partial | Partial | N/A | N/A |
-| **SARIF + GitHub Security tab** | :white_check_mark: | :white_check_mark: | :x: | :white_check_mark: | :white_check_mark: |
-| **One command, zero config** | :white_check_mark: `npx nightfang scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
-| **Open source** | :white_check_mark: MIT | :white_check_mark: (acquired by OpenAI) | :white_check_mark: | :white_check_mark: | :white_check_mark: |
+| **Agentic multi-turn pipeline** | Yes — Autonomous agents with tool use | No Single runner | No Single runner | No Rule-based | No Template runner |
+| **Verification (no false positives)** | Yes — Re-exploits to confirm | No | No | No | No |
+| **LLM endpoint scanning** | Yes — Prompt injection, jailbreaks, exfil | Yes — Red-teaming | Yes — Probes | No | No |
+| **MCP server security** | Yes — Tool poisoning, schema abuse | No | No | No | No |
+| **npm package audit** | Yes — Semgrep + AI review | No | No | Yes — Rules only | No |
+| **Source code review** | Yes — AI-powered deep analysis | No | No | Yes — Rules only | No |
+| **OWASP LLM Top 10** | Yes — 8/10 covered | Partial | Partial | N/A | N/A |
+| **SARIF + GitHub Security tab** | Yes — | Yes — | No | Yes — | Yes — |
+| **One command, zero config** | Yes — `npx nightfang scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
+| **Open source** | Yes — MIT | Yes — (acquired by OpenAI) | Yes — | Yes — | Yes — |
 | **Cost per scan** | $0.05–$1.00 | Varies | Free (local) | Free (OSS) / Paid (Pro) | Free |
 
 Nightfang isn't replacing semgrep or nuclei — it covers the AI-specific attack surface they can't see. Use them together.
