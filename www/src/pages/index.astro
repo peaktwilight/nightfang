@@ -325,33 +325,6 @@ import DataGridBackground from '../components/DataGridBackground';
       </div>
     </section>
 
-    <!-- Pipeline — kept as anchor for nav -->
-    <section id="pipeline" data-section="pipeline" class="hidden"></section>
-
-    <!-- Attack Coverage — compact list under pipeline -->
-    <section class="py-24 border-t border-white/5">
-      <div class="max-w-4xl mx-auto px-6">
-        <h3 class="text-lg font-semibold mb-6" style="font-family: 'Outfit', sans-serif">What the agents hunt for</h3>
-        <div class="space-y-2">
-          {[
-            { name: "Prompt Injection", detail: "Direct, indirect, multi-turn, encoding bypass" },
-            { name: "System Prompt Extraction", detail: "Completion traps, translation tricks, role confusion" },
-            { name: "Jailbreak Resistance", detail: "Roleplay, encoding, multilingual, hypothetical framing" },
-            { name: "Data Exfiltration", detail: "PII leakage, credential extraction, context window abuse" },
-            { name: "MCP / Tool Security", detail: "Tool poisoning, unauthorized calls, SSRF via tools" },
-            { name: "npm Package Audit", detail: "Prototype pollution, ReDoS, path traversal, injection" },
-            { name: "Source Code Review", detail: "Data flow analysis, trust boundary violations, unsafe patterns" },
-          ].map((item) => (
-            <div class="flex items-center gap-3">
-              <div class="w-1.5 h-1.5 rounded-full bg-crimson shrink-0"></div>
-              <span class="text-sm font-medium text-white">{item.name}</span>
-              <span class="text-sm text-ash">{item.detail}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-
     <!-- Comparison -->
     <section id="comparison" data-section="comparison" class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">

@@ -7,11 +7,17 @@ import {
   Easing,
   spring,
 } from "remotion";
-import { loadFont } from "@remotion/google-fonts/SpaceMono";
+import { loadFont as loadSpaceMono } from "@remotion/google-fonts/SpaceMono";
+import { loadFont as loadOutfit } from "@remotion/google-fonts/Outfit";
 import { pwnkitIcon } from "./NightfangIcon";
 
-const { fontFamily: spaceMono } = loadFont("normal", {
+const { fontFamily: spaceMono } = loadSpaceMono("normal", {
   weights: ["400", "700"],
+  subsets: ["latin"],
+});
+
+const { fontFamily: outfit } = loadOutfit("normal", {
+  weights: ["400", "500", "600", "700"],
   subsets: ["latin"],
 });
 
@@ -62,7 +68,7 @@ export const DemoVideo = () => {
     <AbsoluteFill
       style={{
         backgroundColor: C.bg,
-        fontFamily: spaceMono,
+        fontFamily: outfit,
         color: C.white,
         overflow: "hidden",
       }}

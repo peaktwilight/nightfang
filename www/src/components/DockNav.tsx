@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 const SECTIONS = [
   { id: "hero", label: "Home" },
   { id: "commands", label: "Features" },
-  { id: "pipeline", label: "Pipeline" },
   { id: "comparison", label: "Compare" },
   { id: "ci", label: "CI" },
   { id: "about", label: "About" },
