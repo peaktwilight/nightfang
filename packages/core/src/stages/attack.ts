@@ -7,7 +7,6 @@ import type {
 } from "@nightfang/shared";
 import { DEPTH_CONFIG } from "@nightfang/shared";
 import type { Runtime, NativeRuntime, RuntimeContext, RuntimeType } from "../runtime/types.js";
-import { sendPrompt, extractResponseText } from "../http.js";
 import { buildDeepScanPrompt, buildMcpAuditPrompt } from "../prompts.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
@@ -97,10 +96,14 @@ export async function runAttacks(
   const depthCfg = DEPTH_CONFIG[ctx.config.depth];
   const templatesToRun = templates.slice(0, depthCfg.maxTemplates);
 
-  // Check if runtime supports native tool_use (agentic mode)
-  const supportsNative = typeof (runtime as unknown as NativeRuntime).executeNative === "function";
+  // Check if runtime supports native tool_use AND has a working API key
+  const nativeRuntime = runtime as unknown as NativeRuntime;
+  const supportsNative = typeof nativeRuntime.executeNative === "function";
+  const hasApiKey = supportsNative && typeof (nativeRuntime as any).isAvailable === "function"
+    ? await (nativeRuntime as any).isAvailable()
+    : false;
 
-  if (supportsNative) {
+  if (supportsNative && hasApiKey) {
     // ── Agentic path: AI agent with tools decides what to attack and how ──
     const maxTurns = ctx.config.depth === "deep" ? 40 : ctx.config.depth === "default" ? 25 : 12;
 
@@ -156,21 +159,20 @@ export async function runAttacks(
     };
   }
 
-  // ── Legacy path: template-driven payload delivery for CLI runtimes ──
-  const results: AttackResult[] = [];
-  let payloadsRun = 0;
+  // ── CLI runtime path: template-driven payload delivery via subprocess ──
+  // For CLI runtimes (claude/codex/gemini), the subprocess does its own analysis
+  if (runtime.type !== "api") {
+    const results: AttackResult[] = [];
+    let payloadsRun = 0;
 
-  for (const template of templatesToRun) {
-    const payloads = template.payloads.slice(0, depthCfg.maxPayloadsPerTemplate);
+    for (const template of templatesToRun) {
+      const payloads = template.payloads.slice(0, depthCfg.maxPayloadsPerTemplate);
 
-    for (const payload of payloads) {
-      payloadsRun++;
-      try {
-        const { responseText, latencyMs } = await executeProcessAttack(runtime, ctx, template, payload.prompt);
-
-        // For CLI runtimes, the agent subprocess does its own analysis
-        // so we treat any substantive response as needing verification
-        const outcome: AttackOutcome = responseText.length > 50 ? "inconclusive" : "safe";
+      for (const payload of payloads) {
+        payloadsRun++;
+        try {
+          const { responseText, latencyMs } = await executeProcessAttack(runtime, ctx, template, payload.prompt);
+          const outcome: AttackOutcome = responseText.length > 50 ? "inconclusive" : "safe";
 
         const result: AttackResult = {
           templateId: template.id,
@@ -201,13 +203,26 @@ export async function runAttacks(
     }
   }
 
+    return {
+      stage: "attack",
+      success: true,
+      data: {
+        results,
+        templatesRun: templatesToRun.length,
+        payloadsRun,
+      },
+      durationMs: Date.now() - start,
+    };
+  }
+
+  // ── No API key, no CLI runtime: return empty (scan requires AI) ──
   return {
     stage: "attack",
     success: true,
     data: {
-      results,
-      templatesRun: templatesToRun.length,
-      payloadsRun,
+      results: [],
+      templatesRun: 0,
+      payloadsRun: 0,
     },
     durationMs: Date.now() - start,
   };
@@ -243,3 +258,4 @@ async function executeProcessAttack(
     latencyMs: result.durationMs,
   };
 }
+
