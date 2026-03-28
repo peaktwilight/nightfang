@@ -77,13 +77,14 @@ export class ProcessRuntime implements Runtime {
               }
 
               // Codex JSONL format
+              if (event.type === "item.started" && event.item?.type === "command_execution") {
+                showToolCall("shell", { command: event.item.command });
+              }
               if (event.type === "item.completed" && event.item) {
                 if (event.item.type === "agent_message" && event.item.text) {
                   resultText += event.item.text;
-                } else if (event.item.type === "tool_call") {
-                  showToolCall(event.item.name || event.item.type, event.item.arguments);
-                } else if (event.item.type === "tool_output") {
-                  // tool completed, no action needed
+                } else if (event.item.type === "command_execution" && event.item.command) {
+                  // Already shown on item.started
                 }
               }
             } catch {
