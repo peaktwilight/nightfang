@@ -3,27 +3,122 @@ import '../styles/global.css';
 
 interface Props {
   title: string;
+  description?: string;
+  canonical?: string;
 }
-const { title } = Astro.props;
+const { title, description = "Open-source agentic framework for autonomous security research. Scan LLM endpoints, audit npm packages, review source code. 4 AI agents discover, attack, verify, and report vulnerabilities with exploit-backed proof.", canonical = "https://pwnkit.com" } = Astro.props;
 ---
 <!doctype html>
 <html lang="en" class="scroll-smooth">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AI-powered security research automation. Scan LLM endpoints, audit npm packages, review source code. Autonomous agents discover, attack, verify, and report." />
-    <meta name="keywords" content="security scanner, AI pentesting, LLM security, MCP audit, npm vulnerability, code review, pwnkit" />
+
+    <!-- Primary SEO -->
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <meta name="keywords" content="pwnkit, security scanner, AI pentesting, LLM security, MCP server audit, npm vulnerability scanner, code review, agentic security, autonomous pentesting, OWASP LLM Top 10, prompt injection, SARIF, GitHub Action security, open source security tool, AI red teaming, vulnerability scanner, security research, CVE, exploit verification" />
+    <meta name="author" content="Peak Twilight" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Open Graph -->
     <meta property="og:title" content={title} />
-    <meta property="og:description" content="AI-powered security research automation. Autonomous agents pentest your AI before attackers do." />
+    <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://pwnkit.com" />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content="pwnkit" />
+    <meta property="og:image" content="https://pwnkit.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="pwnkit — AI writes the code, pwnkit hacks it. Open-source agentic security framework." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content="https://pwnkit.com/og-image.png" />
+    <meta name="twitter:creator" content="@peaborr" />
+
+    <!-- Structured Data: SoftwareApplication -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "pwnkit",
+      "alternateName": "pwnkit-cli",
+      "applicationCategory": "SecurityApplication",
+      "operatingSystem": "Cross-platform",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "url": "https://pwnkit.com",
+      "downloadUrl": "https://www.npmjs.com/package/pwnkit-cli",
+      "softwareVersion": "0.1.4",
+      "author": {
+        "@type": "Person",
+        "name": "Doruk Tan Ozturk",
+        "alternateName": "Peak Twilight",
+        "url": "https://doruk.ch"
+      },
+      "description": description,
+      "license": "https://opensource.org/licenses/MIT",
+      "codeRepository": "https://github.com/peaktwilight/pwnkit",
+      "programmingLanguage": ["TypeScript", "Node.js"],
+      "keywords": ["security scanner", "AI pentesting", "LLM security", "vulnerability scanner", "MCP audit", "npm audit", "code review", "agentic security"]
+    })} />
+
+    <!-- Structured Data: FAQPage for rich snippets -->
+    <script type="application/ld+json" set:html={JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "What is pwnkit?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "pwnkit is an open-source agentic framework for autonomous security research. It uses 4 AI agents (Discover, Attack, Verify, Report) to find and prove vulnerabilities in LLM endpoints, MCP servers, npm packages, source code, and web applications."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does pwnkit eliminate false positives?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "pwnkit's Verify agent independently re-exploits every finding. If it can't reproduce the vulnerability, the finding is killed as a false positive. Only confirmed vulnerabilities with working proof-of-concept code make it into the final report."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How much does pwnkit cost?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "pwnkit is free and open source (MIT license). The only cost is the AI API usage — quick scans cost ~$0.05, default scans ~$0.15, and deep scans ~$1.00. Free tier models are also supported."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "What can pwnkit scan?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "pwnkit scans 5 attack surfaces: LLM endpoints (ChatGPT, Claude, custom chatbots), MCP servers (tool schemas, auth, poisoning), npm packages (supply chain, malicious code), source code (local repos or GitHub URLs), and web applications (SQLi, XSS, SSRF, auth bypass)."
+          }
+        }
+      ]
+    })} />
+
+    <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
-    <title>{title}</title>
   </head>
   <body class="bg-night text-white min-h-screen antialiased" style="font-family: 'Outfit', sans-serif;">
     <slot />
