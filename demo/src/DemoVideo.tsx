@@ -8,7 +8,7 @@ import {
   spring,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/SpaceMono";
-import { pwnkitIcon } from "./pwnkitIcon";
+import { pwnkitIcon } from "./NightfangIcon";
 
 const { fontFamily: spaceMono } = loadFont("normal", {
   weights: ["400", "700"],
@@ -946,12 +946,10 @@ const CTAScene = () => {
         style={{
           opacity: logoOpacity,
           transform: `scale(${logoScale})`,
-          marginBottom: 8,
-          width: 60,
-          height: 60,
+          marginBottom: 16,
+          width: 120,
+          height: 120,
           position: "relative",
-          overflow: "hidden",
-          borderRadius: 8,
         }}
       >
         <pwnkitIcon />
