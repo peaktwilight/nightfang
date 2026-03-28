@@ -4,6 +4,19 @@ import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult } from "./ty
 // Dim the subprocess output so it's visually distinct from pwnkit's own output
 const dim = (text: string) => `\x1b[2m${text}\x1b[0m`;
 
+function showToolCall(name: string | undefined, input: unknown): void {
+  if (!process.stderr.isTTY) return;
+  const toolName = name || "tool";
+  const inp = input as Record<string, unknown> | undefined;
+  let detail = "";
+  if (inp?.file_path) detail = String(inp.file_path).split("/").slice(-2).join("/");
+  else if (inp?.command) detail = String(inp.command).slice(0, 60);
+  else if (inp?.pattern) detail = String(inp.pattern).slice(0, 40);
+  else if (inp?.path) detail = String(inp.path).slice(0, 60);
+  else if (inp?.content) detail = "(writing file)";
+  process.stderr.write(dim(`    ${toolName}${detail ? ": " + detail : ""}\n`));
+}
+
 const RUNTIME_COMMANDS: Record<string, string> = {
   claude: "claude",
   codex: "codex",
@@ -32,7 +45,7 @@ export class ProcessRuntime implements Runtime {
       let stderr = "";
       let resultText = "";
       let timedOut = false;
-      const isStreamJson = args.includes("stream-json");
+      const isJsonStream = args.includes("stream-json") || args.includes("--json");
 
       const proc = spawn(this.command, args, {
         cwd: this.config.cwd ?? process.cwd(),
@@ -44,33 +57,34 @@ export class ProcessRuntime implements Runtime {
         const text = chunk.toString();
         stdout += text;
 
-        if (isStreamJson) {
-          // Parse stream-json lines for live progress display
+        if (isJsonStream) {
           for (const line of text.split("\n")) {
             if (!line.trim()) continue;
             try {
               const event = JSON.parse(line);
-              // Show assistant text as it streams
+
+              // Claude stream-json format
               if (event.type === "assistant" && event.message?.content) {
                 for (const block of event.message.content) {
                   if (block.type === "text") {
                     resultText += block.text;
                   } else if (block.type === "tool_use") {
-                    // Show tool calls live with clean formatting
-                    if (process.stderr.isTTY) {
-                      const name = block.name || "tool";
-                      const inp = block.input as Record<string, unknown> | undefined;
-                      let detail = "";
-                      if (inp?.file_path) detail = String(inp.file_path).split("/").slice(-2).join("/");
-                      else if (inp?.command) detail = String(inp.command).slice(0, 60);
-                      else if (inp?.pattern) detail = String(inp.pattern).slice(0, 40);
-                      else if (inp?.content) detail = "(writing file)";
-                      process.stderr.write(dim(`    ${name}${detail ? ": " + detail : ""}\n`));
-                    }
+                    showToolCall(block.name, block.input);
                   }
                 }
               } else if (event.type === "result") {
                 resultText = event.result || resultText;
+              }
+
+              // Codex JSONL format
+              if (event.type === "item.completed" && event.item) {
+                if (event.item.type === "agent_message" && event.item.text) {
+                  resultText += event.item.text;
+                } else if (event.item.type === "tool_call") {
+                  showToolCall(event.item.name || event.item.type, event.item.arguments);
+                } else if (event.item.type === "tool_output") {
+                  // tool completed, no action needed
+                }
               }
             } catch {
               // Not valid JSON line, skip
@@ -93,7 +107,7 @@ export class ProcessRuntime implements Runtime {
       proc.on("close", (code) => {
         clearTimeout(timer);
         // For stream-json, use the parsed result text; otherwise raw stdout
-        const output = isStreamJson ? (resultText || stdout).trim() : stdout.trim();
+        const output = isJsonStream ? (resultText || stdout).trim() : stdout.trim();
         resolve({
           output,
           exitCode: code,
@@ -144,6 +158,7 @@ export class ProcessRuntime implements Runtime {
           "exec",
           "--full-auto",
           "--skip-git-repo-check",
+          "--json",
           prompt,
         ];
       case "gemini":
