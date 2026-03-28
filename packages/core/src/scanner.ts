@@ -14,8 +14,8 @@ let _db: any = null;
 async function getDB(dbPath?: string) {
   if (!_db) {
     try {
-      const { PwnkitDB } = await import("@pwnkit/db");
-      _db = new PwnkitDB(dbPath);
+      const { pwnkitDB } = await import("@pwnkit/db");
+      _db = new pwnkitDB(dbPath);
     } catch {
       // DB unavailable (native module issue) — continue without persistence
       _db = null;

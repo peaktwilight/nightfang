@@ -198,7 +198,7 @@ describe("Safe server responses", () => {
   });
 });
 
-describe("Pwnkit scan integration", () => {
+describe("pwnkit scan integration", () => {
   it("completes a scan against the vulnerable target without errors", async () => {
     const report = await runScan({
       target: vulnTarget,

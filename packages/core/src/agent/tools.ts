@@ -5,7 +5,7 @@ import { isAbsolute, resolve } from "node:path";
 import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext } from "./types.js";
 import { sendPrompt, extractResponseText } from "../http.js";
-import type { PwnkitDB } from "@pwnkit/db";
+import type { pwnkitDB } from "@pwnkit/db";
 
 // ── Tool Registry ──
 
@@ -288,10 +288,10 @@ function validateScopedCommand(tokens: string[]): void {
 // ── Tool Executor ──
 
 export class ToolExecutor {
-  private db: PwnkitDB | null;
+  private db: pwnkitDB | null;
   private ctx: ToolContext;
 
-  constructor(ctx: ToolContext, db: PwnkitDB | null = null) {
+  constructor(ctx: ToolContext, db: pwnkitDB | null = null) {
     this.ctx = ctx;
     this.db = db;
   }

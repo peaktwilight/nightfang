@@ -10,7 +10,7 @@ import { SCHEMA_SQL } from "./schema.js";
 const DEFAULT_DB_DIR = join(homedir(), ".pwnkit");
 const DEFAULT_DB_PATH = join(DEFAULT_DB_DIR, "pwnkit.db");
 
-export class PwnkitDB {
+export class pwnkitDB {
   private db: Database.Database;
 
   constructor(dbPath?: string) {

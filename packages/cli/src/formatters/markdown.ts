@@ -3,7 +3,7 @@ import type { ScanReport, Finding } from "@pwnkit/shared";
 export function formatMarkdown(report: ScanReport): string {
   const lines: string[] = [];
 
-  lines.push("# Pwnkit Scan Report");
+  lines.push("# pwnkit Scan Report");
   lines.push("");
   lines.push(`| Field | Value |`);
   lines.push(`|-------|-------|`);

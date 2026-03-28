@@ -1,4 +1,4 @@
-export { PwnkitDB } from "./database.js";
+export { pwnkitDB } from "./database.js";
 export {
   scans,
   targets,

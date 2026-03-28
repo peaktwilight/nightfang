@@ -3,7 +3,7 @@ import Layout from '../../layouts/Layout.astro';
 import DockNav from '../../components/DockNav.tsx';
 ---
 
-<Layout title="How AI Agents Found 7 CVEs in Popular npm Packages - Pwnkit">
+<Layout title="How AI Agents Found 7 CVEs in Popular npm Packages - pwnkit">
 
   <DockNav client:load />
 
@@ -37,7 +37,7 @@ import DockNav from '../../components/DockNav.tsx';
         </p>
 
         <p>
-          This post is about how that workflow operates, what it found, and why it led me to build Pwnkit.
+          This post is about how that workflow operates, what it found, and why it led me to build pwnkit.
         </p>
 
         <h2 class="text-xl font-semibold text-white mt-10 mb-4">The workflow</h2>
@@ -158,7 +158,7 @@ import DockNav from '../../components/DockNav.tsx';
           Not every finding became a CVE. Some were lower severity, some were in packages with smaller install bases, some were reported but not yet disclosed. But every single one was verified with a working exploit before it was reported. No theoretical risks. No "this might be a problem." Working code or it did not count.
         </p>
 
-        <h2 class="text-xl font-semibold text-white mt-10 mb-4">From manual workflow to Pwnkit</h2>
+        <h2 class="text-xl font-semibold text-white mt-10 mb-4">From manual workflow to pwnkit</h2>
 
         <p>
           The security audit framework worked. But it was manual. I had to set up each audit, configure the agent, manage the output, track findings, write reports. The workflow was repeatable, but it required me at the controls.
@@ -169,11 +169,11 @@ import DockNav from '../../components/DockNav.tsx';
         </p>
 
         <p>
-          That is what Pwnkit is. The same agentic pipeline &mdash; discover, attack, verify, report &mdash; packaged as an open-source CLI tool. Point it at an npm package, an LLM endpoint, an MCP server, or a source code repository. It runs autonomous AI agents in sequence, each specialized for a phase of the security assessment. The verification agent independently re-exploits every finding. If it cannot reproduce, the finding is killed.
+          That is what pwnkit is. The same agentic pipeline &mdash; discover, attack, verify, report &mdash; packaged as an open-source CLI tool. Point it at an npm package, an LLM endpoint, an MCP server, or a source code repository. It runs autonomous AI agents in sequence, each specialized for a phase of the security assessment. The verification agent independently re-exploits every finding. If it cannot reproduce, the finding is killed.
         </p>
 
         <p>
-          The 7 CVEs were the proof that this approach works. Pwnkit is the tool that makes it accessible.
+          The 7 CVEs were the proof that this approach works. pwnkit is the tool that makes it accessible.
         </p>
 
         <div class="bg-night-lighter border border-white/10 rounded-lg p-4 font-mono text-sm my-6">

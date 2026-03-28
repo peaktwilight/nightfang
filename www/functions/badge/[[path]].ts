@@ -1,7 +1,7 @@
 /**
- * Pwnkit Badge Service
+ * pwnkit Badge Service
  *
- * Generates SVG badges for repos scanned by Pwnkit.
+ * Generates SVG badges for repos scanned by pwnkit.
  *
  * Routes:
  *   /badge/<owner>/<repo>         — scan status badge

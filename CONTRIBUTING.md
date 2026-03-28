@@ -1,4 +1,4 @@
-# Contributing to Pwnkit
+# Contributing to pwnkit
 
 We love contributions! Here's how to get started.
 

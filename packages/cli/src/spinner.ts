@@ -1,7 +1,7 @@
 import chalk from "chalk";
 
 /**
- * Pwnkit branded CLI spinner.
+ * pwnkit branded CLI spinner.
  *
  * Uses the fang diamond motif with eye-blink animation frames,
  * rendered via raw stdout writes for zero-dependency terminal animation.
@@ -24,22 +24,22 @@ const FRAMES = [
 
 const INTERVAL_MS = 120;
 
-export interface PwnkitSpinner {
+export interface pwnkitSpinner {
   /** Begin the animation. Idempotent — calling twice is safe. */
-  start(): PwnkitSpinner;
+  start(): pwnkitSpinner;
   /** Freeze the spinner and clear its line. */
-  stop(): PwnkitSpinner;
+  stop(): pwnkitSpinner;
   /** Replace the trailing text without restarting. */
-  update(text: string): PwnkitSpinner;
+  update(text: string): pwnkitSpinner;
   /** Stop with a success marker. */
-  succeed(text?: string): PwnkitSpinner;
+  succeed(text?: string): pwnkitSpinner;
   /** Stop with a failure marker. */
-  fail(text?: string): PwnkitSpinner;
+  fail(text?: string): pwnkitSpinner;
   /** Stop with a warning marker. */
-  warn(text?: string): PwnkitSpinner;
+  warn(text?: string): pwnkitSpinner;
 }
 
-export function createPwnkitSpinner(text: string): PwnkitSpinner {
+export function createpwnkitSpinner(text: string): pwnkitSpinner {
   let frameIndex = 0;
   let timer: ReturnType<typeof setInterval> | null = null;
   let currentText = text;
@@ -77,7 +77,7 @@ export function createPwnkitSpinner(text: string): PwnkitSpinner {
     lineLength = 0;
   }
 
-  const spinner: PwnkitSpinner = {
+  const spinner: pwnkitSpinner = {
     start() {
       if (timer !== null) return spinner;
       frameIndex = 0;

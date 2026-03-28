@@ -8,7 +8,7 @@ import type {
 } from "../runtime/types.js";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext, AgentRole } from "./types.js";
 import { ToolExecutor, getToolsForRole } from "./tools.js";
-import type { PwnkitDB } from "@pwnkit/db";
+import type { pwnkitDB } from "@pwnkit/db";
 import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
 
 // ── Native Agent Loop Config ──
@@ -27,7 +27,7 @@ export interface NativeAgentConfig {
 export interface NativeAgentLoopOptions {
   config: NativeAgentConfig;
   runtime: NativeRuntime;
-  db: PwnkitDB | null;
+  db: pwnkitDB | null;
   onTurn?: (turn: number, toolCalls: ToolCall[], results: ToolResult[]) => void;
   onEvent?: (eventType: string, payload: Record<string, unknown>) => void;
 }
@@ -295,7 +295,7 @@ export async function runNativeAgentLoop(
 
 function buildInitialPrompt(config: NativeAgentConfig): string {
   return [
-    `You are a ${config.role} agent for Pwnkit, an AI red-teaming toolkit.`,
+    `You are a ${config.role} agent for pwnkit, an AI red-teaming toolkit.`,
     `Target: ${config.target}`,
     `Scan ID: ${config.scanId}`,
     "",
@@ -326,7 +326,7 @@ function toNativeToolDef(tool: ToolDefinition): NativeToolDef {
 }
 
 function persistSession(
-  db: PwnkitDB,
+  db: pwnkitDB,
   state: NativeAgentState,
   config: NativeAgentConfig,
   status: string,

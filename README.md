@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/nightfang-icon.gif" alt="Pwnkit" width="80" />
+  <img src="assets/nightfang-icon.gif" alt="pwnkit" width="80" />
 </p>
 
-<h1 align="center">Pwnkit</h1>
+<h1 align="center">pwnkit</h1>
 
 <p align="center">
   <strong>Security research automation for the AI era</strong><br/>
@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <img src="assets/demo.gif" alt="Pwnkit Demo" width="700" />
+  <img src="assets/demo.gif" alt="pwnkit Demo" width="700" />
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 ---
 
-Pwnkit is an open-source agentic security toolkit. Autonomous agents discover, attack, verify, and report vulnerabilities. Point it at an API, an npm package, or a Git repo — the agents read code, craft payloads, analyze responses, and **re-exploit each finding to kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
+pwnkit is an open-source agentic security toolkit. Autonomous agents discover, attack, verify, and report vulnerabilities. Point it at an API, an npm package, or a Git repo — the agents read code, craft payloads, analyze responses, and **re-exploit each finding to kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
 
 One command. Zero config. Every finding re-exploited or dropped.
 
@@ -50,11 +50,11 @@ npx pwnkit audit lodash
 npx pwnkit review ./my-ai-app
 ```
 
-That's it. Pwnkit discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
+That's it. pwnkit discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
 
 ## Commands
 
-Pwnkit ships five commands — from quick API probes to deep source-level audits:
+pwnkit ships five commands — from quick API probes to deep source-level audits:
 
 | Command | What It Does | Example |
 |---------|-------------|---------|
@@ -66,7 +66,7 @@ Pwnkit ships five commands — from quick API probes to deep source-level audits
 
 ## How It Works
 
-Pwnkit runs autonomous AI agents in sequence. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
+pwnkit runs autonomous AI agents in sequence. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
 
 ```
   +-----------+     +-----------+     +-----------+     +-----------+
@@ -88,7 +88,7 @@ Pwnkit runs autonomous AI agents in sequence. Each agent uses tools (`read_file`
 
 The **verification step is the differentiator.** No more triaging 200 "possible prompt injections" that turn out to be nothing.
 
-## What Pwnkit Scans
+## What pwnkit Scans
 
 | Target | Command | How |
 |--------|---------|-----|
@@ -144,7 +144,7 @@ npx pwnkit review https://github.com/user/repo --runtime codex --depth deep
 
 ## Runtime Modes
 
-Bring your own agent CLI — Pwnkit orchestrates it:
+Bring your own agent CLI — pwnkit orchestrates it:
 
 | Runtime | Flag | Best For |
 |---------|------|----------|
@@ -167,7 +167,7 @@ Combined with scan modes:
 
 ## How It Compares
 
-| Feature | Pwnkit | promptfoo | garak | semgrep | nuclei |
+| Feature | pwnkit | promptfoo | garak | semgrep | nuclei |
 |---------|--------|-----------|-------|---------|--------|
 | **Agentic multi-turn pipeline** | Yes — Autonomous agents with tool use | No Single runner | No Single runner | No Rule-based | No Template runner |
 | **Verification (no false positives)** | Yes — Re-exploits to confirm | No | No | No | No |
@@ -181,11 +181,11 @@ Combined with scan modes:
 | **Open source** | Yes — MIT | Yes — (acquired by OpenAI) | Yes — | Yes — | Yes — |
 | **Cost per scan** | $0.05–$1.00 | Varies | Free (local) | Free (OSS) / Paid (Pro) | Free |
 
-Pwnkit isn't replacing semgrep or nuclei — it covers the AI-specific attack surface they can't see. Use them together.
+pwnkit isn't replacing semgrep or nuclei — it covers the AI-specific attack surface they can't see. Use them together.
 
 ## GitHub Action
 
-Add Pwnkit to your CI/CD pipeline:
+Add pwnkit to your CI/CD pipeline:
 
 ```yaml
 name: AI Security Scan
@@ -201,7 +201,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Pwnkit
+      - name: Run pwnkit
         uses: peaktwilight/pwnkit/action@v1
         with:
           target: ${{ secrets.STAGING_API_URL }}
@@ -216,13 +216,13 @@ jobs:
           sarif_file: pwnkit-report/report.sarif
 ```
 
-> **API Key Priority:** Pwnkit checks for `OPENROUTER_API_KEY` first, then `ANTHROPIC_API_KEY`, then `OPENAI_API_KEY`. OpenRouter gives you access to many models (including free ones) through a single key at [openrouter.ai](https://openrouter.ai).
+> **API Key Priority:** pwnkit checks for `OPENROUTER_API_KEY` first, then `ANTHROPIC_API_KEY`, then `OPENAI_API_KEY`. OpenRouter gives you access to many models (including free ones) through a single key at [openrouter.ai](https://openrouter.ai).
 
 Findings show up directly in the **Security** tab of your repository.
 
 ### Badge
 
-Add a Pwnkit badge to your README:
+Add a pwnkit badge to your README:
 
 ```markdown
 [![pwnkit](https://pwnkit.com/badge/YOUR_ORG/YOUR_REPO)](https://pwnkit.com)
@@ -275,7 +275,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 
 Created by a security researcher with [7 published CVEs](https://doruk.ch/blog) across node-forge, mysql2, uptime-kuma, liquidjs, picomatch, and jspdf.
 
-Pwnkit exists because traditional security tools can't see AI attack surfaces. You can't `nmap` a language model. You can't write a static rule for a jailbreak that hasn't been invented yet. You need agents that think like attackers — and then re-exploit what they find to prove it's real.
+pwnkit exists because traditional security tools can't see AI attack surfaces. You can't `nmap` a language model. You can't write a static rule for a jailbreak that hasn't been invented yet. You need agents that think like attackers — and then re-exploit what they find to prove it's real.
 
 ## Contributing
 

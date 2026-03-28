@@ -5,7 +5,7 @@ import DockNav from '../components/DockNav';
 import DataGridBackground from '../components/DataGridBackground';
 ---
 
-<Layout title="Pwnkit - Open-source agentic harness for autonomous security research">
+<Layout title="pwnkit - Open-source agentic harness for autonomous security research">
 
 
   <main>
@@ -18,7 +18,7 @@ import DataGridBackground from '../components/DataGridBackground';
       <div class="relative max-w-6xl mx-auto px-6 text-center">
         <div class="animate-fade-up">
           <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-6" style="font-family: 'Outfit', sans-serif">
-            AI writes the code.<br/><span class="text-crimson">Pwnkit hacks it.</span>
+            AI writes the code.<br/><span class="text-crimson">pwnkit hacks it.</span>
           </h1>
           <p class="text-lg sm:text-xl text-smoke max-w-2xl mx-auto mb-4 leading-relaxed">
             Open-source agentic harness for autonomous security research.
@@ -449,7 +449,7 @@ import DataGridBackground from '../components/DataGridBackground';
             <thead>
               <tr class="border-b border-white/10">
                 <th class="text-left py-3 pr-4 text-smoke font-medium">Feature</th>
-                <th class="py-3 px-3 text-crimson font-bold">Pwnkit</th>
+                <th class="py-3 px-3 text-crimson font-bold">pwnkit</th>
                 <th class="py-3 px-3 text-ash font-medium">promptfoo <span class="text-[10px] text-ash/60 font-normal">(acquired by OpenAI)</span></th>
                 <th class="py-3 px-3 text-ash font-medium">garak</th>
                 <th class="py-3 px-3 text-ash font-medium">nuclei</th>
@@ -571,7 +571,7 @@ import DataGridBackground from '../components/DataGridBackground';
     <span class="text-ash">runs-on:</span> <span class="text-emerald-400">ubuntu-latest</span>
     <span class="text-ash">steps:</span>
       - <span class="text-ash">uses:</span> <span class="text-blue-400">actions/checkout@v4</span>
-      - <span class="text-ash">name:</span> <span class="text-amber-300">Run Pwnkit</span>
+      - <span class="text-ash">name:</span> <span class="text-amber-300">Run pwnkit</span>
         <span class="text-ash">uses:</span> <span class="text-blue-400">peaktwilight/pwnkit/action@v1</span>
         <span class="text-ash">with:</span>
           <span class="text-ash">target:</span> <span class="text-crimson">${"${{ secrets.STAGING_API_URL }}"}</span>
@@ -590,11 +590,11 @@ import DataGridBackground from '../components/DataGridBackground';
           <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
             <div class="flex items-center gap-3">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-              <h3 class="font-semibold text-lg" style="font-family: 'Outfit', sans-serif">Pwnkit reviews its own source code</h3>
+              <h3 class="font-semibold text-lg" style="font-family: 'Outfit', sans-serif">pwnkit reviews its own source code</h3>
             </div>
             <span class="text-xs text-ash" style="font-family: 'Space Mono', monospace">Every 6 hours via GitHub Actions</span>
           </div>
-          <p class="text-smoke text-sm mb-5">Pwnkit runs <code class="text-white/60">pwnkit review .</code> on its own repository. The same agentic pipeline that found 7 CVEs — pointed at itself. If it finds something, you'll see it here.</p>
+          <p class="text-smoke text-sm mb-5">pwnkit runs <code class="text-white/60">pwnkit review .</code> on its own repository. The same agentic pipeline that found 7 CVEs — pointed at itself. If it finds something, you'll see it here.</p>
 
           <div class="flex items-center gap-4 mb-6">
             <a href="https://pwnkit.com" class="inline-block">
@@ -619,7 +619,7 @@ import DataGridBackground from '../components/DataGridBackground';
       <div class="max-w-4xl mx-auto px-6 text-center">
         <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">Built from real security research</h2>
         <p class="text-smoke text-lg max-w-2xl mx-auto leading-relaxed mb-8">
-          Pwnkit started as an internal framework. It found <span class="text-white font-semibold">7 CVEs</span> in packages with <span class="text-white font-semibold">40M+ weekly downloads</span> before I open-sourced it.
+          pwnkit started as an internal framework. It found <span class="text-white font-semibold">7 CVEs</span> in packages with <span class="text-white font-semibold">40M+ weekly downloads</span> before I open-sourced it.
         </p>
 
         <div class="flex flex-wrap justify-center gap-2 mb-8">

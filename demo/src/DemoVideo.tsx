@@ -8,7 +8,7 @@ import {
   spring,
 } from "remotion";
 import { loadFont } from "@remotion/google-fonts/SpaceMono";
-import { PwnkitIcon } from "./PwnkitIcon";
+import { pwnkitIcon } from "./pwnkitIcon";
 
 const { fontFamily: spaceMono } = loadFont("normal", {
   weights: ["400", "700"],
@@ -198,7 +198,7 @@ const IntroScene = () => {
           position: "relative",
         }}
       >
-        <PwnkitIcon />
+        <pwnkitIcon />
       </div>
 
       {/* Title */}
@@ -233,8 +233,8 @@ const IntroScene = () => {
   );
 };
 
-// ── Pwnkit Logo (Fang SVG with eyes) ──
-const PwnkitLogo = ({ size = 120 }: { size?: number }) => (
+// ── pwnkit Logo (Fang SVG with eyes) ──
+const pwnkitLogo = ({ size = 120 }: { size?: number }) => (
   <svg
     width={size}
     height={size}
@@ -954,7 +954,7 @@ const CTAScene = () => {
           borderRadius: 8,
         }}
       >
-        <PwnkitIcon />
+        <pwnkitIcon />
       </div>
 
       {/* Command */}

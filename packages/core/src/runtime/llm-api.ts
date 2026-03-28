@@ -147,7 +147,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
       };
       if (this.provider === "openrouter") {
         headers["HTTP-Referer"] = "https://pwnkit.com";
-        headers["X-Title"] = "Pwnkit Security Scanner";
+        headers["X-Title"] = "pwnkit Security Scanner";
       }
       return headers;
     }

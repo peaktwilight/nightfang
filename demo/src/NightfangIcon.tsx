@@ -19,7 +19,7 @@ import {
 const CRIMSON = "#DC2626";
 const GLOW_COLOR = "rgba(220, 38, 38, 0.35)";
 
-export const PwnkitIcon: React.FC = () => {
+export const pwnkitIcon: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames } = useVideoConfig();
 

@@ -3,7 +3,7 @@
 import { Command } from "commander";
 import chalk from "chalk";
 import { VERSION } from "@pwnkit/shared";
-import { createPwnkitSpinner } from "./spinner.js";
+import { createpwnkitSpinner } from "./spinner.js";
 import type {
   ScanDepth,
   OutputFormat,
@@ -166,8 +166,8 @@ program
     // ── Replay last scan (--replay flag) ──
     if (replayMode) {
       try {
-        const { PwnkitDB } = await import("@pwnkit/db");
-        const db = new PwnkitDB(opts.dbPath);
+        const { pwnkitDB } = await import("@pwnkit/db");
+        const db = new pwnkitDB(opts.dbPath);
         const scans = db.listScans(1);
         if (scans.length === 0) {
           console.error(chalk.red("No scan history found. Run a scan first."));
@@ -274,7 +274,7 @@ program
       console.log("");
     }
 
-    const spinner = format === "terminal" ? createPwnkitSpinner("Initializing...") : null;
+    const spinner = format === "terminal" ? createpwnkitSpinner("Initializing...") : null;
     let attackTotal = 0;
     let attacksDone = 0;
 
@@ -422,8 +422,8 @@ program
   .option("--scan <scanId>", "Replay a specific scan by ID (default: last scan)")
   .action(async (opts) => {
     try {
-      const { PwnkitDB } = await import("@pwnkit/db");
-      const db = new PwnkitDB(opts.dbPath);
+      const { pwnkitDB } = await import("@pwnkit/db");
+      const db = new pwnkitDB(opts.dbPath);
 
       let scanRecord;
       if (opts.scan) {
@@ -507,8 +507,8 @@ program
   .option("--db-path <path>", "Path to SQLite database")
   .option("--limit <n>", "Number of scans to show", "10")
   .action(async (opts) => {
-    const { PwnkitDB } = await import("@pwnkit/db");
-    const db = new PwnkitDB(opts.dbPath);
+    const { pwnkitDB } = await import("@pwnkit/db");
+    const db = new pwnkitDB(opts.dbPath);
     const scans = db.listScans(parseInt(opts.limit, 10));
     db.close();
 
@@ -560,8 +560,8 @@ function withFindingsListOptions(command: Command): Command {
 }
 
 async function renderFindingsList(opts: FindingsListOptions): Promise<void> {
-  const { PwnkitDB } = await import("@pwnkit/db");
-  const db = new PwnkitDB(opts.dbPath);
+  const { pwnkitDB } = await import("@pwnkit/db");
+  const db = new pwnkitDB(opts.dbPath);
   const rows = db.listFindings({
     scanId: opts.scan,
     severity: opts.severity,
@@ -627,8 +627,8 @@ findingsCmd
   .argument("<id>", "Finding ID (full or prefix)")
   .option("--db-path <path>", "Path to SQLite database")
   .action(async (id: string, opts) => {
-    const { PwnkitDB } = await import("@pwnkit/db");
-    const db = new PwnkitDB(opts.dbPath);
+    const { pwnkitDB } = await import("@pwnkit/db");
+    const db = new pwnkitDB(opts.dbPath);
 
     // Support prefix matching
     let finding = db.getFinding(id);
@@ -721,7 +721,7 @@ program
       console.log("");
     }
 
-    const spinner = format === "terminal" ? createPwnkitSpinner("Initializing review...") : null;
+    const spinner = format === "terminal" ? createpwnkitSpinner("Initializing review...") : null;
 
     const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
       if (format !== "terminal") return;
@@ -863,7 +863,7 @@ program
       console.log("");
     }
 
-    const spinner = format === "terminal" ? createPwnkitSpinner("Initializing audit...") : null;
+    const spinner = format === "terminal" ? createpwnkitSpinner("Initializing audit...") : null;
 
     const eventHandler = (event: { type: string; stage?: string; message: string; data?: unknown }) => {
       if (format !== "terminal") return;

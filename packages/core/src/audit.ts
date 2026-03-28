@@ -815,7 +815,7 @@ export async function packageAudit(
   const pkg = installPackage(config.package, config.version, emit);
 
   // Initialize DB and create scan record
-  const db = await (async () => { try { const { PwnkitDB } = await import("@pwnkit/db"); return new PwnkitDB(config.dbPath); } catch { return null as any; } })() as any;
+  const db = await (async () => { try { const { pwnkitDB } = await import("@pwnkit/db"); return new pwnkitDB(config.dbPath); } catch { return null as any; } })() as any;
   const scanConfig: ScanConfig = {
     target: `npm:${pkg.name}@${pkg.version}`,
     depth: config.depth,

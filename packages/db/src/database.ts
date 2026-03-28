@@ -12,7 +12,7 @@ import { findingStatuses, type FindingStatusDB } from "./schema.js";
 const DEFAULT_DB_DIR = join(homedir(), ".pwnkit");
 const DEFAULT_DB_PATH = join(DEFAULT_DB_DIR, "pwnkit.db");
 
-export class PwnkitDB {
+export class pwnkitDB {
   private sqlite: Database.Database;
   private db: ReturnType<typeof drizzle>;
 

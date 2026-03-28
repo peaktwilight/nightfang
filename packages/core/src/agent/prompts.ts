@@ -1,7 +1,7 @@
 import type { TargetInfo, Finding } from "@pwnkit/shared";
 
 export function discoveryPrompt(target: string): string {
-  return `You are the Discovery Agent for Pwnkit AI red-teaming toolkit.
+  return `You are the Discovery Agent for pwnkit AI red-teaming toolkit.
 
 Your job: probe the target and build a complete profile.
 
@@ -38,7 +38,7 @@ export function attackPrompt(
     ? `Known system prompt:\n${targetInfo.systemPrompt.slice(0, 500)}`
     : "System prompt: not yet extracted";
 
-  return `You are the Attack Agent for Pwnkit AI red-teaming toolkit.
+  return `You are the Attack Agent for pwnkit AI red-teaming toolkit.
 
 Your job: test the target for security vulnerabilities across these categories: ${templateCategories.join(", ")}.
 
@@ -84,7 +84,7 @@ export function verifyPrompt(target: string, findings: Finding[]): string {
     )
     .join("\n\n");
 
-  return `You are the Verification Agent for Pwnkit AI red-teaming toolkit.
+  return `You are the Verification Agent for pwnkit AI red-teaming toolkit.
 
 Your job: verify each finding by replaying the attack and confirming exploitability.
 
@@ -114,7 +114,7 @@ export function reportPrompt(findings: Finding[]): string {
   const confirmed = findings.filter((f) => f.status === "confirmed");
   const discovered = findings.filter((f) => f.status === "discovered");
 
-  return `You are the Report Agent for Pwnkit AI red-teaming toolkit.
+  return `You are the Report Agent for pwnkit AI red-teaming toolkit.
 
 Your job: generate a final summary of the security assessment.
 

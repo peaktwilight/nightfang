@@ -43,7 +43,7 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
   const { config, dbPath, onEvent, resumeScanId } = opts;
   const emit = onEvent ?? (() => {});
 
-  const db = await (async () => { try { const { PwnkitDB } = await import("@pwnkit/db"); return new PwnkitDB(dbPath); } catch { return null as any; } })() as any;
+  const db = await (async () => { try { const { pwnkitDB } = await import("@pwnkit/db"); return new pwnkitDB(dbPath); } catch { return null as any; } })() as any;
 
   // Resume or create new scan
   const scanId = resumeScanId ?? db.createScan(config);
