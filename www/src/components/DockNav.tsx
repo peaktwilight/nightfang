@@ -62,7 +62,7 @@ export default function DockNav() {
       className="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-24px)]"
     >
       <div
-        className="flex items-center gap-0.5 rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-2xl px-1.5 py-1.5 shadow-2xl shadow-black/30 overflow-x-auto"
+        className="flex items-center justify-between sm:justify-start gap-0.5 rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-2xl px-2 sm:px-1.5 py-1.5 shadow-2xl shadow-black/30 w-[calc(100vw-24px)] sm:w-auto"
         style={{ fontFamily: "'Outfit', sans-serif" }}
       >
         <a href="/" className="flex items-center gap-1.5 h-9 rounded-lg px-2.5 mr-0.5 hover:bg-white/[0.04] transition-colors">
@@ -102,7 +102,6 @@ export default function DockNav() {
         })}
 
         <div className="h-5 w-px bg-white/10 ml-0.5 hidden sm:block" />
-        <div className="flex-1 sm:hidden" />
 
         <div className="flex items-center gap-1 sm:ml-0">
           <a href="/blog" className={`flex items-center h-9 rounded-lg px-3 text-[11px] font-medium transition-colors ${

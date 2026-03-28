@@ -125,25 +125,21 @@ export function formatTerminal(report: ScanReport): string {
     }
   }
 
-  // ── Summary Box ──
+  // ── Summary ──
   lines.push("");
-  lines.push(boxTop(W));
-  lines.push(boxRow(chalk.bold.white(" SUMMARY"), W));
-  lines.push(boxDivider(W));
+  lines.push(`  ${chalk.gray("─".repeat(50))}`);
+  lines.push("");
 
   const { summary } = report;
-  const severityCounts = buildSeverityLine(summary);
-  lines.push(boxRow(severityCounts, W));
-  lines.push(boxRow("", W));
-
-  const statsLine = [
-    `${chalk.white.bold(String(summary.totalFindings))} findings`,
-    `${chalk.white.bold(String(summary.totalAttacks))} probes`,
-    `${chalk.white.bold(formatDuration(report.durationMs))}`,
-  ].join(chalk.gray("  │  "));
-  lines.push(boxRow(` ${statsLine}`, W));
-
-  lines.push(boxBottom(W));
+  const sev = [
+    summary.critical > 0 ? chalk.red.bold(`${summary.critical} critical`) : chalk.gray(`${summary.critical} critical`),
+    summary.high > 0 ? chalk.hex("#f97316").bold(`${summary.high} high`) : chalk.gray(`${summary.high} high`),
+    summary.medium > 0 ? chalk.yellow.bold(`${summary.medium} medium`) : chalk.gray(`${summary.medium} medium`),
+    chalk.gray(`${summary.low} low`),
+    chalk.gray(`${summary.info} info`),
+  ].join(chalk.gray("  "));
+  lines.push(`  ${sev}`);
+  lines.push(`  ${chalk.white.bold(String(summary.totalFindings))} findings ${chalk.gray("in")} ${chalk.white(formatDuration(report.durationMs))}`);
   lines.push("");
 
   return lines.join("\n");
