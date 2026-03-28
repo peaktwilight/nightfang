@@ -3,7 +3,7 @@ import Layout from '../layouts/Layout.astro';
 import PipelineViz from '../components/PipelineViz';
 import DockNav from '../components/DockNav';
 import DataGridBackground from '../components/DataGridBackground';
-import HeroFuturistic from '../components/ui/hero-futuristic';
+import PwnkitHero3D from '../components/PwnkitHero3D';
 ---
 
 <Layout title="pwnkit - Open-source agentic framework for autonomous security research">
@@ -13,11 +13,9 @@ import HeroFuturistic from '../components/ui/hero-futuristic';
 
     <!-- Hero -->
     <section data-section="hero" class="relative min-h-screen pt-32 pb-16 overflow-hidden">
-      <!-- WebGPU 3D background with crimson scan line -->
-      <div class="absolute inset-0 z-0">
-        <HeroFuturistic client:only="react" className="w-full h-full" />
-      </div>
-      <!-- Data grid fallback (shows through when 3D is loading or unsupported) -->
+      <!-- 3D pwnkit shield background -->
+      <PwnkitHero3D client:only="react" />
+      <!-- Subtle data grid underneath -->
       <DataGridBackground client:load />
 
       <div class="relative max-w-6xl mx-auto px-6 text-center">
