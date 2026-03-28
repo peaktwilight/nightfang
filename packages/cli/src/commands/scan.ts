@@ -7,7 +7,7 @@ import { formatReport } from "../formatters/index.js";
 import { renderReplay, replayDataFromReport, createReplayCollector } from "../formatters/replay.js";
 import { createpwnkitSpinner } from "../spinner.js";
 import { createEventHandler } from "../event-handler.js";
-import { buildShareUrl, depthLabel } from "../utils.js";
+import { buildShareUrl, depthLabel, checkRuntimeAvailability } from "../utils.js";
 
 export function registerScanCommand(program: Command): void {
   program

@@ -6,7 +6,7 @@ import { createRuntime, packageAudit } from "@pwnkit/core";
 import { formatAuditReport } from "../formatters/index.js";
 import { createpwnkitSpinner } from "../spinner.js";
 import { createEventHandler } from "../event-handler.js";
-import { buildShareUrl } from "../utils.js";
+import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 
 export function registerAuditCommand(program: Command): void {
   program
@@ -72,6 +72,8 @@ export function registerAuditCommand(program: Command): void {
         }
         console.log("");
       }
+
+      if (format === "terminal") checkRuntimeAvailability();
 
       const spinner = format === "terminal" ? createpwnkitSpinner("Initializing audit...") : null;
 

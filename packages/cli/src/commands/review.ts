@@ -6,7 +6,7 @@ import { sourceReview } from "@pwnkit/core";
 import { formatReviewReport } from "../formatters/index.js";
 import { createpwnkitSpinner } from "../spinner.js";
 import { createEventHandler } from "../event-handler.js";
-import { buildShareUrl } from "../utils.js";
+import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 
 export function registerReviewCommand(program: Command): void {
   program
@@ -47,6 +47,8 @@ export function registerReviewCommand(program: Command): void {
         }
         console.log("");
       }
+
+      if (format === "terminal") checkRuntimeAvailability();
 
       const spinner = format === "terminal" ? createpwnkitSpinner("Initializing review...") : null;
 
