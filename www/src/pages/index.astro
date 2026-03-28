@@ -48,12 +48,12 @@ import DataGridBackground from '../components/DataGridBackground';
 
         <!-- Demo GIF — real CLI output, not a simulation -->
         <div class="animate-fade-up max-w-5xl mx-auto" style="animation-delay: 0.4s">
-          <div class="glow-crimson rounded-xl overflow-hidden border border-white/10 shadow-[0_0_60px_-12px_rgba(220,38,38,0.3)]">
+          <div class="rounded-xl overflow-hidden border border-white/10">
             <img src="/demo.gif" alt="pwnkit scanning a target and finding vulnerabilities" class="w-full" loading="eager" style="max-width: 100%" />
           </div>
           <!-- Static fallback for no-JS -->
           <noscript>
-          <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
+          <div class="rounded-xl overflow-hidden border border-white/10">
             <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
               <div class="flex gap-1.5">
                 <div class="w-3 h-3 rounded-full bg-white/10"></div>
@@ -189,147 +189,21 @@ import DataGridBackground from '../components/DataGridBackground';
           <p class="text-smoke text-lg max-w-xl mx-auto">pwnkit auto-detects what you're scanning. Or use explicit commands for full control.</p>
         </div>
 
-        <!-- Auto-detect examples -->
-        <div class="bg-night-lighter border border-white/5 rounded-xl p-5 mb-8">
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-            <div><span class="text-ash">npm package</span><br/><code class="text-white">pwnkit express</code></div>
-            <div><span class="text-ash">your repo</span><br/><code class="text-white">pwnkit ./my-app</code></div>
-            <div><span class="text-ash">website</span><br/><code class="text-white">pwnkit https://example.com --mode web</code></div>
-          </div>
+        <!-- Compact command grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            { cmd: "pwnkit express", desc: "Audit an npm package", color: "text-amber-400" },
+            { cmd: "pwnkit ./my-repo", desc: "Review source code", color: "text-blue-400" },
+            { cmd: "pwnkit https://api.com", desc: "Scan an API endpoint", color: "text-crimson" },
+            { cmd: "pwnkit https://site.com --mode web", desc: "Full web pentest", color: "text-emerald-400" },
+          ].map((item) => (
+            <div class="bg-night-lighter border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
+              <code class="text-sm font-mono text-white">{item.cmd}</code>
+              <p class={`text-xs mt-1 ${item.color}`}>{item.desc}</p>
+            </div>
+          ))}
         </div>
 
-        <div class="space-y-4">
-          <!-- scan -->
-          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
-            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-crimson bg-crimson/10 px-2 py-0.5 rounded uppercase tracking-wider">scan</span>
-                  <h3 class="font-semibold text-lg">Scan endpoints, APIs, and web apps</h3>
-                </div>
-                <p class="text-smoke text-sm leading-relaxed mb-3">AI endpoints, MCP servers, REST APIs, or full web apps. Autonomous agents probe, attack, and verify. Web mode does SQLi, XSS, SSRF, auth bypass, IDOR.</p>
-                <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--mode probe|deep|mcp|web</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
-                </div>
-              </div>
-              <div class="lg:w-[340px] shrink-0">
-                <div class="copy-wrap relative flex items-center">
-                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli scan --target <url>">npx pwnkit-cli scan --target &lt;url&gt;</code>
-                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli scan --target <url>">
-                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- audit -->
-          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
-            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded uppercase tracking-wider">audit</span>
-                  <h3 class="font-semibold text-lg">Audit npm packages for malicious code</h3>
-                </div>
-                <p class="text-smoke text-sm leading-relaxed mb-3">Installs a package in a sandbox, runs semgrep static analysis plus AI-powered code review. Catches supply chain attacks, backdoors, and dependency vulnerabilities.</p>
-                <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--version &lt;ver&gt;</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
-                </div>
-              </div>
-              <div class="lg:w-[340px] shrink-0">
-                <div class="copy-wrap relative flex items-center">
-                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli audit <package>">npx pwnkit-cli audit &lt;package&gt;</code>
-                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli audit <package>">
-                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- review -->
-          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
-            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded uppercase tracking-wider">review</span>
-                  <h3 class="font-semibold text-lg">Deep security audit of source code</h3>
-                </div>
-                <p class="text-smoke text-sm leading-relaxed mb-3">Security-focused code review of local repos or GitHub URLs. Multiple AI runtimes analyze your entire codebase and output SARIF, Markdown, and JSON reports.</p>
-                <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--runtime api|claude|codex|gemini|auto</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--depth quick|default|deep</span>
-                </div>
-              </div>
-              <div class="lg:w-[340px] shrink-0">
-                <div class="copy-wrap relative flex items-center">
-                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli review <repo>">npx pwnkit-cli review &lt;repo&gt;</code>
-                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli review <repo>">
-                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- findings -->
-          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
-            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-purple-400 bg-purple-400/10 px-2 py-0.5 rounded uppercase tracking-wider">findings</span>
-                  <h3 class="font-semibold text-lg">Query and inspect verified findings</h3>
-                </div>
-                <p class="text-smoke text-sm leading-relaxed mb-3">Filter findings by severity, category, and status. Inspect individual findings with full evidence chains and proof artifacts. Track the lifecycle from discovered to confirmed.</p>
-                <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">list --severity critical</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">show NF-001</span>
-                </div>
-              </div>
-              <div class="lg:w-[340px] shrink-0">
-                <div class="copy-wrap relative flex items-center">
-                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli findings list">npx pwnkit-cli findings list</code>
-                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli findings list">
-                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- history -->
-          <div class="bg-night-lighter border border-white/5 rounded-xl overflow-hidden hover:border-crimson/20 transition-colors">
-            <div class="p-6 flex flex-col lg:flex-row lg:items-center gap-6">
-              <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-3 mb-2">
-                  <span class="text-xs font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded uppercase tracking-wider">history</span>
-                  <h3 class="font-semibold text-lg">Browse past scan results</h3>
-                </div>
-                <p class="text-smoke text-sm leading-relaxed mb-3">Query the local SQLite database for previous scans. See status, depth, findings count, and duration for every run. Track your security posture over time.</p>
-                <div class="flex flex-wrap gap-2">
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--limit 20</span>
-                  <span class="text-xs font-mono text-ash bg-white/5 px-2 py-0.5 rounded">--db-path ./custom.db</span>
-                </div>
-              </div>
-              <div class="lg:w-[340px] shrink-0">
-                <div class="copy-wrap relative flex items-center">
-                  <code class="block w-full bg-night border border-white/5 rounded-lg px-4 py-3 pr-10 font-mono text-xs text-smoke select-all overflow-x-auto" data-copy="npx pwnkit-cli history">npx pwnkit-cli history</code>
-                  <button class="copy-btn absolute right-2 p-1 rounded-md text-ash hover:text-white hover:bg-white/10 transition-all" aria-label="Copy command" data-copy="npx pwnkit-cli history">
-                    <svg class="w-3.5 h-3.5 copy-icon" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
-                    <svg class="w-3.5 h-3.5 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
     </section>
 
     <!-- Value props -->
@@ -491,7 +365,7 @@ import DataGridBackground from '../components/DataGridBackground';
           <p class="text-smoke text-lg">Findings show up directly in GitHub's Security tab.</p>
         </div>
 
-        <div class="glow-crimson rounded-xl overflow-hidden border border-white/10">
+        <div class="rounded-xl overflow-hidden border border-white/10">
           <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
             <span class="text-xs text-ash font-mono">.github/workflows/pwnkit.yml</span>
           </div>
@@ -586,11 +460,8 @@ import DataGridBackground from '../components/DataGridBackground';
     </section>
 
     <!-- Final CTA -->
-    <section class="py-24 border-t border-white/5 relative overflow-hidden">
-      <!-- CSS grid + spotlight background -->
-      <div class="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-crimson/5 rounded-full blur-[120px]"></div>
-
-      <div class="relative max-w-4xl mx-auto px-6 text-center">
+    <section class="py-24 border-t border-white/5">
+      <div class="max-w-4xl mx-auto px-6 text-center">
         <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-6" style="font-family: 'Outfit', sans-serif">
           Stop guessing.<br/>Start <span class="text-crimson">proving</span>.
         </h2>

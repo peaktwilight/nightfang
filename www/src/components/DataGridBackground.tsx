@@ -7,8 +7,8 @@ export default function DataGridBackground() {
     const grid = gridRef.current;
     if (!grid) return;
 
-    const rows = 20;
-    const cols = 30;
+    const rows = 40;
+    const cols = 60;
     const centerR = rows / 2;
     const centerC = cols / 2;
 
@@ -19,14 +19,14 @@ export default function DataGridBackground() {
       const r = Math.floor(i / cols);
       const c = i % cols;
       const dist = Math.sqrt((r - centerR) ** 2 + (c - centerC) ** 2);
-      const delay = dist * 0.15;
+      const delay = dist * 0.1;
 
       const cell = document.createElement("div");
       cell.style.cssText = `
         background: #DC2626;
-        border-radius: 2px;
-        opacity: 0.03;
-        animation: grid-pulse 4s infinite alternate;
+        border-radius: 1px;
+        opacity: 0.06;
+        animation: grid-pulse 3s infinite alternate;
         animation-delay: ${delay.toFixed(2)}s;
       `;
       grid.appendChild(cell);
@@ -47,7 +47,7 @@ export default function DataGridBackground() {
   return (
     <div
       ref={gridRef}
-      className="absolute inset-0 pointer-events-none grid gap-[3px] p-4 z-0"
+      className="absolute inset-0 pointer-events-none grid gap-[1px] p-4 z-0"
       style={{ pointerEvents: "all" }}
     />
   );
