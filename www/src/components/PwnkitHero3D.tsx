@@ -144,19 +144,19 @@ const Shield = () => {
 
   return (
     <group ref={groupRef}>
-      {/* Solid extruded 3D body (dark fill) */}
-      <mesh geometry={extrudeGeo} position-z={-0.04}>
-        <meshBasicMaterial color="#1a0000" transparent opacity={0.5} />
-      </mesh>
-
       {/* Glow outline (wide, soft) */}
       <mesh ref={glowRef} geometry={glowTubeGeo}>
-        <meshBasicMaterial color={CRIMSON} transparent opacity={0.1} />
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.15} />
       </mesh>
 
       {/* Main thick outline */}
       <mesh geometry={outlineTubeGeo}>
-        <meshBasicMaterial color={CRIMSON} transparent opacity={0.9} />
+        <meshBasicMaterial color={CRIMSON} />
+      </mesh>
+
+      {/* Extruded 3D body — just edges visible for depth */}
+      <mesh geometry={extrudeGeo} position-z={-0.04}>
+        <meshBasicMaterial color={CRIMSON} transparent opacity={0.08} />
       </mesh>
 
       {/* Left eye */}
