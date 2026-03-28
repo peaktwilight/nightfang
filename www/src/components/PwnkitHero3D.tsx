@@ -182,7 +182,10 @@ const Shield = () => {
 
 export default function PwnkitHero3D() {
   return (
-    <div className="absolute inset-0 z-0" style={{ opacity: 0.45 }}>
+    <div
+      className="mx-auto mb-6"
+      style={{ width: '180px', height: '180px' }}
+    >
       <Canvas
         camera={{ position: [0, 0, 3], fov: 50 }}
         dpr={[1, 1.5]}
