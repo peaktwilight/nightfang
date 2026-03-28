@@ -410,22 +410,22 @@ import DataGridBackground from '../components/DataGridBackground';
     <section class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
         <div class="text-center mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">What it tests for</h2>
-          <p class="text-smoke text-lg">30+ agentic attack scenarios across 7 categories. Every finding verified with a working exploit.</p>
+          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">What the agents hunt for</h2>
+          <p class="text-smoke text-lg">Agents decide what to attack based on what they find. No hardcoded test suites.</p>
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { name: "Prompt Injection", detail: "Direct, indirect, multi-turn, encoding bypass", count: "8" },
-            { name: "System Prompt Extraction", detail: "5 techniques including completion traps", count: "5" },
-            { name: "Jailbreak Resistance", detail: "DAN, base64 encoding, multilingual, few-shot", count: "5" },
-            { name: "Data Exfiltration", detail: "PII leakage, credential extraction", count: "3" },
-            { name: "MCP / Tool Security", detail: "Tool enumeration, unauthorized calls, SSRF", count: "3" },
-            { name: "npm Package Audit", detail: "Dependency vulnerabilities, supply chain", count: "CLI" },
-            { name: "Source Code Review", detail: "AI-powered deep analysis with semgrep", count: "CLI" },
+            { name: "Prompt Injection", detail: "Direct, indirect, multi-turn, encoding bypass" },
+            { name: "System Prompt Extraction", detail: "Completion traps, translation tricks, role confusion" },
+            { name: "Jailbreak Resistance", detail: "Roleplay, encoding, multilingual, hypothetical framing" },
+            { name: "Data Exfiltration", detail: "PII leakage, credential extraction, context window abuse" },
+            { name: "MCP / Tool Security", detail: "Tool poisoning, unauthorized calls, SSRF via tools" },
+            { name: "npm Package Audit", detail: "Prototype pollution, ReDoS, path traversal, injection" },
+            { name: "Source Code Review", detail: "Data flow analysis, trust boundary violations, unsafe patterns" },
           ].map((item) => (
             <div class="flex items-center gap-3 px-4 py-3 rounded-lg border border-white/5 bg-night-lighter">
-              <span class="text-xs text-crimson font-bold w-6 text-center" style="font-family: 'Space Mono', monospace">{item.count}</span>
+              <div class="w-1.5 h-1.5 rounded-full bg-crimson shrink-0"></div>
               <div class="flex-1 min-w-0">
                 <div class="text-sm font-medium text-white">{item.name}</div>
                 <div class="text-xs text-ash">{item.detail}</div>
