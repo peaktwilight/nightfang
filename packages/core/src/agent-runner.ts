@@ -95,11 +95,36 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
       message: `Using ${runtimeType} CLI for deep AI analysis...`,
     });
 
+    // Schema for structured findings output
+    const findingsSchema = {
+      type: "object",
+      properties: {
+        findings: {
+          type: "array",
+          items: {
+            type: "object",
+            properties: {
+              title: { type: "string", description: "Clear vulnerability title" },
+              severity: { type: "string", enum: ["critical", "high", "medium", "low", "info"] },
+              category: { type: "string" },
+              file: { type: "string", description: "File path and line number" },
+              description: { type: "string", description: "Detailed vulnerability description" },
+              poc: { type: "string", description: "Proof-of-concept code or command" },
+            },
+            required: ["title", "severity", "description"],
+          },
+        },
+        summary: { type: "string", description: "Brief summary of the audit" },
+      },
+      required: ["findings", "summary"],
+    };
+
     const { ProcessRuntime } = await import("./runtime/process.js");
     const cliRuntime = new ProcessRuntime({
       type: runtimeType,
       timeout: config.timeout ?? 600_000,
       cwd: scopePath,
+      outputSchema: findingsSchema,
       onToolCall: (name, detail) => {
         emit({
           type: "stage:start",

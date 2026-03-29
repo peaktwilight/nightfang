@@ -1,4 +1,7 @@
 import { spawn } from "node:child_process";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { writeFileSync } from "node:fs";
 import type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult } from "./types.js";
 
 // Dim the subprocess output so it's visually distinct from pwnkit's own output
@@ -171,16 +174,28 @@ export class ProcessRuntime implements Runtime {
         if (context?.systemPrompt) {
           args.push("--system-prompt", context.systemPrompt);
         }
+        // Structured output schema for findings
+        if (this.config.outputSchema) {
+          args.push("--json-schema", JSON.stringify(this.config.outputSchema));
+        }
         return args;
       }
-      case "codex":
-        return [
+      case "codex": {
+        const args = [
           "exec",
           "--full-auto",
           "--skip-git-repo-check",
           "--json",
-          prompt,
         ];
+        if (this.config.outputSchema) {
+          // Codex needs schema as a file — write to temp
+          const schemaPath = join(tmpdir(), `pwnkit-schema-${Date.now()}.json`);
+          writeFileSync(schemaPath, JSON.stringify(this.config.outputSchema));
+          args.push("--output-schema", schemaPath);
+        }
+        args.push(prompt);
+        return args;
+      }
       case "gemini":
         return ["-p", prompt];
       case "opencode":

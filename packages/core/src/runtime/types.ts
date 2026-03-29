@@ -11,6 +11,8 @@ export interface RuntimeConfig {
   onToolCall?: (name: string, detail: string) => void;
   /** Called when the model streams thinking/reasoning text */
   onThinking?: (text: string) => void;
+  /** JSON Schema for structured output (Claude --json-schema, Codex --output-schema) */
+  outputSchema?: Record<string, unknown>;
 }
 
 export interface RuntimeResult {

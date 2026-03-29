@@ -531,7 +531,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
         ),
         agentSystemPrompt,
         cliSystemPrompt:
-          "You are a security researcher. Map the codebase, find real exploitable vulnerabilities, and write concrete PoC code for each one.",
+          "You are a security researcher performing an authorized source code audit. For EACH vulnerability you find, output it using the exact ---FINDING--- / ---END--- format specified in the prompt. Do NOT write prose analysis — only output structured finding blocks. If you find no vulnerabilities, say 'No vulnerabilities found.' and nothing else.",
       });
     } else {
       // URL / web-app targets — not supported yet in unified pipeline
