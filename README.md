@@ -89,17 +89,16 @@ pwnkit ships five commands — from quick API probes to deep source-level audits
 
 pwnkit runs autonomous AI agents in a research-then-verify pipeline. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
 
-```
- +-----------+   +------------------+   +-----------+
- | RESEARCH | --> | BLIND VERIFY  | --> | REPORT  |
- | (Discover |   | (PoC + path only |   | (Output) |
- | + Attack |   | no reasoning)  |   |      |
- | + PoC)  |   +------------------+   +-----------+
- +-----------+   Runs in parallel     Only confirmed
-  Single agent   per finding —      findings in SARIF,
-  session: recon,  independently      Markdown, and JSON
-  payloads, and   reproduces or      with severity +
-  proof-of-concept kills finding      remediation
+```mermaid
+graph LR
+    A["🔍 Research<br/><small>discover + attack + PoC<br/>single agent session</small>"] --> B["🔒 Blind Verify<br/><small>gets ONLY PoC + path<br/>no reasoning, no bias</small>"]
+    B --> C["📄 Report<br/><small>SARIF · Markdown · JSON<br/>only confirmed findings</small>"]
+    B -->|can't reproduce| D["❌ Killed"]
+
+    style A fill:#1a1a2e,stroke:#DC2626,color:#fff
+    style B fill:#1a1a2e,stroke:#3B82F6,color:#fff
+    style C fill:#1a1a2e,stroke:#8B5CF6,color:#fff
+    style D fill:#1a1a2e,stroke:#6B7280,color:#6B7280
 ```
 
 | Agent | Role | What It Does |
