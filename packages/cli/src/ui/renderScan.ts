@@ -142,7 +142,7 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
         ...s,
         status: "done",
         detail,
-        actions: s.actions.slice(0, 4), // keep max 4 actions after completion
+        actions: stageId === "verify" ? s.actions : s.actions.slice(0, 4),
         duration: (event.data as any)?.durationMs ?? s.duration,
       }));
       return;

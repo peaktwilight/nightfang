@@ -20,6 +20,8 @@ await build({
     "better-sqlite3",
     "drizzle-orm",
     "drizzle-orm/*",
+    "react-devtools-core",
+    "yoga-wasm-web",
   ],
 });
 
