@@ -3,8 +3,8 @@ import { render } from "ink";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
-import cfonts from "cfonts";
 import { VERSION } from "@pwnkit/shared";
+import { printBanner } from "./banner.js";
 import { ScanUI } from "./ScanUI.js";
 import { buildShareUrl } from "../utils.js";
 import type { ScanEvent, ScanSummary, StageState, StageStatusKind } from "./ScanUI.js";
@@ -42,28 +42,11 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   let rerender: (() => void) | null = null;
 
 
-  // Static banner — printed once before Ink takes over (won't re-render)
-  const r = "\x1b[31m";    // red/crimson
-  const d = "\x1b[2m";     // dim
-  const b = "\x1b[1m";     // bold
-  const x = "\x1b[0m";     // reset
-
-  // Banner
-  console.log("");
-  try {
-    cfonts.say(`pwnkit|v${VERSION}`, {
-      font: "tiny",
-      colors: ["red", "gray"],
-      space: false,
-    });
-  } catch {
-    console.log(`  ${r}${b}pwnkit${x} ${d}v${VERSION}${x}`);
-  }
-  const modeLabel = opts.mode === "audit" ? "auditing npm package"
-    : opts.mode === "review" ? "reviewing source code"
-    : "scanning target";
-  console.log(`  ${d}${modeLabel} ${x}${b}${opts.target}${x}`);
-  console.log("");
+  // Static banner — printed once before Ink takes over
+  const modeLabel = opts.mode === "audit" ? `auditing npm package \x1b[1m${opts.target}\x1b[0m`
+    : opts.mode === "review" ? `reviewing source code \x1b[1m${opts.target}\x1b[0m`
+    : `scanning target \x1b[1m${opts.target}\x1b[0m`;
+  printBanner(modeLabel);
 
   function App() {
     const [tick, setTick] = useState(0);

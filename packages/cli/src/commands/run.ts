@@ -3,8 +3,6 @@ import { VERSION } from "@pwnkit/shared";
 import type { ScanDepth, OutputFormat, RuntimeMode } from "@pwnkit/shared";
 import { runPipeline, createRuntime } from "@pwnkit/core";
 import { formatAuditReport, formatReviewReport, formatReport } from "../formatters/index.js";
-import { createpwnkitSpinner } from "../spinner.js";
-import { createEventHandler } from "../event-handler.js";
 import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 
 export interface RunOptions {
@@ -42,21 +40,17 @@ export async function runUnified(opts: RunOptions): Promise<void> {
 
   if (format === "terminal") checkRuntimeAvailability();
 
-  // Ink TUI for terminal, plain text for json/md
-  const useInkUI = format === "terminal";
-  let inkUI: ReturnType<typeof import("../ui/renderScan.js").renderScanUI> | null = null;
-  let eventHandler: (event: any) => void;
+  // Ink TUI for terminal, silent for json/md
+  let inkUI: { onEvent: (event: any) => void; setReport: (report: any) => void; waitForExit: () => Promise<void> } | null = null;
+  let eventHandler: (event: any) => void = () => {};
 
-  if (useInkUI) {
+  if (format === "terminal") {
     const { renderScanUI } = await import("../ui/renderScan.js");
     const mode = opts.targetType === "npm-package" ? "audit"
       : opts.targetType === "source-code" ? "review"
       : "scan";
     inkUI = renderScanUI({ version: VERSION, target, depth, mode });
     eventHandler = inkUI.onEvent;
-  } else {
-    const spinner = createpwnkitSpinner("Initializing...");
-    eventHandler = createEventHandler({ format, spinner });
   }
 
   try {
@@ -78,7 +72,6 @@ export async function runUnified(opts: RunOptions): Promise<void> {
       inkUI.setReport(report as any);
       await inkUI.waitForExit();
     } else {
-      // Pick the right formatter based on target type
       const reportAny = report as any;
       const output = reportAny.targetType === "npm-package"
         ? formatAuditReport(reportAny, format)
@@ -86,13 +79,8 @@ export async function runUnified(opts: RunOptions): Promise<void> {
           ? formatReviewReport(reportAny, format)
           : formatReport(reportAny, format);
       console.log(output);
-
-      if (format === "terminal") {
-        console.log(`\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(reportAny))}\n`);
-      }
     }
 
-    // Exit with non-zero if critical/high findings
     if (report.summary.critical > 0 || report.summary.high > 0) {
       process.exit(1);
     }
