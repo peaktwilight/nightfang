@@ -83,35 +83,32 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
 
   // ── Public API ──
 
-  // Map audit/scan event stage names to UI stage names
-  function mapStage(eventStage: string | undefined): StageName | undefined {
-    if (!eventStage) return undefined;
-    const map: Record<string, StageName> = {
-      "discovery": "install",
+  // Map events to UI stages — use message content as primary signal
+  // because the audit pipeline reuses "discovery" for both install and npm audit
+  function detectStage(event: { type: string; stage?: string; message?: string }): StageName | undefined {
+    const msg = (event.message ?? "").toLowerCase();
+
+    // Message-based detection (most reliable)
+    if (msg.includes("install")) return "install";
+    if (msg.includes("npm audit")) return "npm-audit";
+    if (msg.includes("semgrep")) return "semgrep";
+    if (msg.includes("agent") || msg.includes("claude") || msg.includes("codex") || msg.includes("agentic") || msg.includes("ai ")) return "ai-agent";
+    if (msg.includes("audit complete") || msg.includes("review complete")) return "report";
+
+    // Stage-name fallback
+    const stageMap: Record<string, StageName> = {
       "source-analysis": "semgrep",
       "attack": "ai-agent",
       "verify": "verify",
       "report": "report",
-      // Direct matches
-      "install": "install",
-      "npm-audit": "npm-audit",
-      "semgrep": "semgrep",
-      "ai-agent": "ai-agent",
     };
-    // Also match by message content
-    return map[eventStage] ?? undefined;
+    if (event.stage && stageMap[event.stage]) return stageMap[event.stage];
+
+    return undefined;
   }
 
   function onEvent(event: ScanEvent): void {
-    // Map stage names and also detect stages from message content
-    let stageName = mapStage(event.stage);
-    if (!stageName && event.message) {
-      const msg = event.message.toLowerCase();
-      if (msg.includes("install")) stageName = "install";
-      else if (msg.includes("npm audit")) stageName = "npm-audit";
-      else if (msg.includes("semgrep")) stageName = "semgrep";
-      else if (msg.includes("agent") || msg.includes("claude") || msg.includes("codex") || msg.includes("agentic")) stageName = "ai-agent";
-    }
+    const stageName = detectStage(event);
 
     switch (event.type) {
       case "stage:start":
