@@ -57,7 +57,7 @@ function getMaxTurns(role: "audit" | "review", depth: string | undefined, branch
  * Unified agent runner for both audit and review roles.
  *
  * Contains the 3-branch runtime selection logic:
- * 1. CLI runtime fast path (ProcessRuntime) — claude/codex/gemini/opencode
+ * 1. CLI runtime fast path (ProcessRuntime) — claude/codex/gemini/
  * 2. API runtime with native tool_use (runNativeAgentLoop)
  * 3. Legacy fallback (runAgentLoop)
  */

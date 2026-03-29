@@ -1,34 +1,34 @@
 <p align="center">
-  <img src="assets/pwnkit-icon.gif" alt="pwnkit" width="80" />
+ <img src="assets/pwnkit-icon.gif" alt="pwnkit" width="80" />
 </p>
 
 <h1 align="center">pwnkit</h1>
 
 <p align="center">
-  <strong>General-purpose autonomous pentesting framework</strong><br/>
-  <em>Scan LLM endpoints. Audit npm packages. Review source code. Pentest web apps. Re-exploit to kill false positives.</em>
+ <strong>General-purpose autonomous pentesting framework</strong><br/>
+ <em>Scan LLM endpoints. Audit npm packages. Review source code. Pentest web apps. Re-exploit to kill false positives.</em>
 </p>
 
 <p align="center">
-  <a href="https://www.npmjs.com/package/pwnkit-cli"><img src="https://img.shields.io/npm/v/pwnkit-cli?color=crimson&style=flat-square" alt="npm version" /></a>
-  <a href="https://github.com/peaktwilight/pwnkit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="license" /></a>
-  <a href="https://github.com/peaktwilight/pwnkit/actions"><img src="https://img.shields.io/github/actions/workflow/status/peaktwilight/pwnkit/ci.yml?style=flat-square" alt="CI" /></a>
-  <a href="https://github.com/peaktwilight/pwnkit/stargazers"><img src="https://img.shields.io/github/stars/peaktwilight/pwnkit?style=flat-square&color=gold" alt="stars" /></a>
-  <a href="https://pwnkit.com"><img src="https://pwnkit.com/badge/peaktwilight/pwnkit" alt="pwnkit verified" /></a>
+ <a href="https://www.npmjs.com/package/pwnkit-cli"><img src="https://img.shields.io/npm/v/pwnkit-cli?color=crimson&style=flat-square" alt="npm version" /></a>
+ <a href="https://github.com/peaktwilight/pwnkit/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-blue?style=flat-square" alt="license" /></a>
+ <a href="https://github.com/peaktwilight/pwnkit/actions"><img src="https://img.shields.io/github/actions/workflow/status/peaktwilight/pwnkit/ci.yml?style=flat-square" alt="CI" /></a>
+ <a href="https://github.com/peaktwilight/pwnkit/stargazers"><img src="https://img.shields.io/github/stars/peaktwilight/pwnkit?style=flat-square&color=gold" alt="stars" /></a>
+ <a href="https://pwnkit.com"><img src="https://pwnkit.com/badge/peaktwilight/pwnkit" alt="pwnkit verified" /></a>
 </p>
 
 <p align="center">
-  <img src="assets/demo.gif" alt="pwnkit Demo" width="700" />
+ <img src="assets/demo.gif" alt="pwnkit Demo" width="700" />
 </p>
 
 <p align="center">
-  <a href="#quick-start">Quick Start</a> &middot;
-  <a href="#commands">Commands</a> &middot;
-  <a href="#how-it-works">How It Works</a> &middot;
-  <a href="#what-pwnkit-scans">What It Scans</a> &middot;
-  <a href="#how-it-compares">Comparison</a> &middot;
-  <a href="#github-action">CI/CD</a> &middot;
-  <a href="#built-by">About</a>
+ <a href="#quick-start">Quick Start</a> &middot;
+ <a href="#commands">Commands</a> &middot;
+ <a href="#how-it-works">How It Works</a> &middot;
+ <a href="#what-pwnkit-scans">What It Scans</a> &middot;
+ <a href="#how-it-compares">Comparison</a> &middot;
+ <a href="#github-action">CI/CD</a> &middot;
+ <a href="#built-by">About</a>
 </p>
 
 ---
@@ -50,10 +50,10 @@ npx pwnkit-cli audit lodash
 npx pwnkit-cli review ./my-ai-app
 
 # Or just point pwnkit at a target — it auto-detects what to do
-npx pwnkit-cli express          # audits npm package
-npx pwnkit-cli ./my-repo        # reviews source code
-npx pwnkit-cli https://github.com/user/repo  # clones and reviews
-npx pwnkit-cli https://example.com           # scans web endpoint
+npx pwnkit-cli express     # audits npm package
+npx pwnkit-cli ./my-repo    # reviews source code
+npx pwnkit-cli https://github.com/user/repo # clones and reviews
+npx pwnkit-cli https://example.com      # scans web endpoint
 ```
 
 That's it. pwnkit discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
@@ -90,16 +90,16 @@ pwnkit ships five commands — from quick API probes to deep source-level audits
 pwnkit runs autonomous AI agents in a research-then-verify pipeline. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
 
 ```
-  +-----------+     +------------------+     +-----------+
-  | RESEARCH  | --> |  BLIND VERIFY    | --> |  REPORT   |
-  | (Discover |     | (PoC + path only |     | (Output)  |
-  |  + Attack |     |  no reasoning)   |     |           |
-  |  + PoC)   |     +------------------+     +-----------+
-  +-----------+      Runs in parallel         Only confirmed
-   Single agent      per finding —            findings in SARIF,
-   session: recon,   independently            Markdown, and JSON
-   payloads, and     reproduces or            with severity +
-   proof-of-concept  kills finding            remediation
+ +-----------+   +------------------+   +-----------+
+ | RESEARCH | --> | BLIND VERIFY  | --> | REPORT  |
+ | (Discover |   | (PoC + path only |   | (Output) |
+ | + Attack |   | no reasoning)  |   |      |
+ | + PoC)  |   +------------------+   +-----------+
+ +-----------+   Runs in parallel     Only confirmed
+  Single agent   per finding —      findings in SARIF,
+  session: recon,  independently      Markdown, and JSON
+  payloads, and   reproduces or      with severity +
+  proof-of-concept kills finding      remediation
 ```
 
 | Agent | Role | What It Does |
@@ -178,7 +178,7 @@ Bring your own agent CLI — pwnkit orchestrates it:
 | `claude` | `--runtime claude` | Attack generation, deep analysis — spawns Claude Code CLI |
 | `codex` | `--runtime codex` | Verification, source analysis — spawns Codex CLI |
 | `gemini` | `--runtime gemini` | Large context source analysis — spawns Gemini CLI |
-| `opencode` | `--runtime opencode` | Multi-provider flexibility — spawns OpenCode CLI |
+| `` | `--runtime ` | Multi-provider flexibility — spawns CLI |
 | `auto` | `--runtime auto` | Best overall — auto-detects installed runtimes, picks best per stage |
 
 Combined with scan modes:
@@ -190,7 +190,7 @@ Combined with scan modes:
 | `mcp` | `--mode mcp` | Connect to MCP server, enumerate tools, test each for security issues |
 | `web` | `--mode web` | Full web pentesting — SQLi, XSS, SSRF, auth bypass, IDOR |
 
-> `deep`, `mcp`, and `web` modes require a process runtime (`claude`, `codex`, `gemini`, `opencode`, or `auto`).
+> `deep`, `mcp`, and `web` modes require a process runtime (`claude`, `codex`, `gemini`, ``, or `auto`).
 
 ## How It Compares
 
@@ -220,28 +220,28 @@ name: AI Security Scan
 on: [push, pull_request]
 
 permissions:
-  contents: read
-  security-events: write
+ contents: read
+ security-events: write
 
 jobs:
-  pwnkit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+ pwnkit:
+  runs-on: ubuntu-latest
+  steps:
+   - uses: actions/checkout@v4
 
-      - name: Run pwnkit
-        uses: peaktwilight/pwnkit/action@v1
-        with:
-          target: ${{ secrets.STAGING_API_URL }}
-          depth: default  # quick | default | deep
-          fail-on-severity: high  # critical | high | medium | low | info | none
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+   - name: Run pwnkit
+    uses: peaktwilight/pwnkit/action@v1
+    with:
+     target: ${{ secrets.STAGING_API_URL }}
+     depth: default # quick | default | deep
+     fail-on-severity: high # critical | high | medium | low | info | none
+    env:
+     OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: pwnkit-report/report.sarif
+   - name: Upload SARIF
+    uses: github/codeql-action/upload-sarif@v3
+    with:
+     sarif_file: pwnkit-report/report.sarif
 ```
 
 > **API Key Priority:** pwnkit checks for `OPENROUTER_API_KEY` first, then `ANTHROPIC_API_KEY`, then `OPENAI_API_KEY`. OpenRouter gives you access to many models (including free ones) through a single key at [openrouter.ai](https://openrouter.ai).
@@ -291,7 +291,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 - [x] MCP server scanning
 - [x] npm package auditing
 - [x] Source code review (local + GitHub)
-- [x] Multi-runtime support (Claude, Codex, Gemini, OpenCode)
+- [x] Multi-runtime support (Claude, Codex, Gemini)
 - [x] Multi-turn agentic attacks (agents adapt payloads based on responses)
 - [x] Web pentesting mode (SQLi, XSS, SSRF, auth bypass, IDOR)
 - [ ] RAG pipeline security (poisoning, extraction)

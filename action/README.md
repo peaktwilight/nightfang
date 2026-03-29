@@ -9,28 +9,28 @@ name: AI Security Scan
 on: [push, pull_request]
 
 permissions:
-  contents: read
-  security-events: write
+ contents: read
+ security-events: write
 
 jobs:
-  pwnkit:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+ pwnkit:
+  runs-on: ubuntu-latest
+  steps:
+   - uses: actions/checkout@v4
 
-      - name: Run pwnkit
-        uses: peaktwilight/pwnkit/action@v1
-        with:
-          target: ${{ secrets.STAGING_API_URL }}
-          depth: default
-          runtime: api
-          mode: probe
-          fail-on-severity: high
+   - name: Run pwnkit
+    uses: peaktwilight/pwnkit/action@v1
+    with:
+     target: ${{ secrets.STAGING_API_URL }}
+     depth: default
+     runtime: api
+     mode: probe
+     fail-on-severity: high
 
-      - name: Upload SARIF
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: pwnkit-report/report.sarif
+   - name: Upload SARIF
+    uses: github/codeql-action/upload-sarif@v3
+    with:
+     sarif_file: pwnkit-report/report.sarif
 ```
 
 ## Deep Scan Example
@@ -39,30 +39,30 @@ jobs:
 
 ```yaml
 jobs:
-  pwnkit-deep:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+ pwnkit-deep:
+  runs-on: ubuntu-latest
+  steps:
+   - uses: actions/checkout@v4
 
-      - name: Install Claude Code CLI
-        run: npm install --global @anthropic-ai/claude-code
+   - name: Install Claude Code CLI
+    run: npm install --global @anthropic-ai/claude-code
 
-      - name: Run pwnkit deep scan
-        uses: peaktwilight/pwnkit/action@v1
-        with:
-          target: ${{ secrets.STAGING_API_URL }}
-          runtime: claude
-          mode: deep
-          repo-path: .
-          timeout: 60000
-          fail-on-severity: high
+   - name: Run pwnkit deep scan
+    uses: peaktwilight/pwnkit/action@v1
+    with:
+     target: ${{ secrets.STAGING_API_URL }}
+     runtime: claude
+     mode: deep
+     repo-path: .
+     timeout: 60000
+     fail-on-severity: high
 ```
 
 ## Inputs
 
 - `target` (required): Target URL to scan.
 - `depth` (optional, default `default`): `quick`, `default`, or `deep`.
-- `runtime` (optional, default `api`): `api`, `claude`, `codex`, `gemini`, `opencode`, or `auto`.
+- `runtime` (optional, default `api`): `api`, `claude`, `codex`, `gemini`, ``, or `auto`.
 - `mode` (optional, default `probe`): `probe`, `deep`, or `mcp`.
 - `repo-path` (optional): Local repo path to analyze during `deep` mode.
 - `timeout` (optional, default `30000`): Request/runtime timeout in milliseconds.

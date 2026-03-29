@@ -3,75 +3,75 @@ description: Run Pwnkit in CI, generate SARIF, and fail on a configurable severi
 author: peaktwilight
 
 inputs:
-  target:
-    description: Target URL to scan.
-    required: true
-  depth:
-    description: Scan depth (quick, default, deep).
-    required: false
-    default: default
-  runtime:
-    description: Runtime to use (api, claude, codex, gemini, opencode, auto).
-    required: false
-    default: api
-  mode:
-    description: Scan mode (probe, deep, mcp).
-    required: false
-    default: probe
-  repo-path:
-    description: Local repository path for source analysis in deep mode.
-    required: false
-    default: ""
-  timeout:
-    description: Request/runtime timeout in milliseconds.
-    required: false
-    default: "30000"
-  fail-on-severity:
-    description: Severity threshold that fails the job (critical, high, medium, low, info, none).
-    required: false
-    default: high
-  report-dir:
-    description: Directory where report.json and report.sarif are written.
-    required: false
-    default: pwnkit-report
-  pwnkit-version:
-    description: Pwnkit npm version to install (for example: latest, 0.1.0).
-    required: false
-    default: latest
+ target:
+  description: Target URL to scan.
+  required: true
+ depth:
+  description: Scan depth (quick, default, deep).
+  required: false
+  default: default
+ runtime:
+  description: Runtime to use (api, claude, codex, gemini, auto).
+  required: false
+  default: api
+ mode:
+  description: Scan mode (probe, deep, mcp).
+  required: false
+  default: probe
+ repo-path:
+  description: Local repository path for source analysis in deep mode.
+  required: false
+  default: ""
+ timeout:
+  description: Request/runtime timeout in milliseconds.
+  required: false
+  default: "30000"
+ fail-on-severity:
+  description: Severity threshold that fails the job (critical, high, medium, low, info, none).
+  required: false
+  default: high
+ report-dir:
+  description: Directory where report.json and report.sarif are written.
+  required: false
+  default: pwnkit-report
+ pwnkit-version:
+  description: Pwnkit npm version to install (for example: latest, 0.1.0).
+  required: false
+  default: latest
 
 outputs:
-  json-report-file:
-    description: Absolute path to generated JSON report.
-    value: ${{ steps.scan.outputs.json-report-file }}
-  sarif-report-file:
-    description: Absolute path to generated SARIF report.
-    value: ${{ steps.scan.outputs.sarif-report-file }}
-  total-findings:
-    description: Number of findings found in the scan.
-    value: ${{ steps.scan.outputs.total-findings }}
+ json-report-file:
+  description: Absolute path to generated JSON report.
+  value: ${{ steps.scan.outputs.json-report-file }}
+ sarif-report-file:
+  description: Absolute path to generated SARIF report.
+  value: ${{ steps.scan.outputs.sarif-report-file }}
+ total-findings:
+  description: Number of findings found in the scan.
+  value: ${{ steps.scan.outputs.total-findings }}
 
 runs:
-  using: composite
-  steps:
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
+ using: composite
+ steps:
+  - name: Setup Node.js
+   uses: actions/setup-node@v4
+   with:
+    node-version: 20
 
-    - name: Install Pwnkit CLI
-      shell: bash
-      run: npm install --global "pwnkit@${{ inputs.pwnkit-version }}"
+  - name: Install Pwnkit CLI
+   shell: bash
+   run: npm install --global "pwnkit@${{ inputs.pwnkit-version }}"
 
-    - id: scan
-      name: Run Pwnkit scan
-      shell: bash
-      run: "${{ github.action_path }}/run-scan.sh"
-      env:
-        INPUT_TARGET: ${{ inputs.target }}
-        INPUT_DEPTH: ${{ inputs.depth }}
-        INPUT_RUNTIME: ${{ inputs.runtime }}
-        INPUT_MODE: ${{ inputs.mode }}
-        INPUT_REPO_PATH: ${{ inputs.repo-path }}
-        INPUT_TIMEOUT: ${{ inputs.timeout }}
-        INPUT_FAIL_ON_SEVERITY: ${{ inputs.fail-on-severity }}
-        INPUT_REPORT_DIR: ${{ inputs.report-dir }}
+  - id: scan
+   name: Run Pwnkit scan
+   shell: bash
+   run: "${{ github.action_path }}/run-scan.sh"
+   env:
+    INPUT_TARGET: ${{ inputs.target }}
+    INPUT_DEPTH: ${{ inputs.depth }}
+    INPUT_RUNTIME: ${{ inputs.runtime }}
+    INPUT_MODE: ${{ inputs.mode }}
+    INPUT_REPO_PATH: ${{ inputs.repo-path }}
+    INPUT_TIMEOUT: ${{ inputs.timeout }}
+    INPUT_FAIL_ON_SEVERITY: ${{ inputs.fail-on-severity }}
+    INPUT_REPORT_DIR: ${{ inputs.report-dir }}

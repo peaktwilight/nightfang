@@ -61,7 +61,7 @@ export async function scan(
   if (isAuto) {
     availableRuntimes = await detectAvailableRuntimes();
     if (availableRuntimes.size === 0) {
-      throw new Error("--runtime auto: no CLI runtimes (claude, codex, gemini, opencode) detected. Install at least one or use --runtime api.");
+      throw new Error("--runtime auto: no CLI runtimes (claude, codex, gemini) detected. Install at least one or use --runtime api.");
     }
   }
 

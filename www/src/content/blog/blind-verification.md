@@ -167,7 +167,7 @@ And because pwnkit is runtime-agnostic, this works with whatever you're running:
 
 - **Claude Code** &mdash; `--runtime claude` with `--json-schema`
 - **Codex** &mdash; `--runtime codex` with `--output-schema`
-- **Gemini, OpenCode, or any API** &mdash; same pipeline, different backend
+- **Gemini, or any API** &mdash; same pipeline, different backend
 
 ## the pipeline, end to end
 
