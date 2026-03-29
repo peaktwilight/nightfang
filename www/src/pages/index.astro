@@ -34,9 +34,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
               <svg class="w-4 h-4 check-icon hidden" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
             </button>
           </div>
-          <a href="https://github.com/peaktwilight/pwnkit#quick-start" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white hover:bg-white/90 text-black font-medium rounded-lg px-6 py-3 transition-colors text-sm">
-            Get started
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <a href="https://github.com/peaktwilight/pwnkit" target="_blank" rel="noopener" class="inline-flex items-center gap-2 bg-white hover:bg-white/90 text-black font-medium rounded-lg px-5 py-3 transition-colors text-sm">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+            GitHub
           </a>
         </div>
         <p class="text-xs text-ash mb-16 animate-fade-up" style="animation-delay: 0.3s">
@@ -178,7 +178,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     <!-- 5 Commands -->
     <section id="commands" data-section="commands" class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-6 text-center" style="font-family: 'Outfit', sans-serif">Just give it a target.</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Just give it a target.</h2>
 
         <!-- Compact command grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -200,9 +200,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     <!-- Why pwnkit -->
     <section class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">Why pwnkit</h2>
-        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Why pwnkit</h2>
 
         <div class="grid sm:grid-cols-3 gap-4">
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-crimson/20 transition-colors">
@@ -233,12 +231,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     <!-- Comparison -->
     <section id="comparison" data-section="comparison" class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <div class="text-center mb-12">
-          <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">How it compares</h2>
-          <p class="text-smoke text-lg">Independent. Open source. No vendor lock-in.</p>
-        </div>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">How it compares</h2>
 
-        <div class="overflow-x-auto">
+        <div class="bg-night-lighter border border-white/5 rounded-xl p-6 overflow-x-auto">
           <table class="w-full text-sm">
             <thead>
               <tr class="border-b border-white/10">
@@ -377,13 +372,15 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     <!-- Self-Scan Badge — live dogfooding results -->
     <section class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Dogfooding</h2>
+
         <div class="bg-night-lighter border border-white/5 rounded-xl p-6 sm:p-8">
           <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
             <div class="flex items-center gap-3">
               <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
               <h3 class="font-semibold text-lg" style="font-family: 'Outfit', sans-serif">pwnkit reviews its own source code</h3>
             </div>
-            <span class="text-xs text-ash" class="font-mono">Every 6 hours via GitHub Actions</span>
+            <span class="text-xs text-ash">On every push via GitHub Actions</span>
           </div>
           <p class="text-smoke text-sm mb-5">pwnkit runs <code class="text-white/60">pwnkit review .</code> on its own repository. The same agentic pipeline that found 7 CVEs — pointed at itself. If it finds something, you'll see it here.</p>
 
@@ -415,7 +412,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     <!-- Credibility -->
     <section id="about" data-section="about" class="py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6 text-center">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-4" style="font-family: 'Outfit', sans-serif">Built from real security research</h2>
+        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Built from real security research</h2>
         <p class="text-smoke text-lg mb-8">
           <span class="text-white font-semibold">7 CVEs</span> found in packages with <span class="text-white font-semibold">40M+ weekly downloads</span>.
         </p>
