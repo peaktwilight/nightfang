@@ -75,9 +75,20 @@ export function registerAuditCommand(program: Command): void {
 
       if (format === "terminal") checkRuntimeAvailability();
 
-      const spinner = format === "terminal" ? createpwnkitSpinner("Initializing audit...") : null;
+      // Use Ink TUI for terminal output, fallback to spinner for json/md
+      const useInkUI = format === "terminal";
+      let inkUI: ReturnType<typeof import("../ui/renderScan.js").renderScanUI> | null = null;
+      let spinner: ReturnType<typeof createpwnkitSpinner> | null = null;
+      let eventHandler: (event: any) => void;
 
-      const eventHandler = createEventHandler({ format, spinner });
+      if (useInkUI) {
+        const { renderScanUI } = await import("../ui/renderScan.js");
+        inkUI = renderScanUI({ version: VERSION, target: packageName, depth, mode: "audit" });
+        eventHandler = inkUI.onEvent;
+      } else {
+        spinner = createpwnkitSpinner("Initializing audit...");
+        eventHandler = createEventHandler({ format, spinner });
+      }
 
       try {
         const report = await packageAudit({
@@ -96,14 +107,19 @@ export function registerAuditCommand(program: Command): void {
           onEvent: eventHandler,
         });
 
-        const output = formatAuditReport(report, format);
-        console.log(output);
+        if (inkUI) {
+          // Set report data for Ink UI to render summary
+          inkUI.setReport(report);
+          await inkUI.waitForExit();
+        } else {
+          const output = formatAuditReport(report, format);
+          console.log(output);
 
-        // Print shareable report URL
-        if (format === "terminal") {
-          console.log(
-            `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report))}\n`
-          );
+          if (format === "terminal") {
+            console.log(
+              `\n  ${chalk.gray("Share this report:")} ${chalk.cyan(buildShareUrl(report))}\n`
+            );
+          }
         }
 
         // Exit with non-zero if critical/high findings

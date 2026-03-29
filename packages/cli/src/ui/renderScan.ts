@@ -1,0 +1,207 @@
+import React from "react";
+import { render } from "ink";
+import { ScanUI } from "./ScanUI.js";
+import type { ScanEvent, ScanSummary, StageName, StageStatusKind, StageState, StageFinding } from "./ScanUI.js";
+
+// Re-export types for consumers
+export type { ScanEvent, ScanSummary, StageName };
+
+interface RenderScanOptions {
+  version: string;
+  target: string;
+  depth: string;
+  mode?: string;
+}
+
+interface RenderScanResult {
+  /** Push a scan event to update the TUI. */
+  onEvent: (event: ScanEvent) => void;
+  /** Resolves when the Ink instance is unmounted. */
+  waitForExit: () => Promise<void>;
+  /** Set the final report summary (renders the bottom bar). */
+  setReport: (report: {
+    summary: { critical: number; high: number; medium: number; low: number; info?: number };
+    shareUrl?: string;
+  }) => void;
+}
+
+const DEFAULT_STAGES: Array<{ name: StageName; label: string }> = [
+  { name: "install", label: "Install" },
+  { name: "npm-audit", label: "npm audit" },
+  { name: "semgrep", label: "Semgrep" },
+  { name: "ai-agent", label: "AI Agent" },
+  { name: "verify", label: "Verify" },
+  { name: "report", label: "Report" },
+];
+
+/**
+ * Create and render the Ink-based scan TUI.
+ *
+ * Returns an event-driven interface: the caller pushes ScanEvents and the
+ * UI updates automatically.  Call `setReport` once the scan finishes to
+ * render the summary bar, then `waitForExit` to block until Ink unmounts.
+ */
+export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
+  // ── Mutable state managed outside React ──
+  // We drive React updates by calling a setter captured via a wrapper component.
+
+  let stages: StageState[] = DEFAULT_STAGES.map((s) => ({
+    ...s,
+    status: "pending" as StageStatusKind,
+  }));
+  let summary: ScanSummary | null = null;
+  let rerender: (() => void) | null = null;
+
+  // Thin wrapper component that reads from the mutable state above.
+  // `rerender` triggers a React re-render by bumping a counter.
+  function App() {
+    const [, setTick] = React.useState(0);
+
+    // Capture the re-render trigger on first mount.
+    React.useEffect(() => {
+      rerender = () => setTick((t) => t + 1);
+      return () => {
+        rerender = null;
+      };
+    }, []);
+
+    return React.createElement(ScanUI, {
+      version: opts.version,
+      stages,
+      summary,
+    });
+  }
+
+  const instance = render(React.createElement(App));
+
+  // ── Helpers ──
+
+  function updateStage(name: StageName, updater: (s: StageState) => StageState) {
+    stages = stages.map((s) => (s.name === name ? updater(s) : s));
+    rerender?.();
+  }
+
+  // ── Public API ──
+
+  // Map audit/scan event stage names to UI stage names
+  function mapStage(eventStage: string | undefined): StageName | undefined {
+    if (!eventStage) return undefined;
+    const map: Record<string, StageName> = {
+      "discovery": "install",
+      "source-analysis": "semgrep",
+      "attack": "ai-agent",
+      "verify": "verify",
+      "report": "report",
+      // Direct matches
+      "install": "install",
+      "npm-audit": "npm-audit",
+      "semgrep": "semgrep",
+      "ai-agent": "ai-agent",
+    };
+    // Also match by message content
+    return map[eventStage] ?? undefined;
+  }
+
+  function onEvent(event: ScanEvent): void {
+    // Map stage names and also detect stages from message content
+    let stageName = mapStage(event.stage);
+    if (!stageName && event.message) {
+      const msg = event.message.toLowerCase();
+      if (msg.includes("install")) stageName = "install";
+      else if (msg.includes("npm audit")) stageName = "npm-audit";
+      else if (msg.includes("semgrep")) stageName = "semgrep";
+      else if (msg.includes("agent") || msg.includes("claude") || msg.includes("codex") || msg.includes("agentic")) stageName = "ai-agent";
+    }
+
+    switch (event.type) {
+      case "stage:start":
+        if (stageName) {
+          updateStage(stageName, (s) => ({
+            ...s,
+            status: "running",
+            detail: event.message,
+            actions: [],
+            findings: [],
+          }));
+        }
+        break;
+
+      case "stage:end":
+        if (stageName) {
+          updateStage(stageName, (s) => ({
+            ...s,
+            status: "done",
+            detail: event.message ?? s.detail,
+            duration: (event.data?.durationMs as number | undefined) ?? s.duration,
+          }));
+        }
+        break;
+
+      case "stage:error":
+        if (stageName) {
+          updateStage(stageName, (s) => ({
+            ...s,
+            status: "error",
+            detail: event.message ?? s.detail,
+            error: event.message,
+          }));
+        }
+        break;
+
+      case "action":
+        if (stageName) {
+          updateStage(stageName, (s) =>
+            s.status === "running"
+              ? {
+                  ...s,
+                  actions: [...(s.actions ?? []), event.message ?? ""].slice(-5),
+                }
+              : s
+          );
+        }
+        break;
+
+      case "finding":
+        if (stageName) {
+          updateStage(stageName, (s) => ({
+            ...s,
+            findings: [
+              ...(s.findings ?? []),
+              {
+                severity: (event.data?.severity as string) ?? "medium",
+                title: event.message ?? "Unknown finding",
+              },
+            ],
+          }));
+        }
+        break;
+
+      case "summary":
+        summary = event.data as unknown as ScanSummary;
+        rerender?.();
+        break;
+    }
+  }
+
+  function setReport(report: {
+    summary: { critical: number; high: number; medium: number; low: number; info?: number };
+    shareUrl?: string;
+  }): void {
+    summary = {
+      critical: report.summary.critical,
+      high: report.summary.high,
+      medium: report.summary.medium,
+      low: report.summary.low,
+      info: report.summary.info,
+      shareUrl: report.shareUrl,
+    };
+    rerender?.();
+  }
+
+  async function waitForExit(): Promise<void> {
+    instance.unmount();
+    await instance.waitUntilExit();
+  }
+
+  return { onEvent, waitForExit, setReport };
+}
