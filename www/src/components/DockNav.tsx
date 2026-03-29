@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const SECTIONS = [
@@ -13,8 +13,7 @@ export default function DockNav() {
   const [active, setActive] = useState(-1);
   const [isHomepage, setIsHomepage] = useState(false);
   const [isBlogPage, setIsBlogPage] = useState(false);
-  const [isSticky, setIsSticky] = useState(false);
-  const sentinelRef = useRef<HTMLDivElement>(null);
+  const [showLogo, setShowLogo] = useState(false);
 
   useEffect(() => {
     const path = window.location.pathname;
@@ -22,15 +21,17 @@ export default function DockNav() {
     setIsHomepage(onHome);
     setIsBlogPage(path.startsWith("/blog"));
 
-    // On non-homepage, always show sticky with logo
     if (!onHome) {
-      setIsSticky(true);
+      setShowLogo(true);
       setActive(-1);
       return;
     }
 
-    // Track scroll for active section
     const onScroll = () => {
+      // Show logo once scrolled past the 3D character area (~350px)
+      setShowLogo(window.scrollY > 350);
+
+      // Active section tracking
       const ids = [...SECTIONS.map(s => s.id)].reverse();
       for (const id of ids) {
         const el = document.querySelector(`[data-section="${id}"]`);
@@ -46,23 +47,6 @@ export default function DockNav() {
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
-
-    // Use IntersectionObserver on sentinel to detect when nav should go sticky
-    const sentinel = document.getElementById("nav-sentinel");
-    if (sentinel) {
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          setIsSticky(!entry.isIntersecting);
-        },
-        { threshold: 0 }
-      );
-      observer.observe(sentinel);
-      return () => {
-        window.removeEventListener("scroll", onScroll);
-        observer.disconnect();
-      };
-    }
-
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
@@ -77,33 +61,25 @@ export default function DockNav() {
 
   return (
     <motion.header
-      initial={{ y: -10, opacity: 0 }}
+      initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className={`z-50 max-w-[calc(100vw-24px)] transition-all duration-300 ${
-        isSticky
-          ? "fixed top-3 left-1/2 -translate-x-1/2"
-          : "relative mx-auto mt-2 mb-6"
-      }`}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="fixed top-3 left-1/2 -translate-x-1/2 z-50 max-w-[calc(100vw-24px)]"
     >
       <div
-        className={`flex items-center justify-between sm:justify-start gap-0.5 rounded-xl border px-2 sm:px-1.5 py-1.5 shadow-2xl shadow-black/30 w-[calc(100vw-24px)] sm:w-auto transition-all duration-300 ${
-          isSticky
-            ? "border-white/10 bg-[#0a0a0a]/80 backdrop-blur-2xl"
-            : "border-white/5 bg-[#0a0a0a]/50 backdrop-blur-xl"
-        }`}
+        className="flex items-center justify-between sm:justify-start gap-0.5 rounded-xl border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-2xl px-2 sm:px-1.5 py-1.5 shadow-2xl shadow-black/30 w-[calc(100vw-24px)] sm:w-auto"
         style={{ fontFamily: "'Outfit', sans-serif" }}
       >
-        {/* Logo — only visible when sticky */}
+        {/* Logo — slides in when scrolled past the character */}
         <AnimatePresence>
-          {isSticky && (
+          {showLogo && (
             <motion.a
               href="/"
-              initial={{ width: 0, opacity: 0 }}
-              animate={{ width: "auto", opacity: 1 }}
-              exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className="flex items-center gap-1.5 h-9 rounded-lg px-2.5 mr-0.5 hover:bg-white/[0.04] transition-colors overflow-hidden"
+              initial={{ width: 0, opacity: 0, marginRight: 0 }}
+              animate={{ width: "auto", opacity: 1, marginRight: 2 }}
+              exit={{ width: 0, opacity: 0, marginRight: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="flex items-center gap-1.5 h-9 rounded-lg px-2.5 hover:bg-white/[0.04] transition-colors overflow-hidden"
             >
               <img src="/pwnkit-icon.gif" alt="" className="w-[28px] h-[28px] shrink-0 rounded-sm" />
               <span className="text-[13px] font-bold text-white tracking-tight leading-none whitespace-nowrap" style={{ fontFamily: "'Outfit', sans-serif" }}>pwnkit</span>
@@ -111,7 +87,7 @@ export default function DockNav() {
           )}
         </AnimatePresence>
 
-        {isSticky && <div className="h-5 w-px bg-white/10 hidden sm:block" />}
+        {showLogo && <div className="h-5 w-px bg-white/10 hidden sm:block" />}
 
         {SECTIONS.map((section, i) => {
           const isActive = i === active;
