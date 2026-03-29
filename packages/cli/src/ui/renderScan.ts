@@ -60,11 +60,13 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   const x = "\x1b[0m";     // reset
 
   console.log("");
-  console.log(`${r}    ╱▔▔▔╲${x}`);
-  console.log(`${r}   ╱ ${b}◉ ◉${x}${r} ╲${x}   ${b}pwnkit${x} ${d}${opts.mode}${x}`);
-  console.log(`${r}  ╱  ╲▁╱  ╲${x}  ${d}${opts.target}${x}`);
-  console.log(`${r}  ╲  ╱ ╲  ╱${x}  ${d}pwnkit.com${x}`);
-  console.log(`${r}   ╲╱   ╲╱${x}`);
+  console.log(`${r}      ▄▀▀▀▀▀▄${x}`);
+  console.log(`${r}    ▄▀       ▀▄${x}`);
+  console.log(`${r}   █  ${b}■${x}${r}   ${b}■${x}${r}  █${x}   ${b}pwnkit${x} ${d}${opts.mode}${x}`);
+  console.log(`${r}   █         █${x}   ${d}${opts.target}${x}`);
+  console.log(`${r}    ▀▄     ▄▀${x}    ${d}pwnkit.com${x}`);
+  console.log(`${r}     █▄ ▄█${x}`);
+  console.log(`${r}     ▀▄ ▄▀${x}`);
   console.log("");
 
   function App() {
