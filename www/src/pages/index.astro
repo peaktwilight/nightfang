@@ -12,7 +12,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
   <main>
 
     <!-- Hero -->
-    <section data-section="hero" class="relative min-h-screen pt-24 pb-16 overflow-hidden">
+    <section data-section="hero" class="relative min-h-screen pt-16 sm:pt-24 pb-12 sm:pb-16 overflow-hidden">
       <div class="max-w-6xl mx-auto px-6 text-center">
         <!-- 3D pwnkit character -->
         <div class="animate-fade-up">
@@ -131,40 +131,40 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- What you can scan -->
-    <section class="py-24 border-t border-white/5">
+    <section class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">General-purpose autonomous pentesting.</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">General-purpose autonomous pentesting.</h2>
 
-        <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+        <div class="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory sm:grid sm:grid-cols-2 lg:grid-cols-5 sm:gap-4 sm:overflow-visible sm:pb-0">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center min-w-[140px] snap-start shrink-0 sm:min-w-0 sm:shrink">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
             <p class="text-xs text-ash">ChatGPT, Claude, Llama APIs, custom chatbots</p>
           </div>
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center min-w-[140px] snap-start shrink-0 sm:min-w-0 sm:shrink">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">MCP Servers</h3>
             <p class="text-xs text-ash">Tool schemas, validation, auth, poisoning</p>
           </div>
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center min-w-[140px] snap-start shrink-0 sm:min-w-0 sm:shrink">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">npm Packages</h3>
             <p class="text-xs text-ash">Supply chain, malicious code, dependency risk</p>
           </div>
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center min-w-[140px] snap-start shrink-0 sm:min-w-0 sm:shrink">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">Source Code</h3>
             <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
           </div>
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center min-w-[140px] snap-start shrink-0 sm:min-w-0 sm:shrink">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             </div>
@@ -176,9 +176,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- 5 Commands -->
-    <section id="commands" data-section="commands" class="py-24 border-t border-white/5">
+    <section id="commands" data-section="commands" class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Just give it a target.</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Just give it a target.</h2>
 
         <!-- Compact command grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -198,9 +198,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- Why pwnkit -->
-    <section class="py-24 border-t border-white/5">
+    <section class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Why pwnkit</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Why pwnkit</h2>
 
         <div class="grid sm:grid-cols-3 gap-4">
           <div class="bg-night-lighter border border-white/5 rounded-xl p-6 hover:border-crimson/20 transition-colors">
@@ -229,12 +229,13 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- Comparison -->
-    <section id="comparison" data-section="comparison" class="py-24 border-t border-white/5">
+    <section id="comparison" data-section="comparison" class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">How it compares</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">How it compares</h2>
 
-        <div class="bg-night-lighter border border-white/5 rounded-xl p-6 overflow-x-auto">
-          <table class="w-full text-sm">
+        <div class="bg-night-lighter border border-white/5 rounded-xl p-4 sm:p-6 overflow-x-auto">
+          <p class="text-[10px] text-ash mb-2 sm:hidden">Scroll to compare &rarr;</p>
+          <table class="w-full text-sm min-w-[600px]">
             <thead>
               <tr class="border-b border-white/10">
                 <th class="text-left py-3 pr-4 text-smoke font-medium">Feature</th>
@@ -341,9 +342,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- CI/CD -->
-    <section id="ci" data-section="ci" class="py-24 border-t border-white/5">
+    <section id="ci" data-section="ci" class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Findings in GitHub's Security tab.</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Findings in GitHub's Security tab.</h2>
 
         <div class="rounded-xl overflow-hidden border border-white/10">
           <div class="bg-night-lighter border-b border-white/5 px-4 py-2.5 flex items-center gap-2">
@@ -370,9 +371,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- Self-Scan Badge — live dogfooding results -->
-    <section class="py-24 border-t border-white/5">
+    <section class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Dogfooding</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Dogfooding</h2>
 
         <div class="bg-night-lighter border border-white/5 rounded-xl p-6 sm:p-8">
           <div class="flex flex-col sm:flex-row sm:items-center gap-4 mb-5">
@@ -410,9 +411,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- Credibility -->
-    <section id="about" data-section="about" class="py-24 border-t border-white/5">
+    <section id="about" data-section="about" class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6 text-center">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Built from real security research</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Built from real security research</h2>
         <p class="text-smoke text-lg mb-8">
           <span class="text-white font-semibold">7 CVEs</span> found in packages with <span class="text-white font-semibold">40M+ weekly downloads</span>.
         </p>
@@ -442,9 +443,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     </section>
 
     <!-- Final CTA -->
-    <section class="py-24 border-t border-white/5">
+    <section class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6 text-center">
-        <h2 class="text-3xl sm:text-4xl font-bold tracking-tight mb-8" style="font-family: 'Outfit', sans-serif">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8" style="font-family: 'Outfit', sans-serif">
           Stop guessing.<br/>Start <span class="text-crimson">proving</span>.
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto mb-10">

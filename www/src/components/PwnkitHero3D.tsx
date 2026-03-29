@@ -252,7 +252,7 @@ const VoxelCharacter = () => {
 
 export default function PwnkitHero3D() {
   return (
-    <div className="mx-auto mb-4" style={{ width: '240px', height: '280px' }}>
+    <div className="mx-auto mb-4 w-[160px] h-[180px] sm:w-[240px] sm:h-[280px]">
       <Canvas
         camera={{ position: [0, 0, 4], fov: 45 }}
         dpr={[1, 2]}
