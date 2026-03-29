@@ -96,7 +96,6 @@ export default function DockNav() {
           )}
         </AnimatePresence>
 
-        {showLogo && <div className="h-5 w-px bg-white/10 hidden sm:block" />}
 
         {SECTIONS.map((section, i) => {
           const isActive = i === active;
