@@ -15,4 +15,4 @@ We will acknowledge your report within 48 hours and aim to release a fix within 
 
 | Version | Supported |
 |---------|-----------|
-| 0.1.x   | ✅        |
+| 0.1.x+  | Yes       |

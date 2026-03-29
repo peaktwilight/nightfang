@@ -91,9 +91,9 @@ pwnkit runs autonomous AI agents in a research-then-verify pipeline. Each agent 
 
 ```mermaid
 graph LR
-    A["🔍 Research<br/><small>discover + attack + PoC<br/>single agent session</small>"] --> B["🔒 Blind Verify<br/><small>gets ONLY PoC + path<br/>no reasoning, no bias</small>"]
-    B --> C["📄 Report<br/><small>SARIF · Markdown · JSON<br/>only confirmed findings</small>"]
-    B -->|can't reproduce| D["❌ Killed"]
+    A["Research\ndiscover + attack + PoC\nsingle agent session"] --> B["Blind Verify\ngets ONLY PoC + path\nno reasoning, no bias"]
+    B --> C["Report\nSARIF, Markdown, JSON\nonly confirmed findings"]
+    B -->|can't reproduce| D["Killed"]
 
     style A fill:#1a1a2e,stroke:#DC2626,color:#fff
     style B fill:#1a1a2e,stroke:#3B82F6,color:#fff
@@ -113,12 +113,10 @@ The **blind verification is the differentiator.** The verify agent can't be bias
 
 | Target | Command | How |
 |--------|---------|-----|
-| **LLM Endpoints** — ChatGPT, Claude, Llama APIs, custom chatbots | `scan --target <url>` | HTTP probing + multi-turn agent attacks |
-| **MCP Servers** — Tool schemas, input validation, authorization | `scan --target <url> --mode mcp` | Connects to server, enumerates tools, tests each |
-| **Web Apps & APIs** — AI-powered copilots, agents, RAG pipelines | `scan --target <url> --mode deep --repo ./src` | API probing + source code analysis |
-| **Web Pentesting** — SQLi, XSS, SSRF, auth bypass, IDOR | `scan --target <url> --mode web` | Full autonomous web pentest, agents adapt per finding |
-| **npm Packages** — Dependency supply chain, malicious code | `audit <package>` | Installs in sandbox, runs semgrep + AI code review |
-| **Git Repositories** — Source-level security review | `review <path-or-url>` | Deep analysis with Claude Code, Codex, or Gemini CLI |
+| **LLM Endpoints** — ChatGPT, Claude, Llama APIs, custom chatbots | `pwnkit-cli scan --target <url>` | HTTP probing + multi-turn agent attacks |
+| **npm Packages** — Dependency supply chain, malicious code | `pwnkit-cli audit <package>` | Installs in sandbox, runs semgrep + AI code review |
+| **Git Repositories** — Source-level security review | `pwnkit-cli review <path-or-url>` | Deep analysis with Claude Code, Codex, or Gemini CLI |
+| **Auto-detect** — Give it anything | `pwnkit-cli <target>` | URL, package name, or path — pwnkit figures it out |
 
 ## Example Output
 
@@ -151,20 +149,19 @@ npx pwnkit-cli scan --target https://api.example.com/chat --depth quick
 # Deep audit before launch
 npx pwnkit-cli scan --target https://api.example.com/chat --depth deep
 
-# Source + API scan with Claude Code
-npx pwnkit-cli scan --target https://api.example.com/chat --runtime claude --mode deep --repo ./src
-
-# MCP server audit
-npx pwnkit-cli scan --target https://mcp-server.example.com --mode mcp --runtime claude
-
-# Full web pentest (SQLi, XSS, SSRF, auth bypass, IDOR)
-npx pwnkit-cli scan --target https://example.com --mode web --runtime claude
+# Deep scan with Claude Code CLI
+npx pwnkit-cli scan --target https://api.example.com/chat --depth deep --runtime claude
 
 # Audit an npm package
 npx pwnkit-cli audit react --depth deep --runtime claude
 
 # Review a GitHub repo
 npx pwnkit-cli review https://github.com/user/repo --runtime codex --depth deep
+
+# Auto-detect — just give it a target
+npx pwnkit-cli express
+npx pwnkit-cli ./my-repo
+npx pwnkit-cli https://api.example.com
 ```
 
 ## Runtime Modes
@@ -173,23 +170,11 @@ Bring your own agent CLI — pwnkit orchestrates it:
 
 | Runtime | Flag | Best For |
 |---------|------|----------|
-| `api` | `--runtime api` | CI, quick scans — uses OpenRouter by default (`claude-sonnet-4.6`), no dependencies (default) |
-| `claude` | `--runtime claude` | Attack generation, deep analysis — spawns Claude Code CLI |
-| `codex` | `--runtime codex` | Verification, source analysis — spawns Codex CLI |
+| `api` | `--runtime api` | CI, quick scans — uses your API key (OpenRouter, Anthropic, OpenAI). Default |
+| `claude` | `--runtime claude` | Deep analysis — spawns Claude Code CLI with your subscription |
+| `codex` | `--runtime codex` | Source analysis — spawns Codex CLI |
 | `gemini` | `--runtime gemini` | Large context source analysis — spawns Gemini CLI |
-| `` | `--runtime ` | Multi-provider flexibility — spawns CLI |
-| `auto` | `--runtime auto` | Best overall — auto-detects installed runtimes, picks best per stage |
-
-Combined with scan modes:
-
-| Mode | Flag | Description |
-|------|------|-------------|
-| `probe` | `--mode probe` | Send payloads to API, check responses (default) |
-| `deep` | `--mode deep` | API probing + source code audit (requires `--repo`) |
-| `mcp` | `--mode mcp` | Connect to MCP server, enumerate tools, test each for security issues |
-| `web` | `--mode web` | Full web pentesting — SQLi, XSS, SSRF, auth bypass, IDOR |
-
-> `deep`, `mcp`, and `web` modes require a process runtime (`claude`, `codex`, `gemini`, ``, or `auto`).
+| `auto` | `--runtime auto` | Auto-detects installed CLIs, picks best per stage |
 
 ## How It Compares
 
@@ -198,11 +183,11 @@ Combined with scan modes:
 | **Agentic multi-turn pipeline** | Yes — Autonomous agents with tool use | No — Single runner | No — Single runner | No — Rule-based | No — Template runner |
 | **Verification (no false positives)** | Yes — Re-exploits to confirm | No | No | No | No |
 | **LLM endpoint scanning** | Yes — Prompt injection, jailbreaks, exfil | Yes — Red-teaming | Yes — Probes | No | No |
-| **Web pentesting (SQLi, XSS, SSRF, IDOR)** | Yes — `--mode web` | No | No | No | Partial — Templates only |
+| **Web pentesting (SQLi, XSS, SSRF, IDOR)** | Yes | No | No | No | Partial — Templates only |
 | **MCP server security** | Yes — Tool poisoning, schema abuse | No | No | No | No |
 | **npm package audit** | Yes — Semgrep + AI review | No | No | Yes — Rules only | No |
 | **Source code review** | Yes — AI-powered deep analysis | No | No | Yes — Rules only | No |
-| **OWASP LLM Top 10** | Yes — 8/10 covered | Partial | Partial | N/A | N/A |
+| **OWASP LLM Top 10** | Yes — Covered | Partial | Partial | N/A | N/A |
 | **SARIF + GitHub Security tab** | Yes | Yes | No | Yes | Yes |
 | **One command, zero config** | Yes — `npx pwnkit-cli scan` | Needs YAML config | Needs Python setup | Needs rules config | Needs templates |
 | **Open source** | Yes — Apache-2.0 | Yes — (acquired by OpenAI) | Yes — MIT | Yes — LGPL / Paid Pro | Yes — MIT |
@@ -285,7 +270,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 ## Roadmap
 
 - [x] Core autonomous agent pipeline (research, blind verify, report)
-- [x] OWASP LLM Top 10 coverage (8/10)
+- [x] OWASP LLM Top 10 coverage
 - [x] SARIF output + GitHub Action
 - [x] MCP server scanning
 - [x] npm package auditing
