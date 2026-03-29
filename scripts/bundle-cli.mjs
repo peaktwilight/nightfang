@@ -1,5 +1,5 @@
 import { build } from "esbuild";
-import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
 
 const outdir = "dist";
 
@@ -43,9 +43,37 @@ await build({
 
 cpSync("packages/templates/attacks", `${outdir}/attacks`, { recursive: true });
 
+// Fix double shebang
 const bundlePath = `${outdir}/index.js`;
 const bundle = readFileSync(bundlePath, "utf8").replace(
   "#!/usr/bin/env node\n#!/usr/bin/env node\n",
   "#!/usr/bin/env node\n"
 );
 writeFileSync(bundlePath, bundle);
+
+// Write a clean package.json for publishing (no workspace: deps)
+const rootPkg = JSON.parse(readFileSync("package.json", "utf8"));
+const publishPkg = {
+  name: rootPkg.name,
+  version: rootPkg.version,
+  type: "module",
+  description: rootPkg.description,
+  bin: { pwnkit: "./index.js" },
+  files: ["index.js", "attacks"],
+  keywords: rootPkg.keywords,
+  author: rootPkg.author,
+  homepage: rootPkg.homepage,
+  bugs: rootPkg.bugs,
+  repository: rootPkg.repository,
+  license: rootPkg.license,
+  engines: { node: ">=20" },
+  dependencies: {
+    "better-sqlite3": rootPkg.dependencies["better-sqlite3"],
+    "drizzle-orm": rootPkg.dependencies["drizzle-orm"],
+  },
+};
+writeFileSync(`${outdir}/package.json`, JSON.stringify(publishPkg, null, 2) + "\n");
+copyFileSync("LICENSE", `${outdir}/LICENSE`);
+copyFileSync("README.md", `${outdir}/README.md`);
+
+console.log(`Bundled pwnkit-cli v${rootPkg.version} → ${outdir}/`);

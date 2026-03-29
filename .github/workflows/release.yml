@@ -24,6 +24,7 @@ jobs:
       - run: pnpm -r build
       - run: node scripts/bundle-cli.mjs
       - run: npm publish --provenance --access public
+        working-directory: dist
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
