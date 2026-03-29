@@ -101,11 +101,23 @@ function StageRow({ stage }: { stage: StageState }) {
       {/* Tool call actions — visible during and after execution */}
       {stage.actions.length > 0 && (
         <Box flexDirection="column" marginLeft={6}>
-          {stage.actions.map((action, i) => (
-            <Text key={i} color={stage.status === "done" ? GRAY : CYAN} dimColor={stage.status === "done"}>
-              {"→ "}{action}
-            </Text>
-          ))}
+          {stage.actions.map((action, i) => {
+            // Verify stage: color confirmed (✓) green, rejected (✗) gray
+            if (stage.id === "verify") {
+              const isConfirmed = action.startsWith("\u2713");
+              const isRejected = action.startsWith("\u2717");
+              return (
+                <Text key={i} color={isConfirmed ? GREEN : isRejected ? GRAY : CYAN}>
+                  {"→ "}{action}
+                </Text>
+              );
+            }
+            return (
+              <Text key={i} color={stage.status === "done" ? GRAY : CYAN} dimColor={stage.status === "done"}>
+                {"→ "}{action}
+              </Text>
+            );
+          })}
         </Box>
       )}
 

@@ -35,7 +35,7 @@ export type { PipelineOptions, PipelineReport } from "./unified-pipeline.js";
 
 // Agent system
 export { runAgentLoop, runNativeAgentLoop, ToolExecutor, getToolsForRole, TOOL_DEFINITIONS } from "./agent/index.js";
-export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt, sourceVerifyPrompt } from "./agent/prompts.js";
+export { discoveryPrompt, attackPrompt, verifyPrompt, reportPrompt, sourceVerifyPrompt, researchPrompt, blindVerifyPrompt } from "./agent/prompts.js";
 export type {
   AgentRole,
   AgentConfig,

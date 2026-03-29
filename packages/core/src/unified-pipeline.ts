@@ -16,7 +16,7 @@ import type {
 import type { ScanListener } from "./scanner.js";
 import { runAnalysisAgent } from "./agent-runner.js";
 import { auditAgentPrompt, reviewAgentPrompt } from "./analysis-prompts.js";
-import { sourceVerifyPrompt } from "./agent/prompts.js";
+import { researchPrompt, blindVerifyPrompt } from "./agent/prompts.js";
 import { runSemgrepScan, bufferToString } from "./shared-analysis.js";
 
 // ── Public types ──
@@ -374,92 +374,6 @@ file: <path/to/file.js:lineNumber>
 Output as many ---FINDING--- blocks as needed. Be precise and honest about severity.`;
 }
 
-// ── Verify phase ──
-
-async function runVerifyPhase(
-  findings: Finding[],
-  prepared: PrepareResult,
-  opts: PipelineOptions,
-  db: any,
-  scanId: string,
-  emit: ScanListener,
-): Promise<Finding[]> {
-  // Only source-code and npm-package targets support source verification
-  if (prepared.resolvedType !== "source-code" && prepared.resolvedType !== "npm-package") {
-    return findings;
-  }
-
-  const verifySystemPrompt = sourceVerifyPrompt(prepared.scopePath, findings);
-
-  const verifiedFindings = await runAnalysisAgent({
-    role: "review", // reuse review role which has read_file + run_command tools
-    scopePath: prepared.scopePath,
-    target: prepared.resolvedTarget,
-    scanId,
-    config: {
-      runtime: opts.runtime,
-      timeout: opts.timeout,
-      depth: opts.depth,
-      apiKey: opts.apiKey,
-      model: opts.model,
-    },
-    db,
-    emit,
-    cliPrompt: buildVerifyCliPrompt(prepared.scopePath, findings),
-    agentSystemPrompt: verifySystemPrompt,
-    cliSystemPrompt: "You are a security verification agent. Re-read the code for each finding, trace data flow, and confirm or reject each finding. Be precise.",
-  });
-
-  // Merge: keep verified findings, mark missing ones as false-positive
-  const verifiedIds = new Set(verifiedFindings.map((f) => f.title.toLowerCase()));
-  return findings.map((f) => {
-    if (verifiedIds.has(f.title.toLowerCase())) {
-      // Find the matching verified finding for any updated info
-      const verified = verifiedFindings.find(
-        (vf) => vf.title.toLowerCase() === f.title.toLowerCase(),
-      );
-      return {
-        ...f,
-        status: "verified" as Finding["status"],
-        confidence: verified?.confidence ?? f.confidence,
-        description: verified?.description ?? f.description,
-      };
-    }
-    return { ...f, status: "false-positive" as Finding["status"] };
-  });
-}
-
-function buildVerifyCliPrompt(scopePath: string, findings: Finding[]): string {
-  const findingList = findings
-    .map(
-      (f, i) =>
-        `${i + 1}. [${f.severity}] ${f.title} (${f.category})\n   ${f.description.slice(0, 300)}`,
-    )
-    .join("\n\n");
-
-  return `You are verifying security findings in the source code at ${scopePath}.
-
-## Findings to verify:
-
-${findingList}
-
-For each finding:
-1. Re-read the vulnerable file independently
-2. Trace data flow from entry point to sink
-3. Confirm exploitability or mark as false positive
-
-For EACH CONFIRMED finding, output:
-
----FINDING---
-title: <exact title from above>
-severity: <critical|high|medium|low|info>
-category: <same category>
-description: <updated description with verification evidence>
-file: <path/to/file.js:lineNumber>
----END---
-
-Only output findings you have CONFIRMED. Omit any you determined are false positives.`;
-}
 
 // ── Build summary from findings ──
 
@@ -481,10 +395,10 @@ function buildSummary(findings: Finding[], totalAttacks: number) {
  * Unified pipeline for all pwnkit scan types.
  *
  * Pipeline:
- *   Phase 1: PREPARE  — detect target type, install/clone/resolve
- *   Phase 2: ANALYZE  — semgrep + npm audit (static analysis)
- *   Phase 3: AGENT    — AI agent deep analysis via runAnalysisAgent
- *   Phase 4: VERIFY   — re-read code and confirm findings (source targets only)
+ *   Phase 1: PREPARE   — detect target type, install/clone/resolve
+ *   Phase 2: ANALYZE   — semgrep + npm audit (static analysis)
+ *   Phase 3: RESEARCH  — single AI agent discovers, attacks, and writes PoCs
+ *   Phase 4: VERIFY    — parallel blind agents independently verify each finding
  *
  * Reuses runAnalysisAgent() from agent-runner.ts which handles all runtimes
  * (Claude Code CLI, Codex, API with native tool_use, legacy fallback).
@@ -530,6 +444,13 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     // ── PHASE 2: ANALYZE (static analysis) ──
     emit({ type: "stage:start", stage: "analyze", message: "Running static analysis..." });
 
+    // Intercept inner events — convert to analyze sub-actions
+    const analyzeEmit: ScanListener = (event) => {
+      if (event.type === "stage:start") {
+        emit({ type: "stage:start", stage: "analyze", message: event.message });
+      }
+    };
+
     let semgrepFindings: SemgrepFinding[] = [];
     let npmAuditFindings: NpmAuditFinding[] = [];
 
@@ -538,7 +459,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       try {
         semgrepFindings = runSemgrepScan(
           prepared.scopePath,
-          emit,
+          analyzeEmit,
           prepared.resolvedType === "npm-package" ? { noGitIgnore: true } : undefined,
         );
       } catch (err) {
@@ -563,23 +484,33 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       message: `Analysis complete: ${semgrepFindings.length} semgrep findings, ${npmAuditFindings.length} npm advisories`,
     });
 
-    // ── PHASE 3: AGENT ──
-    emit({ type: "stage:start", stage: "agent", message: "AI agent analyzing..." });
+    // ── PHASE 3: RESEARCH (single agent: discover + attack + PoC) ──
+    emit({ type: "stage:start", stage: "research", message: "Researching vulnerabilities..." });
+
+    const researchEmit: ScanListener = (event) => {
+      if (event.type === "stage:start") {
+        emit({ type: "stage:start", stage: "research", message: event.message });
+      } else if (event.type === "finding") {
+        emit(event);
+      }
+    };
 
     let findings: Finding[] = [];
 
-    if (prepared.resolvedType === "npm-package") {
-      // Use audit role with audit-specific prompts
-      const agentSystemPrompt = auditAgentPrompt(
-        prepared.packageName!,
-        prepared.packageVersion!,
+    if (prepared.resolvedType === "npm-package" || prepared.resolvedType === "source-code") {
+      const targetLabel = prepared.resolvedType === "npm-package"
+        ? `npm package ${prepared.packageName}@${prepared.packageVersion}`
+        : "repository";
+
+      const agentSystemPrompt = researchPrompt(
         prepared.scopePath,
-        semgrepFindings,
-        npmAuditFindings,
+        semgrepFindings.map(f => ({ ruleId: f.ruleId, message: f.message, path: f.path, startLine: f.startLine })),
+        npmAuditFindings.map(f => ({ name: f.name, severity: f.severity, title: f.title })),
+        targetLabel,
       );
 
       findings = await runAnalysisAgent({
-        role: "audit",
+        role: prepared.resolvedType === "npm-package" ? "audit" : "review",
         scopePath: prepared.scopePath,
         target: prepared.resolvedTarget,
         scanId,
@@ -591,69 +522,114 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
           model: opts.model,
         },
         db,
-        emit,
+        emit: researchEmit,
         cliPrompt: buildCliPrompt(
           prepared.scopePath,
           semgrepFindings,
           npmAuditFindings,
-          `npm package ${prepared.packageName}@${prepared.packageVersion}`,
+          targetLabel,
         ),
         agentSystemPrompt,
         cliSystemPrompt:
-          "You are a security researcher performing an authorized npm package audit. Be thorough and precise. Only report real, exploitable vulnerabilities.",
-      });
-    } else if (prepared.resolvedType === "source-code") {
-      // Use review role with review-specific prompts
-      const agentSystemPrompt = reviewAgentPrompt(prepared.scopePath, semgrepFindings);
-
-      findings = await runAnalysisAgent({
-        role: "review",
-        scopePath: prepared.scopePath,
-        target: prepared.resolvedTarget,
-        scanId,
-        config: {
-          runtime: opts.runtime,
-          timeout: opts.timeout,
-          depth: opts.depth,
-          apiKey: opts.apiKey,
-          model: opts.model,
-        },
-        db,
-        emit,
-        cliPrompt: buildCliPrompt(prepared.scopePath, semgrepFindings, npmAuditFindings, "repository"),
-        agentSystemPrompt,
-        cliSystemPrompt:
-          "You are a security researcher performing an authorized source code review. Be thorough and precise. Only report real, exploitable vulnerabilities.",
+          "You are a security researcher. Map the codebase, find real exploitable vulnerabilities, and write concrete PoC code for each one.",
       });
     } else {
       // URL / web-app targets — not supported yet in unified pipeline
-      // These should use the agentic-scanner.ts flow for now
       warnings.push({
-        stage: "agent",
+        stage: "research",
         message: `Target type "${prepared.resolvedType}" is not yet supported in the unified pipeline. Use 'pwnkit scan' for URL/web-app targets.`,
       });
     }
 
     emit({
       type: "stage:end",
-      stage: "agent",
-      message: `Agent complete: ${findings.length} findings`,
+      stage: "research",
+      message: `${findings.length} findings discovered`,
     });
 
-    // ── PHASE 4: VERIFY (only if findings exist and target is source-based) ──
+    // ── PHASE 4: VERIFY (parallel blind agents) ──
     if (findings.length > 0 && (prepared.resolvedType === "source-code" || prepared.resolvedType === "npm-package")) {
-      emit({ type: "stage:start", stage: "verify", message: `Verifying ${findings.length} findings...` });
+      emit({ type: "stage:start", stage: "verify", message: `Blind-verifying ${findings.length} findings...` });
 
       try {
-        findings = await runVerifyPhase(findings, prepared, opts, db, scanId, emit);
+        const verifyResults = await Promise.all(
+          findings.map(async (finding) => {
+            // Extract file path from evidence_request field
+            const filePath = finding.evidence.request || "";
+            // Extract PoC from evidence_response (the PoC code)
+            const poc = finding.evidence.response || finding.evidence.analysis || "";
+            const claimedSeverity = finding.severity;
 
-        const confirmed = findings.filter((f) => f.status !== "false-positive").length;
-        const rejected = findings.filter((f) => f.status === "false-positive").length;
+            const verifySystemPrompt = blindVerifyPrompt(
+              filePath,
+              poc,
+              claimedSeverity,
+              prepared.scopePath,
+            );
+
+            const verifyEmit: ScanListener = (event) => {
+              if (event.type === "finding") {
+                emit({ type: "verify:result", message: `Confirmed: ${finding.title}`, data: { confirmed: true, finding } });
+              }
+            };
+
+            try {
+              const verifiedFindings = await runAnalysisAgent({
+                role: "review",
+                scopePath: prepared.scopePath,
+                target: prepared.resolvedTarget,
+                scanId,
+                config: {
+                  runtime: "api", // API runtime: cheaper and faster for focused verification
+                  timeout: Math.min(opts.timeout ?? 120_000, 120_000),
+                  depth: "quick",
+                  apiKey: opts.apiKey,
+                  model: opts.model,
+                },
+                db,
+                emit: verifyEmit,
+                cliPrompt: `Verify this vulnerability in ${filePath}:\n\nPoC:\n${poc}\n\nClaimed severity: ${claimedSeverity}\n\nRead the file, trace data flow, confirm or reject.`,
+                agentSystemPrompt: verifySystemPrompt,
+                cliSystemPrompt: "You are a blind verification agent. Read the file, trace the PoC, confirm or reject the vulnerability.",
+              });
+
+              const confirmed = verifiedFindings.length > 0;
+              return { finding, confirmed, verifiedFinding: verifiedFindings[0] ?? null };
+            } catch (err) {
+              // If verification fails, keep the finding (fail-open)
+              const msg = err instanceof Error ? err.message : String(err);
+              warnings.push({ stage: "verify", message: `Verification failed for "${finding.title}": ${msg}` });
+              return { finding, confirmed: true, verifiedFinding: null };
+            }
+          }),
+        );
+
+        // Emit results and filter
+        let confirmedCount = 0;
+        let rejectedCount = 0;
+
+        findings = verifyResults
+          .map(({ finding, confirmed, verifiedFinding }) => {
+            if (confirmed) {
+              confirmedCount++;
+              emit({ type: "verify:result", message: `Confirmed: ${finding.title}`, data: { confirmed: true, title: finding.title } });
+              return {
+                ...finding,
+                status: "verified" as Finding["status"],
+                confidence: verifiedFinding?.confidence ?? finding.confidence,
+                severity: verifiedFinding?.severity ?? finding.severity,
+              };
+            } else {
+              rejectedCount++;
+              emit({ type: "verify:result", message: `Rejected: ${finding.title}`, data: { confirmed: false, title: finding.title } });
+              return { ...finding, status: "false-positive" as Finding["status"] };
+            }
+          });
 
         emit({
           type: "stage:end",
           stage: "verify",
-          message: `Verification complete: ${confirmed} confirmed, ${rejected} rejected`,
+          message: `Verification complete: ${confirmedCount} confirmed, ${rejectedCount} rejected`,
         });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);

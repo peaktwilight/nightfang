@@ -81,27 +81,41 @@ import DockNav from '../../components/DockNav.tsx';
           pwnkit runs autonomous agents in sequence, each specialized for a phase:
         </p>
 
-        <div class="grid grid-cols-2 gap-4 my-8">
+        <div class="grid grid-cols-3 gap-4 my-8">
           <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
-            <div class="text-xs font-mono text-emerald-400 mb-1">01 Discover</div>
-            <p class="text-sm text-smoke m-0">Maps the attack surface. Endpoints, system prompts, MCP tool schemas, auth flows.</p>
+            <div class="text-xs font-mono text-emerald-400 mb-1">01 Research</div>
+            <p class="text-sm text-smoke m-0">Maps the attack surface, crafts payloads, launches multi-turn attacks, and writes PoC code &mdash; all in one agent session.</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
-            <div class="text-xs font-mono text-amber-400 mb-1">02 Attack</div>
-            <p class="text-sm text-smoke m-0">47+ test cases. Prompt injection, jailbreaks, tool poisoning, data exfiltration.</p>
+            <div class="text-xs font-mono text-blue-400 mb-1">02 Verify</div>
+            <p class="text-sm text-smoke m-0">Blind verification &mdash; gets ONLY the PoC and file path, independently reproduces each finding. Can't reproduce? Killed.</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
-            <div class="text-xs font-mono text-blue-400 mb-1">03 Verify</div>
-            <p class="text-sm text-smoke m-0">Re-exploits every finding independently. If it can't reproduce, it's killed.</p>
-          </div>
-          <div class="bg-night-lighter border border-white/5 rounded-lg p-4">
-            <div class="text-xs font-mono text-purple-400 mb-1">04 Report</div>
-            <p class="text-sm text-smoke m-0">SARIF for GitHub Security tab. Markdown and JSON with full evidence chains.</p>
+            <div class="text-xs font-mono text-purple-400 mb-1">03 Report</div>
+            <p class="text-sm text-smoke m-0">SARIF for GitHub Security tab. Markdown and JSON with full evidence chains. Only confirmed findings.</p>
           </div>
         </div>
 
         <p>
           The verification agent is what makes this different. It doesn't trust the attack agent's output. It independently re-exploits each finding, captures proof artifacts, and assigns a confidence score. If a "prompt injection" only works with a contrived input that a real user would never send, it gets flagged and downgraded.
+        </p>
+
+        <h3 class="text-lg font-semibold text-white mt-8 mb-4">Blind Verification</h3>
+
+        <p>
+          Most security tools report everything that "might" be a bug. pwnkit does something different.
+        </p>
+
+        <p>
+          After the research agent finds a vulnerability and writes a proof-of-concept, a separate verify agent gets ONLY the PoC code and the file path &mdash; not the reasoning. It independently traces the data flow and tries to reproduce the finding.
+        </p>
+
+        <p>
+          If it can't reproduce &rarr; the finding is killed. No false positives in the report.
+        </p>
+
+        <p>
+          This is the same principle as double-blind peer review: the reviewer doesn't know the researcher's reasoning, so they can't be biased by it.
         </p>
 
         <h2 class="text-xl font-semibold text-white mt-10 mb-4">Not just LLMs</h2>
@@ -169,7 +183,7 @@ import DockNav from '../../components/DockNav.tsx';
         </ul>
 
         <p>
-          The harness orchestrates the 4-agent pipeline. The model does the thinking. You choose what powers it.</p>
+          The harness orchestrates the research-verify pipeline. The model does the thinking. You choose what powers it.</p>
 
         <h2 class="text-xl font-semibold text-white mt-10 mb-4">Try it now</h2>
 

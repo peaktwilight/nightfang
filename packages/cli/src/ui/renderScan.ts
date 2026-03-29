@@ -25,13 +25,13 @@ interface RenderScanResult {
   setReport: (report: Record<string, unknown>) => void;
 }
 
-// Same 4 stages for everything — the pipeline adapts internally
+// 4 stages — research (discover+attack+PoC) then blind verify
 function getStages(): StageState[] {
   return [
-    { id: "prepare", label: "Prepare", status: "pending", actions: [], findings: [] },
-    { id: "analyze", label: "Analyze", status: "pending", actions: [], findings: [] },
-    { id: "agent",   label: "Agent",   status: "pending", actions: [], findings: [] },
-    { id: "verify",  label: "Verify",  status: "pending", actions: [], findings: [] },
+    { id: "prepare",  label: "Prepare",  status: "pending", actions: [], findings: [] },
+    { id: "analyze",  label: "Analyze",  status: "pending", actions: [], findings: [] },
+    { id: "research", label: "Research", status: "pending", actions: [], findings: [] },
+    { id: "verify",   label: "Verify",   status: "pending", actions: [], findings: [] },
   ];
 }
 
@@ -81,19 +81,26 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     rerender?.();
   }
 
-  // Map old event stage names to unified stage IDs
+  // Map event stage names to TUI stage IDs
   function mapStageId(coreStage: string | undefined, msg: string): string | undefined {
-    // New unified pipeline uses these directly
-    if (coreStage === "prepare" || coreStage === "analyze" || coreStage === "agent" || coreStage === "verify") {
+    // Direct matches
+    if (coreStage === "prepare" || coreStage === "analyze" || coreStage === "research" || coreStage === "verify") {
       return coreStage;
     }
-    // Old event names → unified stages (backwards compat during migration)
+    // Old names → research (backwards compat)
+    if (coreStage === "discover" || coreStage === "attack") {
+      return "research";
+    }
+    // Legacy "agent" → research
+    if (coreStage === "agent") {
+      return "research";
+    }
+    // Old event names (backwards compat)
     if (coreStage === "discovery" || coreStage === "source-analysis") {
-      if (msg.toLowerCase().includes("install") || msg.toLowerCase().includes("clone") || msg.toLowerCase().includes("resolv")) return "prepare";
+      if (msg.toLowerCase().includes("install") || msg.toLowerCase().includes("clone")) return "prepare";
       return "analyze";
     }
-    if (coreStage === "attack") return "agent";
-    if (coreStage === "report") return undefined; // handled by setReport
+    if (coreStage === "report") return undefined;
     return coreStage;
   }
 
@@ -142,7 +149,7 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
     }
 
     if (event.type === "finding") {
-      const running = stages.find((s) => s.status === "running") ?? stages.find((s) => s.id === "ai-agent" || s.id === "attack");
+      const running = stages.find((s) => s.status === "running") ?? stages.find((s) => s.id === "research");
       if (running) {
         const severity = (event.data as any)?.severity ?? "info";
         // Clean up title — remove [severity] prefix if present, truncate
@@ -154,6 +161,17 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
           findings: [...s.findings, { severity, title }],
         }));
       }
+      return;
+    }
+
+    if (event.type === "verify:result") {
+      const data = event.data as any;
+      const confirmed = data?.confirmed;
+      const msg2 = event.message ?? "";
+      updateStage("verify", (s) => ({
+        ...s,
+        actions: [...s.actions, `${confirmed ? "\u2713" : "\u2717"} ${msg2}`],
+      }));
       return;
     }
 

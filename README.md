@@ -33,7 +33,7 @@
 
 ---
 
-pwnkit is an open-source agentic security toolkit. Autonomous agents discover, attack, verify, and report vulnerabilities across LLM endpoints, web applications, npm packages, and Git repositories — the agents read code, craft payloads, analyze responses, and **re-exploit each finding to kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
+pwnkit is an open-source agentic security toolkit. A research agent discovers, attacks, and writes proof-of-concept code for vulnerabilities across LLM endpoints, web applications, npm packages, and Git repositories. Then a blind verify agent — given ONLY the PoC and file path, not the reasoning — independently reproduces each finding to **kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
 
 One command. Zero config. Every finding re-exploited or dropped.
 
@@ -87,27 +87,28 @@ pwnkit ships five commands — from quick API probes to deep source-level audits
 
 ## How It Works
 
-pwnkit runs autonomous AI agents in sequence. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
+pwnkit runs autonomous AI agents in a research-then-verify pipeline. Each agent uses tools (`read_file`, `run_command`, `send_prompt`, `save_finding`) and makes multi-turn decisions — adapting its strategy based on what it learns:
 
 ```
-  +-----------+     +-----------+     +-----------+     +-----------+
-  | DISCOVER  | --> |  ATTACK   | --> |  VERIFY   | --> |  REPORT   |
-  |  (Recon)  |     | (Offense) |     | (Confirm) |     | (Output)  |
-  +-----------+     +-----------+     +-----------+     +-----------+
-   Maps endpoints    Agents craft      Re-exploits       Generates SARIF,
-   Model detection   payloads in       each finding       Markdown, and JSON
-   System prompt     multi-turn        to kill false      with severity +
-   extraction        conversations     positives          remediation
+  +-----------+     +------------------+     +-----------+
+  | RESEARCH  | --> |  BLIND VERIFY    | --> |  REPORT   |
+  | (Discover |     | (PoC + path only |     | (Output)  |
+  |  + Attack |     |  no reasoning)   |     |           |
+  |  + PoC)   |     +------------------+     +-----------+
+  +-----------+      Runs in parallel         Only confirmed
+   Single agent      per finding —            findings in SARIF,
+   session: recon,   independently            Markdown, and JSON
+   payloads, and     reproduces or            with severity +
+   proof-of-concept  kills finding            remediation
 ```
 
 | Agent | Role | What It Does |
 |-------|------|-------------|
-| **Discover** | Recon | Maps endpoints, detects models, extracts system prompts, enumerates MCP tool schemas |
-| **Attack** | Offense | Agentic multi-turn attacks: prompt injection, jailbreaks, tool poisoning, data exfiltration, encoding bypasses — agent reads responses and adapts |
-| **Verify** | Validation | Re-exploits each finding independently. If it can't reproduce it, it's killed as a false positive |
-| **Report** | Output | SARIF for GitHub Security tab, Markdown for humans, JSON for pipelines — with severity scores and remediation |
+| **Research** | Discover + Attack + PoC | Maps endpoints, detects models, extracts system prompts, crafts multi-turn attacks (prompt injection, jailbreaks, tool poisoning, data exfiltration), and writes proof-of-concept code — all in one agent session |
+| **Verify** | Blind validation | Gets ONLY the PoC code and file path — not the research agent's reasoning. Independently traces data flow and reproduces each finding. Can't reproduce? Killed as false positive |
+| **Report** | Output | SARIF for GitHub Security tab, Markdown for humans, JSON for pipelines — only confirmed findings with severity scores and remediation |
 
-The **verification step is the differentiator.** No more triaging 200 "possible prompt injections" that turn out to be nothing.
+The **blind verification is the differentiator.** The verify agent can't be biased by the research agent's reasoning — same principle as double-blind peer review. No more triaging 200 "possible prompt injections" that turn out to be nothing.
 
 ## What pwnkit Scans
 
@@ -284,7 +285,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 
 ## Roadmap
 
-- [x] Core autonomous agent pipeline (discover, attack, verify, report)
+- [x] Core autonomous agent pipeline (research, blind verify, report)
 - [x] OWASP LLM Top 10 coverage (8/10)
 - [x] SARIF output + GitHub Action
 - [x] MCP server scanning

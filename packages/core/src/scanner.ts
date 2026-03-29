@@ -30,6 +30,7 @@ export type ScanEventType =
   | "attack:start"
   | "attack:end"
   | "finding"
+  | "verify:result"
   | "error";
 
 export interface ScanEvent {
