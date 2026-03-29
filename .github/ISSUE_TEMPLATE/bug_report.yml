@@ -21,7 +21,7 @@ body:
   - type: input
     attributes:
       label: Pwnkit version
-      description: Run `pwnkit --version`
+      description: Run `pwnkit-cli --version`
     validations:
       required: true
   - type: input

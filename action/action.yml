@@ -60,7 +60,7 @@ runs:
 
   - name: Install Pwnkit CLI
    shell: bash
-   run: npm install --global "pwnkit@${{ inputs.pwnkit-version }}"
+   run: npm install --global "pwnkit-cli@${{ inputs.pwnkit-version }}"
 
   - id: scan
    name: Run Pwnkit scan

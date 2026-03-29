@@ -63,7 +63,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
               <div class="text-ash terminal-line">$ npx pwnkit-cli express</div>
               <div class="terminal-line">&nbsp;</div>
               <div class="text-smoke terminal-line">
-                <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> pwnkit v0.1.0
+                <svg class="w-5 h-5 inline-block" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><path d="M8 12 L16 6 L24 12 L24 22 L20 26 L16 22 L12 26 L8 22Z" fill="none" stroke="#DC2626" stroke-width="2" stroke-linejoin="round"/><circle cx="13" cy="16" r="1.5" fill="#DC2626"/><circle cx="19" cy="16" r="1.5" fill="#DC2626"/></svg> pwnkit-cli v0.1.0
               </div>
               <div class="text-smoke terminal-line">
                 <span class="inline-block w-2 h-2 rounded-sm bg-crimson"></span> Target: https://demo.app/api/chat
@@ -135,20 +135,13 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
       <div class="max-w-4xl mx-auto px-6">
         <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">General-purpose autonomous pentesting.</h2>
 
-        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center ">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
             <p class="text-xs text-ash">ChatGPT, Claude, Llama APIs, custom chatbots</p>
-          </div>
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center ">
-            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v6m0 8v6M4.93 4.93l4.24 4.24m5.66 5.66l4.24 4.24M2 12h6m8 0h6M4.93 19.07l4.24-4.24m5.66-5.66l4.24-4.24"/></svg>
-            </div>
-            <h3 class="font-semibold text-sm mb-1">MCP Servers</h3>
-            <p class="text-xs text-ash">Tool schemas, validation, auth, poisoning</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center ">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
@@ -164,13 +157,6 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
             <h3 class="font-semibold text-sm mb-1">Source Code</h3>
             <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
           </div>
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center ">
-            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
-            </div>
-            <h3 class="font-semibold text-sm mb-1">Web Apps</h3>
-            <p class="text-xs text-ash">SQLi, XSS, SSRF, auth bypass, IDOR, full pentest</p>
-          </div>
         </div>
       </div>
     </section>
@@ -183,10 +169,9 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
         <!-- Compact command grid -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { cmd: "pwnkit express", desc: "Audit an npm package", color: "text-amber-400" },
-            { cmd: "pwnkit ./my-repo", desc: "Review source code", color: "text-blue-400" },
-            { cmd: "pwnkit https://api.com", desc: "Scan an API endpoint", color: "text-crimson" },
-            { cmd: "pwnkit https://site.com --mode web", desc: "Full web pentest", color: "text-emerald-400" },
+            { cmd: "pwnkit-cli express", desc: "Audit an npm package", color: "text-amber-400" },
+            { cmd: "pwnkit-cli ./my-repo", desc: "Review source code", color: "text-blue-400" },
+            { cmd: "pwnkit-cli https://api.com/chat", desc: "Scan an LLM endpoint", color: "text-crimson" },
           ].map((item) => (
             <div class="bg-night-lighter border border-white/5 rounded-xl p-4 hover:border-white/10 transition-colors">
               <code class="text-sm font-mono text-white">{item.cmd}</code>
@@ -272,14 +257,6 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
-                <td class="py-3 pr-4">MCP server security</td>
-                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
-              </tr>
-              <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">npm package audit</td>
                 <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
@@ -294,14 +271,6 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
                 <td class="py-3 px-3 text-center text-emerald-400">Rules</td>
-              </tr>
-              <tr class="border-b border-white/5">
-                <td class="py-3 pr-4">Web/API scanning</td>
-                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
-                <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
-                <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
                 <td class="py-3 pr-4">AI attack coverage</td>
@@ -450,10 +419,10 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto mb-10">
           {[
-            { cmd: "pwnkit https://api.example.com", label: "Scan an API" },
-            { cmd: "pwnkit express", label: "Audit a package" },
-            { cmd: "pwnkit ./my-repo", label: "Review source code" },
-            { cmd: "pwnkit https://github.com/org/repo", label: "Review a GitHub repo" },
+            { cmd: "pwnkit-cli https://api.example.com/chat", label: "Scan an LLM endpoint" },
+            { cmd: "pwnkit-cli express", label: "Audit a package" },
+            { cmd: "pwnkit-cli ./my-repo", label: "Review source code" },
+            { cmd: "pwnkit-cli https://github.com/org/repo", label: "Review a GitHub repo" },
           ].map((item) => (
             <div class="copy-wrap relative flex items-center group">
               <code class="block w-full bg-night-lighter border border-white/10 rounded-lg px-4 py-2.5 pr-10 font-mono text-xs text-white text-left select-all cursor-pointer hover:border-crimson/30 transition-colors" data-copy={item.cmd}>{item.cmd}</code>
@@ -484,7 +453,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
       <div class="flex items-center gap-4">
         <a href="https://github.com/peaktwilight/pwnkit" target="_blank" rel="noopener" class="hover:text-white transition-colors">GitHub</a>
         <a href="https://github.com/peaktwilight/pwnkit/issues" target="_blank" rel="noopener" class="hover:text-white transition-colors">Issues</a>
-        <a href="https://www.npmjs.com/package/pwnkit" target="_blank" rel="noopener" class="hover:text-white transition-colors">npm</a>
+        <a href="https://www.npmjs.com/package/pwnkit-cli" target="_blank" rel="noopener" class="hover:text-white transition-colors">npm</a>
       </div>
     </div>
   </footer>

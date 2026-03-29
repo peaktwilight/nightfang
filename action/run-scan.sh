@@ -81,17 +81,17 @@ if [[ -n "$REPO_PATH" ]]; then
 fi
 
 set +e
-pwnkit "${SCAN_ARGS[@]}" > "$JSON_REPORT"
+pwnkit-cli "${SCAN_ARGS[@]}" > "$JSON_REPORT"
 SCAN_EXIT=$?
 set -e
 
 if [[ $SCAN_EXIT -eq 2 ]]; then
-  echo "::error::pwnkit scan failed to execute."
+  echo "::error::pwnkit-cli scan failed to execute."
   exit 2
 fi
 
 if [[ ! -s "$JSON_REPORT" ]]; then
-  echo "::error::pwnkit scan did not produce a JSON report."
+  echo "::error::pwnkit-cli scan did not produce a JSON report."
   exit 1
 fi
 
@@ -218,7 +218,7 @@ if (githubOutput) {
 
 if (shouldFail) {
   console.error(
-    `pwnkit findings met fail-on-severity='${failOn}'. Summary: ` +
+    `pwnkit-cli findings met fail-on-severity='${failOn}'. Summary: ` +
       JSON.stringify(counts)
   );
   process.exit(3);

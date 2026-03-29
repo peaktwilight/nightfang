@@ -4,7 +4,7 @@
   "version": "0.3.3",
   "description": "AI-powered agentic security scanner. Scan endpoints, audit packages, review source code. Autonomous agents discover, attack, verify, and report.",
   "bin": {
-    "pwnkit": "dist/index.js"
+    "pwnkit-cli": "dist/index.js"
   },
   "files": [
     "LICENSE",

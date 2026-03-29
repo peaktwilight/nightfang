@@ -58,7 +58,7 @@ const publishPkg = {
   version: rootPkg.version,
   type: "module",
   description: rootPkg.description,
-  bin: { pwnkit: "./index.js" },
+  bin: { "pwnkit-cli": "./index.js" },
   files: ["index.js", "attacks"],
   keywords: rootPkg.keywords,
   author: rootPkg.author,

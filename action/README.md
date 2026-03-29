@@ -68,7 +68,7 @@ jobs:
 - `timeout` (optional, default `30000`): Request/runtime timeout in milliseconds.
 - `fail-on-severity` (optional, default `high`): `critical`, `high`, `medium`, `low`, `info`, or `none`.
 - `report-dir` (optional, default `pwnkit-report`): Output directory for reports.
-- `pwnkit-version` (optional, default `latest`): npm version of the pwnkit CLI to install.
+- `pwnkit-version` (optional, default `latest`): npm version of pwnkit-cli to install.
 
 ## Outputs
 

@@ -6,7 +6,7 @@
 
 <p align="center">
  <strong>General-purpose autonomous pentesting framework</strong><br/>
- <em>Scan LLM endpoints. Audit npm packages. Review source code. Pentest web apps. Re-exploit to kill false positives.</em>
+ <em>Scan LLM endpoints. Audit npm packages. Review source code. Re-exploit to kill false positives.</em>
 </p>
 
 <p align="center">
@@ -33,7 +33,7 @@
 
 ---
 
-pwnkit is an open-source agentic security toolkit. A research agent discovers, attacks, and writes proof-of-concept code for vulnerabilities across LLM endpoints, web applications, npm packages, and Git repositories. Then a blind verify agent — given ONLY the PoC and file path, not the reasoning — independently reproduces each finding to **kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
+pwnkit is an open-source agentic security toolkit. A research agent discovers, attacks, and writes proof-of-concept code for vulnerabilities across LLM endpoints, npm packages, and Git repositories. Then a blind verify agent — given ONLY the PoC and file path, not the reasoning — independently reproduces each finding to **kill false positives**. No templates, no static rules — multi-turn agentic reasoning that thinks like an attacker.
 
 One command. Zero config. Every finding re-exploited or dropped.
 
@@ -49,25 +49,24 @@ npx pwnkit-cli audit lodash
 # Deep security review of a codebase
 npx pwnkit-cli review ./my-ai-app
 
-# Or just point pwnkit at a target — it auto-detects what to do
+# Or just point pwnkit-cli at a target — it auto-detects what to do
 npx pwnkit-cli express     # audits npm package
 npx pwnkit-cli ./my-repo    # reviews source code
 npx pwnkit-cli https://github.com/user/repo # clones and reviews
-npx pwnkit-cli https://example.com      # scans web endpoint
 ```
 
 That's it. pwnkit discovers your attack surface, launches targeted attacks, verifies findings, and generates a report — all in under 5 minutes.
 
 ### Auto-Detect
 
-`pwnkit <target>` figures out what you mean without explicit subcommands:
+`pwnkit-cli <target>` figures out what you mean without explicit subcommands:
 
-| Input | What pwnkit does |
+| Input | What pwnkit-cli does |
 |-------|-----------------|
-| `pwnkit express` | Treats it as an npm package name and runs `audit` |
-| `pwnkit ./my-repo` | Detects a local path and runs `review` |
-| `pwnkit https://github.com/user/repo` | Clones the repo and runs `review` |
-| `pwnkit https://example.com` | Detects an HTTP URL and runs `scan` |
+| `pwnkit-cli express` | Treats it as an npm package name and runs `audit` |
+| `pwnkit-cli ./my-repo` | Detects a local path and runs `review` |
+| `pwnkit-cli https://github.com/user/repo` | Clones the repo and runs `review` |
+| `pwnkit-cli https://example.com/api/chat` | Detects an LLM endpoint URL and runs `scan` |
 
 Explicit subcommands (`scan`, `audit`, `review`) still work — auto-detect is just a convenience layer on top.
 
@@ -79,7 +78,7 @@ pwnkit ships five commands — from quick API probes to deep source-level audits
 
 | Command | What It Does | Example |
 |---------|-------------|---------|
-| **`scan`** | Probe LLM endpoints, MCP servers, and AI APIs for vulnerabilities | `npx pwnkit-cli scan --target https://api.example.com/chat` |
+| **`scan`** | Probe LLM endpoints and AI APIs for vulnerabilities | `npx pwnkit-cli scan --target https://api.example.com/chat` |
 | **`audit`** | Install and security-audit any npm package with static analysis + AI review | `npx pwnkit-cli audit express@4.18.2` |
 | **`review`** | Deep source code security review of a local repo or GitHub URL | `npx pwnkit-cli review https://github.com/user/repo` |
 | **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit-cli history --limit 20` |
@@ -116,7 +115,7 @@ The **blind verification is the differentiator.** The verify agent can't be bias
 | **LLM Endpoints** — ChatGPT, Claude, Llama APIs, custom chatbots | `pwnkit-cli scan --target <url>` | HTTP probing + multi-turn agent attacks |
 | **npm Packages** — Dependency supply chain, malicious code | `pwnkit-cli audit <package>` | Installs in sandbox, runs semgrep + AI code review |
 | **Git Repositories** — Source-level security review | `pwnkit-cli review <path-or-url>` | Deep analysis with Claude Code, Codex, or Gemini CLI |
-| **Auto-detect** — Give it anything | `pwnkit-cli <target>` | URL, package name, or path — pwnkit figures it out |
+| **Auto-detect** — Give it anything | `pwnkit-cli <target>` | URL, package name, or path — pwnkit-cli figures it out |
 
 ## Example Output
 
@@ -183,8 +182,6 @@ Bring your own agent CLI — pwnkit orchestrates it:
 | **Agentic multi-turn pipeline** | Yes — Autonomous agents with tool use | No — Single runner | No — Single runner | No — Rule-based | No — Template runner |
 | **Verification (no false positives)** | Yes — Re-exploits to confirm | No | No | No | No |
 | **LLM endpoint scanning** | Yes — Prompt injection, jailbreaks, exfil | Yes — Red-teaming | Yes — Probes | No | No |
-| **Web pentesting (SQLi, XSS, SSRF, IDOR)** | Yes | No | No | No | Partial — Templates only |
-| **MCP server security** | Yes — Tool poisoning, schema abuse | No | No | No | No |
 | **npm package audit** | Yes — Semgrep + AI review | No | No | Yes — Rules only | No |
 | **Source code review** | Yes — AI-powered deep analysis | No | No | Yes — Rules only | No |
 | **OWASP LLM Top 10** | Yes — Covered | Partial | Partial | N/A | N/A |
@@ -272,12 +269,12 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 - [x] Core autonomous agent pipeline (research, blind verify, report)
 - [x] OWASP LLM Top 10 coverage
 - [x] SARIF output + GitHub Action
-- [x] MCP server scanning
 - [x] npm package auditing
 - [x] Source code review (local + GitHub)
 - [x] Multi-runtime support (Claude, Codex, Gemini)
 - [x] Multi-turn agentic attacks (agents adapt payloads based on responses)
-- [x] Web pentesting mode (SQLi, XSS, SSRF, auth bypass, IDOR)
+- [ ] MCP server scanning (tool poisoning, schema abuse)
+- [ ] Web pentesting mode (SQLi, XSS, SSRF, auth bypass, IDOR)
 - [ ] RAG pipeline security (poisoning, extraction)
 - [ ] Agentic workflow testing (multi-tool chains)
 - [ ] VS Code extension
@@ -288,7 +285,7 @@ Finding lifecycle: `discovered → verified → confirmed → scored → reporte
 
 Created by a security researcher with [7 published CVEs](https://doruk.ch/blog) across node-forge, mysql2, uptime-kuma, liquidjs, picomatch, and jspdf.
 
-pwnkit is a general-purpose autonomous pentesting framework. It exists because modern attack surfaces — LLM endpoints, MCP servers, AI-powered web apps — require agents that adapt, not static rules that don't. You can't `nmap` a language model. You can't write a rule for a jailbreak that hasn't been invented yet. And traditional web scanners don't understand context — they miss IDOR in paginated APIs and SSRF buried in AI pipeline callbacks.
+pwnkit is a general-purpose autonomous pentesting framework. It exists because modern attack surfaces — LLM endpoints, npm supply chains, AI-powered codebases — require agents that adapt, not static rules that don't. You can't `nmap` a language model. You can't write a rule for a jailbreak that hasn't been invented yet. Static analysis alone misses logical flaws and semantic vulnerabilities that only an agent tracing data flow can find.
 
 pwnkit uses autonomous agents that think like attackers, adapt their strategy mid-scan, and re-exploit every finding before reporting it. The result: real vulnerabilities, zero noise.
 
