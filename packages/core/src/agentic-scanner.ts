@@ -385,7 +385,7 @@ async function runNativeVerify(
     config: {
       role: "verify",
       systemPrompt: verifyPrompt(config.target, findings),
-      tools: getToolsForRole("verify"),
+      tools: getToolsForRole("verify", { hasScope: !!config.repoPath }),
       maxTurns: Math.min(findings.length * 3, 15),
       target: config.target,
       scanId,
@@ -486,7 +486,7 @@ async function runLegacyVerify(
     config: {
       role: "verify",
       systemPrompt: verifyPrompt(config.target, findings),
-      tools: getToolsForRole("verify"),
+      tools: getToolsForRole("verify", { hasScope: !!config.repoPath }),
       maxTurns: Math.min(findings.length * 3, 15),
       target: config.target,
       scanId,

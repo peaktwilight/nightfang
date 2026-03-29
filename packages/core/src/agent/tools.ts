@@ -656,13 +656,16 @@ export class ToolExecutor {
 
 // ── Helper: get tools for a specific agent role ──
 
-export function getToolsForRole(role: string): ToolDefinition[] {
+export function getToolsForRole(role: string, opts?: { hasScope?: boolean }): ToolDefinition[] {
   const common = ["query_findings", "done"];
+  const networkTools = ["http_request", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {
-    discovery: ["http_request", "send_prompt", "update_target", "save_finding", ...common],
-    attack: ["http_request", "send_prompt", "save_finding", "update_target", ...common],
-    verify: ["http_request", "send_prompt", "save_finding", "update_finding", "update_target", ...common],
+    discovery: networkTools,
+    attack: networkTools,
+    // Verify agent gets file tools when there's a local scope (audit/review mode)
+    verify: opts?.hasScope ? [...networkTools, ...fileTools] : networkTools,
     report: [...common],
     audit: Object.keys(TOOL_DEFINITIONS),
     review: Object.keys(TOOL_DEFINITIONS),

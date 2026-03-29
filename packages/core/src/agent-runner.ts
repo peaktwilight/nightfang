@@ -198,7 +198,7 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
         config: {
           role,
           systemPrompt: agentSystemPrompt,
-          tools: getToolsForRole(role),
+          tools: getToolsForRole(role, { hasScope: !!scopePath }),
           maxTurns,
           target,
           scanId,
@@ -293,7 +293,7 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
     config: {
       role,
       systemPrompt: agentSystemPrompt,
-      tools: getToolsForRole(role),
+      tools: getToolsForRole(role, { hasScope: !!scopePath }),
       maxTurns,
       target,
       scanId,

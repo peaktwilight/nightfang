@@ -40,7 +40,7 @@ export async function runAgentLoop(opts: AgentLoopOptions): Promise<AgentState> 
   };
 
   const executor = new ToolExecutor(toolCtx, db);
-  const tools = config.tools.length > 0 ? config.tools : getToolsForRole(config.role);
+  const tools = config.tools.length > 0 ? config.tools : getToolsForRole(config.role, { hasScope: !!config.scopePath });
 
   const state: AgentState = {
     messages: [{ role: "system", content: config.systemPrompt }],

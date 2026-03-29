@@ -140,7 +140,7 @@ export async function runVerification(
       config: {
         role: "verify",
         systemPrompt,
-        tools: getToolsForRole("verify"),
+        tools: getToolsForRole("verify", { hasScope: !!ctx.config.repoPath }),
         maxTurns,
         target: ctx.config.target,
         scanId: ctx.scanId ?? "no-db",
