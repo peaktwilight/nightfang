@@ -1,232 +1,199 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { render } from "ink";
 import { ScanUI } from "./ScanUI.js";
 import { buildShareUrl } from "../utils.js";
-import type { ScanEvent, ScanSummary, StageName, StageStatusKind, StageState, StageFinding } from "./ScanUI.js";
+import type { ScanEvent, ScanSummary, StageState, StageStatusKind, StageFinding } from "./ScanUI.js";
 
-// Re-export types for consumers
-export type { ScanEvent, ScanSummary, StageName };
+export type { ScanEvent, ScanSummary };
+
+export type CommandMode = "audit" | "review" | "scan";
 
 interface RenderScanOptions {
   version: string;
   target: string;
   depth: string;
-  mode?: string;
+  mode: CommandMode;
 }
 
 interface RenderScanResult {
-  /** Push a scan event to update the TUI. */
-  onEvent: (event: ScanEvent) => void;
-  /** Resolves when the Ink instance is unmounted. */
+  onEvent: (event: { type: string; stage?: string; message: string; data?: unknown }) => void;
   waitForExit: () => Promise<void>;
-  /** Set the final report summary (renders the bottom bar). */
-  setReport: (report: {
-    summary: { critical: number; high: number; medium: number; low: number; info?: number };
-    shareUrl?: string;
-  }) => void;
+  setReport: (report: Record<string, unknown>) => void;
 }
 
-const DEFAULT_STAGES: Array<{ name: StageName; label: string }> = [
-  { name: "install", label: "Install" },
-  { name: "npm-audit", label: "npm audit" },
-  { name: "semgrep", label: "Semgrep" },
-  { name: "ai-agent", label: "AI Agent" },
-  { name: "verify", label: "Verify" },
-  { name: "report", label: "Report" },
-];
+// Stage definitions per command mode
+function getStages(mode: CommandMode): StageState[] {
+  const base: StageState[] = [
+    { id: "install", label: "Install", status: "pending", actions: [], findings: [] },
+    { id: "npm-audit", label: "npm audit", status: "pending", actions: [], findings: [] },
+    { id: "semgrep", label: "Semgrep", status: "pending", actions: [], findings: [] },
+    { id: "ai-agent", label: "AI Agent", status: "pending", actions: [], findings: [] },
+  ];
 
-/**
- * Create and render the Ink-based scan TUI.
- *
- * Returns an event-driven interface: the caller pushes ScanEvents and the
- * UI updates automatically.  Call `setReport` once the scan finishes to
- * render the summary bar, then `waitForExit` to block until Ink unmounts.
- */
+  if (mode === "scan") {
+    return [
+      { id: "discovery", label: "Discovery", status: "pending", actions: [], findings: [] },
+      { id: "attack", label: "Attack", status: "pending", actions: [], findings: [] },
+      { id: "verify", label: "Verify", status: "pending", actions: [], findings: [] },
+      { id: "report", label: "Report", status: "pending", actions: [], findings: [] },
+    ];
+  }
+
+  if (mode === "review") {
+    return [
+      { id: "semgrep", label: "Semgrep", status: "pending", actions: [], findings: [] },
+      { id: "ai-agent", label: "AI Agent", status: "pending", actions: [], findings: [] },
+    ];
+  }
+
+  return base; // audit
+}
+
+// Detect which UI stage an event belongs to
+function detectStageId(event: { stage?: string; message?: string }, mode: CommandMode): string | undefined {
+  const msg = (event.message ?? "").toLowerCase();
+
+  // Message-based detection (most reliable since core reuses stage names)
+  if (msg.includes("install")) return "install";
+  if (msg.includes("npm audit")) return "npm-audit";
+  if (msg.includes("semgrep")) return "semgrep";
+  if (msg.includes("agent") || msg.includes("claude") || msg.includes("codex") ||
+      msg.includes("agentic") || msg.includes("ai ")) return "ai-agent";
+  if (msg.includes("complete") && (msg.includes("audit") || msg.includes("review"))) return "report";
+
+  // For scan mode, map directly
+  if (mode === "scan" && event.stage) {
+    const map: Record<string, string> = {
+      "discovery": "discovery", "attack": "attack", "verify": "verify", "report": "report",
+    };
+    if (map[event.stage]) return map[event.stage];
+  }
+
+  return event.stage;
+}
+
 export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
-  // ── Mutable state managed outside React ──
-  // We drive React updates by calling a setter captured via a wrapper component.
-
-  let stages: StageState[] = DEFAULT_STAGES.map((s) => ({
-    ...s,
-    status: "pending" as StageStatusKind,
-  }));
+  let stages = getStages(opts.mode);
   let summary: ScanSummary | null = null;
+  let thinking: string | null = null;
   let rerender: (() => void) | null = null;
 
-  // Thin wrapper component that reads from the mutable state above.
-  // `rerender` triggers a React re-render by bumping a counter.
+  // Wrapper component that bridges external state → React
   function App() {
-    const [, setTick] = React.useState(0);
-
-    // Capture the re-render trigger on first mount.
-    React.useEffect(() => {
+    const [tick, setTick] = useState(0);
+    useEffect(() => {
       rerender = () => setTick((t) => t + 1);
-      return () => {
-        rerender = null;
-      };
+      return () => { rerender = null; };
     }, []);
 
-    return React.createElement(ScanUI, {
-      version: opts.version,
-      stages,
-      summary,
-    });
+    return React.createElement(ScanUI, { stages, summary, thinking });
   }
 
   const instance = render(React.createElement(App));
 
-  // ── Helpers ──
-
-  function updateStage(name: StageName, updater: (s: StageState) => StageState) {
-    stages = stages.map((s) => (s.name === name ? updater(s) : s));
+  function updateStage(id: string, updater: (s: StageState) => StageState) {
+    stages = stages.map((s) => (s.id === id ? updater(s) : s));
     rerender?.();
   }
 
-  // ── Public API ──
-
-  // Map events to UI stages — use message content as primary signal
-  // because the audit pipeline reuses "discovery" for both install and npm audit
-  function detectStage(event: { type: string; stage?: string; message?: string }): StageName | undefined {
-    const msg = (event.message ?? "").toLowerCase();
-
-    // Message-based detection (most reliable)
-    if (msg.includes("install")) return "install";
-    if (msg.includes("npm audit")) return "npm-audit";
-    if (msg.includes("semgrep")) return "semgrep";
-    if (msg.includes("agent") || msg.includes("claude") || msg.includes("codex") || msg.includes("agentic") || msg.includes("ai ")) return "ai-agent";
-    if (msg.includes("audit complete") || msg.includes("review complete")) return "report";
-
-    // Stage-name fallback
-    const stageMap: Record<string, StageName> = {
-      "source-analysis": "semgrep",
-      "attack": "ai-agent",
-      "verify": "verify",
-      "report": "report",
-    };
-    if (event.stage && stageMap[event.stage]) return stageMap[event.stage];
-
-    return undefined;
-  }
-
-  function onEvent(event: ScanEvent): void {
-    const stageName = detectStage(event);
+  function onEvent(event: { type: string; stage?: string; message: string; data?: unknown }): void {
+    const stageId = detectStageId(event, opts.mode);
 
     switch (event.type) {
       case "stage:start": {
-        if (!stageName) break;
-
-        // Check if this is a tool call action on an already-running stage
-        const currentStage = stages.find((s) => s.name === stageName);
+        if (!stageId) break;
+        const current = stages.find((s) => s.id === stageId);
         const msg = event.message ?? "";
-        const isToolCall = currentStage?.status === "running" && (
-          msg.includes(":") && (
-            msg.startsWith("Read") || msg.startsWith("shell") || msg.startsWith("Bash") ||
-            msg.startsWith("Write") || msg.startsWith("Grep") || msg.startsWith("Glob") ||
-            msg.startsWith("tool") || /^[A-Z][a-z]+:/.test(msg)
-          )
-        );
 
-        if (isToolCall) {
-          // Add as action to running stage
-          updateStage(stageName, (s) => ({
+        // Tool call on already-running stage
+        if (current?.status === "running" && msg.includes(":") && (
+          msg.startsWith("Read") || msg.startsWith("shell") || msg.startsWith("Bash") ||
+          msg.startsWith("Write") || msg.startsWith("Grep") || msg.startsWith("Glob") ||
+          /^[A-Z][a-z]+:/.test(msg)
+        )) {
+          updateStage(stageId, (s) => ({
             ...s,
-            actions: [...(s.actions ?? []), msg].slice(-6),
+            actions: [...s.actions, msg].slice(-6),
           }));
         } else {
-          // New stage start
-          updateStage(stageName, (s) => ({
+          updateStage(stageId, (s) => ({
             ...s,
             status: "running",
             detail: msg,
             actions: [],
-            findings: [],
           }));
         }
         break;
       }
 
       case "stage:end":
-        if (stageName) {
-          updateStage(stageName, (s) => ({
+        if (stageId) {
+          updateStage(stageId, (s) => ({
             ...s,
             status: "done",
             detail: event.message ?? s.detail,
-            duration: (event.data?.durationMs as number | undefined) ?? s.duration,
+            duration: (event.data as any)?.durationMs ?? s.duration,
           }));
         }
         break;
 
-      case "stage:error":
-        if (stageName) {
-          updateStage(stageName, (s) => ({
+      case "finding": {
+        // Add finding to the currently running stage
+        const runningStage = stages.find((s) => s.status === "running");
+        if (runningStage) {
+          updateStage(runningStage.id, (s) => ({
+            ...s,
+            findings: [...s.findings, {
+              severity: (event.data as any)?.severity ?? "medium",
+              title: event.message ?? "Finding",
+            }],
+          }));
+        }
+        break;
+      }
+
+      case "error":
+        if (stageId) {
+          updateStage(stageId, (s) => ({
             ...s,
             status: "error",
-            detail: event.message ?? s.detail,
             error: event.message,
           }));
         }
         break;
+    }
 
-      case "action":
-        if (stageName) {
-          updateStage(stageName, (s) =>
-            s.status === "running"
-              ? {
-                  ...s,
-                  actions: [...(s.actions ?? []), event.message ?? ""].slice(-5),
-                }
-              : s
-          );
-        }
-        break;
-
-      case "finding":
-        if (stageName) {
-          updateStage(stageName, (s) => ({
-            ...s,
-            findings: [
-              ...(s.findings ?? []),
-              {
-                severity: (event.data?.severity as string) ?? "medium",
-                title: event.message ?? "Unknown finding",
-              },
-            ],
-          }));
-        }
-        break;
-
-      case "summary":
-        summary = event.data as unknown as ScanSummary;
-        rerender?.();
-        break;
+    // Show thinking text from assistant messages
+    if (event.type === "thinking" && event.message) {
+      thinking = event.message;
+      rerender?.();
     }
   }
 
-  function setReport(report: {
-    summary: { critical: number; high: number; medium: number; low: number; info?: number };
-    durationMs?: number;
-  } & Record<string, unknown>): void {
-    // Auto-complete any still-pending or running stages
+  function setReport(report: Record<string, unknown>): void {
+    // Complete any remaining stages
     stages = stages.map((s) =>
-      s.status === "pending" ? { ...s, status: "done" as StageStatusKind, detail: "skipped" } :
-      s.status === "running" ? { ...s, status: "done" as StageStatusKind } : s
+      s.status === "pending" || s.status === "running"
+        ? { ...s, status: "done" as StageStatusKind, detail: s.status === "pending" ? "skipped" : s.detail }
+        : s
     );
 
-    const shareUrl = buildShareUrl(report as any);
-
+    const rep = report as any;
     summary = {
-      critical: report.summary.critical,
-      high: report.summary.high,
-      medium: report.summary.medium,
-      low: report.summary.low,
-      info: report.summary.info,
-      duration: report.durationMs,
-      shareUrl,
+      critical: rep.summary?.critical ?? 0,
+      high: rep.summary?.high ?? 0,
+      medium: rep.summary?.medium ?? 0,
+      low: rep.summary?.low ?? 0,
+      info: rep.summary?.info ?? 0,
+      duration: rep.durationMs,
+      shareUrl: buildShareUrl(rep),
     };
     rerender?.();
   }
 
   async function waitForExit(): Promise<void> {
+    // Small delay so final render is visible
+    await new Promise((r) => setTimeout(r, 100));
     instance.unmount();
     await instance.waitUntilExit();
   }

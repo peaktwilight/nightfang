@@ -107,6 +107,13 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
           message: `${name}${detail ? ": " + detail : ""}`,
         });
       },
+      onThinking: (text) => {
+        emit({
+          type: "thinking" as any,
+          stage: "attack",
+          message: text.slice(0, 100),
+        });
+      },
     });
 
     const result = await cliRuntime.execute(cliPrompt, {

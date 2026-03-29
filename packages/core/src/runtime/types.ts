@@ -9,6 +9,8 @@ export interface RuntimeConfig {
   apiKey?: string;
   /** Called when the subprocess executes a tool (read file, run command, etc.) */
   onToolCall?: (name: string, detail: string) => void;
+  /** Called when the model streams thinking/reasoning text */
+  onThinking?: (text: string) => void;
 }
 
 export interface RuntimeResult {

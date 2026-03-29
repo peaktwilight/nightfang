@@ -85,6 +85,7 @@ export class ProcessRuntime implements Runtime {
                 for (const block of event.message.content) {
                   if (block.type === "text") {
                     resultText += block.text;
+                    this.config.onThinking?.(block.text);
                   } else if (block.type === "tool_use") {
                     showToolCall(block.name, block.input);
                   }
@@ -100,6 +101,7 @@ export class ProcessRuntime implements Runtime {
               if (event.type === "item.completed" && event.item) {
                 if (event.item.type === "agent_message" && event.item.text) {
                   resultText += event.item.text;
+                  this.config.onThinking?.(event.item.text);
                 } else if (event.item.type === "command_execution" && event.item.command) {
                   // Already shown on item.started
                 }

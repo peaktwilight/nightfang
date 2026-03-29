@@ -93,7 +93,7 @@ export function registerAuditCommand(program: Command): void {
 
         if (inkUI) {
           // Set report data for Ink UI to render summary
-          inkUI.setReport(report);
+          inkUI.setReport(report as any);
           await inkUI.waitForExit();
         } else {
           const output = formatAuditReport(report, format);
