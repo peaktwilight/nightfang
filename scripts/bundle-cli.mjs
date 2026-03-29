@@ -6,6 +6,23 @@ const outdir = "dist";
 rmSync(outdir, { force: true, recursive: true });
 mkdirSync(outdir, { recursive: true });
 
+// Stub out optional dev-only dependencies that Ink tries to import
+const stubPlugin = {
+  name: "stub-optional",
+  setup(build) {
+    const stubModules = ["react-devtools-core", "yoga-wasm-web"];
+    const filter = new RegExp(`^(${stubModules.join("|")})$`);
+    build.onResolve({ filter }, (args) => ({
+      path: args.path,
+      namespace: "stub",
+    }));
+    build.onLoad({ filter: /.*/, namespace: "stub" }, () => ({
+      contents: "export default {}; export const activate = () => {};",
+      loader: "js",
+    }));
+  },
+};
+
 await build({
   entryPoints: ["packages/cli/src/index.ts"],
   outfile: `${outdir}/index.js`,
@@ -20,9 +37,8 @@ await build({
     "better-sqlite3",
     "drizzle-orm",
     "drizzle-orm/*",
-    "react-devtools-core",
-    "yoga-wasm-web",
   ],
+  plugins: [stubPlugin],
 });
 
 cpSync("packages/templates/attacks", `${outdir}/attacks`, { recursive: true });
