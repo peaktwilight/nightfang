@@ -344,6 +344,46 @@ import Layout from '../layouts/Layout.astro';
         findingsList.innerHTML = findingsHtml;
       }
 
+      // ── Verification section ──
+      const verified = findings.filter(f => f.status === 'verified' || f.status === 'confirmed');
+      const falsePositives = findings.filter(f => f.status === 'false-positive');
+      const hasVerifyData = verified.length > 0 || falsePositives.length > 0;
+
+      if (hasVerifyData) {
+        const verifySection = document.getElementById('verification-section');
+        verifySection.style.removeProperty('display');
+
+        const total = verified.length + falsePositives.length;
+        document.getElementById('verification-summary').textContent =
+          `${verified.length}/${total} confirmed \u2014 blind verification pipeline`;
+
+        let verifyHtml = '';
+        // Confirmed findings
+        for (const f of verified) {
+          verifyHtml += `
+            <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.65rem 0.85rem;background:#141414;border:1px solid rgba(34,197,94,0.15);border-radius:0.5rem">
+              <span style="color:#22c55e;font-size:1rem;flex-shrink:0;line-height:1.3">\u2713</span>
+              <div style="min-width:0">
+                <span style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:#22c55e;font-weight:600">${esc(f.title)}</span>
+                <span class="${severityBadgeClass(f.severity)}" style="display:inline-block;padding:0.1rem 0.4rem;border-radius:0.25rem;border:1px solid;font-family:'Space Mono',monospace;font-size:0.55rem;font-weight:700;letter-spacing:0.06em;margin-left:0.5rem;vertical-align:middle">${severityLabel(f.severity)}</span>
+              </div>
+            </div>`;
+        }
+        // Rejected findings
+        for (const f of falsePositives) {
+          const reason = f.evidence && f.evidence.analysis ? f.evidence.analysis : '';
+          verifyHtml += `
+            <div style="display:flex;align-items:flex-start;gap:0.65rem;padding:0.65rem 0.85rem;background:#141414;border:1px solid rgba(220,38,38,0.12);border-radius:0.5rem">
+              <span style="color:#ef4444;font-size:1rem;flex-shrink:0;line-height:1.3">\u2717</span>
+              <div style="min-width:0">
+                <span style="font-family:'Outfit',sans-serif;font-size:0.875rem;color:#6b7280;text-decoration:line-through">${esc(f.title)}</span>
+                ${reason ? `<p style="font-family:'Outfit',sans-serif;font-size:0.78rem;color:#525252;margin:0.25rem 0 0;line-height:1.55">${esc(reason)}</p>` : ''}
+              </div>
+            </div>`;
+        }
+        document.getElementById('verification-list').innerHTML = verifyHtml;
+      }
+
       // ── Show report ──
       document.getElementById('loading-state').style.display = 'none';
       document.getElementById('report-root').style.removeProperty('display');

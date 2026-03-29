@@ -80,6 +80,16 @@ function StageRow({ stage }: { stage: StageState }) {
       <Text color={GRAY}>{"◌"}</Text>
     );
 
+  // Compute verify confirmed count
+  let verifyCount = "";
+  if (stage.id === "verify" && stage.status === "done" && stage.actions.length > 0) {
+    const confirmed = stage.actions.filter((a) => a.startsWith("\u2713")).length;
+    const total = stage.actions.filter((a) => a.startsWith("\u2713") || a.startsWith("\u2717")).length;
+    if (total > 0) {
+      verifyCount = `${confirmed}/${total} confirmed`;
+    }
+  }
+
   return (
     <Box flexDirection="column">
       <Box gap={1}>
@@ -88,11 +98,13 @@ function StageRow({ stage }: { stage: StageState }) {
         <Text bold color={stage.status === "pending" ? GRAY : undefined}>
           {stage.label.padEnd(12)}
         </Text>
-        {stage.detail && (
+        {verifyCount ? (
+          <Text color={GREEN}>{verifyCount}</Text>
+        ) : stage.detail ? (
           <Text color={stage.status === "done" ? GRAY : undefined} dimColor={stage.status === "done"}>
             {stage.detail}
           </Text>
-        )}
+        ) : null}
         {stage.duration !== undefined && (
           <Text color={GRAY}> {formatDuration(stage.duration)}</Text>
         )}
@@ -102,12 +114,26 @@ function StageRow({ stage }: { stage: StageState }) {
       {stage.actions.length > 0 && (
         <Box flexDirection="column" marginLeft={6}>
           {stage.actions.map((action, i) => {
-            // Verify stage: color confirmed (✓) green, rejected (✗) gray
+            // Verify stage: confirmed (✓) green+bold, rejected (✗) dim red+strikethrough
             if (stage.id === "verify") {
               const isConfirmed = action.startsWith("\u2713");
               const isRejected = action.startsWith("\u2717");
+              if (isConfirmed) {
+                return (
+                  <Text key={i} color={GREEN} bold>
+                    {"→ "}{action}
+                  </Text>
+                );
+              }
+              if (isRejected) {
+                return (
+                  <Text key={i} color={CRIMSON} dimColor strikethrough>
+                    {"→ "}{action}
+                  </Text>
+                );
+              }
               return (
-                <Text key={i} color={isConfirmed ? GREEN : isRejected ? GRAY : CYAN}>
+                <Text key={i} color={CYAN}>
                   {"→ "}{action}
                 </Text>
               );
