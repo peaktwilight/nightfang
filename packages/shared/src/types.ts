@@ -1,7 +1,7 @@
 // ── Scan Configuration ──
 
 export type ScanDepth = "quick" | "default" | "deep";
-export type OutputFormat = "terminal" | "json" | "markdown";
+export type OutputFormat = "terminal" | "json" | "markdown" | "html";
 export type RuntimeMode = "api" | "claude" | "codex" | "gemini" | "auto";
 export type ScanMode = "probe" | "deep" | "mcp" | "web";
 
@@ -86,7 +86,7 @@ export interface ScanContext {
 
 export interface TargetInfo {
   url: string;
-  type: "api" | "chatbot" | "agent" | "unknown";
+  type: "api" | "chatbot" | "agent" | "mcp" | "unknown";
   endpoints?: string[];
   systemPrompt?: string;
   model?: string;

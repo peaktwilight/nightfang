@@ -9,7 +9,7 @@ export function registerAuditCommand(program: Command): void {
     .argument("<package>", "npm package name (e.g. lodash, express)")
     .option("--version <version>", "Specific version to audit (default: latest)")
     .option("--depth <depth>", "Audit depth: quick, default, deep", "default")
-    .option("--format <format>", "Output format: terminal, json, md", "terminal")
+    .option("--format <format>", "Output format: terminal, json, md, html", "terminal")
     .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, api", "auto")
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider")

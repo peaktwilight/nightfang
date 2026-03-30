@@ -1,3 +1,7 @@
+import { writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { execFile } from "node:child_process";
 import type { Command } from "commander";
 import chalk from "chalk";
 import type { ScanDepth, OutputFormat, RuntimeMode } from "@pwnkit/shared";
@@ -13,7 +17,8 @@ export function registerScanCommand(program: Command): void {
     .description("Run security scan against a URL or API endpoint")
     .requiredOption("--target <url>", "Target URL")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
-    .option("--format <format>", "Output format: terminal, json, md", "terminal")
+    .option("--format <format>", "Output format: terminal, json, md, html", "terminal")
+    .option("--report <path>", "Write HTML report to file (implies --format html)")
     .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, auto", "auto")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
     .option("--db-path <path>", "Path to SQLite database")
@@ -58,7 +63,11 @@ export function registerScanCommand(program: Command): void {
         }
       }
 
-      const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
+      // --report implies --format html
+      const reportPath = opts.report as string | undefined;
+      const format = reportPath
+        ? "html" as OutputFormat
+        : (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
       const runtime = (opts.runtime as RuntimeMode) ?? "auto";
 
       if (format === "terminal") checkRuntimeAvailability();
@@ -94,7 +103,25 @@ export function registerScanCommand(program: Command): void {
           inkUI.setReport(report as any);
           await inkUI.waitForExit();
         } else {
-          console.log(formatReport(report, format));
+          const output = formatReport(report, format);
+
+          if (format === "html") {
+            const filePath = reportPath
+              ? resolve(reportPath)
+              : join(tmpdir(), `pwnkit-report-${Date.now()}.html`);
+            await writeFile(filePath, output, "utf-8");
+
+            const openCmd = process.platform === "darwin" ? "open" : "xdg-open";
+            execFile(openCmd, [filePath], (err) => {
+              if (err) {
+                console.error(chalk.yellow(`Could not open browser. Report saved to: ${filePath}`));
+              }
+            });
+
+            console.log(chalk.green(`Report saved to: ${filePath}`));
+          } else {
+            console.log(output);
+          }
         }
 
         if (report.summary.critical > 0 || report.summary.high > 0) {
