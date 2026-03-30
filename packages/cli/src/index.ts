@@ -52,6 +52,9 @@ async function showInteractiveMenu(): Promise<void> {
 
 // ── Smart target detection: pwnkit <target> auto-routes ──
 function detectAndRoute(target: string): string[] | null {
+  if (target.startsWith("mcp://")) {
+    return ["scan", "--target", target];
+  }
   if (target.startsWith("./") || target.startsWith("/") || target === ".") {
     return ["review", target];
   }

@@ -2,6 +2,7 @@ import type { ScanReport, AuditReport, ReviewReport, OutputFormat } from "@pwnki
 import { formatTerminal } from "./terminal.js";
 import { formatJson } from "./json.js";
 import { formatMarkdown } from "./markdown.js";
+import { formatHtml } from "./html.js";
 export { renderReplay, renderReplayStatic, replayDataFromReport, createReplayCollector } from "./replay.js";
 export type { ReplayData, ReplayCollector } from "./replay.js";
 
@@ -13,6 +14,8 @@ export function formatReport(report: ScanReport, format: OutputFormat): string {
       return formatJson(report);
     case "markdown":
       return formatMarkdown(report);
+    case "html":
+      return formatHtml(report);
   }
 }
 

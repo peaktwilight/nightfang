@@ -11,6 +11,7 @@ import { buildDeepScanPrompt, buildMcpAuditPrompt } from "../prompts.js";
 import { webPentestPrompt } from "../agent/prompts.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
+import { runMcpSecurityChecks } from "../mcp.js";
 
 export interface AttackStageResult {
   results: AttackResult[];
@@ -99,6 +100,28 @@ export async function runAttacks(
   runtime: Runtime
 ): Promise<StageResult<AttackStageResult>> {
   const start = Date.now();
+
+  if (ctx.config.mode === "mcp") {
+    const { results, findings } = await runMcpSecurityChecks(ctx);
+    ctx.attacks.push(...results);
+    for (const finding of findings) {
+      if (!ctx.findings.some((existing) => existing.templateId === finding.templateId && existing.title === finding.title)) {
+        ctx.findings.push(finding);
+      }
+    }
+
+    return {
+      stage: "attack",
+      success: true,
+      data: {
+        results,
+        templatesRun: results.length,
+        payloadsRun: results.length,
+      },
+      durationMs: Date.now() - start,
+    };
+  }
+
   const depthCfg = DEPTH_CONFIG[ctx.config.depth];
   const templatesToRun = templates.slice(0, depthCfg.maxTemplates);
 
@@ -264,4 +287,3 @@ async function executeProcessAttack(
     latencyMs: result.durationMs,
   };
 }
-

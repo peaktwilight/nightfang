@@ -1,9 +1,10 @@
 import type { ScanContext, StageResult, TargetInfo } from "@pwnkit/shared";
 import type { NativeRuntime, RuntimeType } from "../runtime/types.js";
-import { sendPrompt, extractResponseText } from "../http.js";
+import { sendPrompt, extractResponseText, isMcpTarget } from "../http.js";
 import { LlmApiRuntime } from "../runtime/llm-api.js";
 import { runNativeAgentLoop } from "../agent/native-loop.js";
 import { getToolsForRole } from "../agent/tools.js";
+import { discoverMcpTarget } from "../mcp.js";
 
 export interface DiscoveryResult {
   target: TargetInfo;
@@ -13,6 +14,32 @@ export async function runDiscovery(
   ctx: ScanContext
 ): Promise<StageResult<DiscoveryResult>> {
   const start = Date.now();
+
+  if (isMcpTarget(ctx.config.target)) {
+    try {
+      const target = await discoverMcpTarget(ctx.config.target, ctx.config.timeout);
+      ctx.target = target;
+      return {
+        stage: "discovery",
+        success: true,
+        data: { target },
+        durationMs: Date.now() - start,
+      };
+    } catch (err) {
+      return {
+        stage: "discovery",
+        success: false,
+        data: {
+          target: {
+            url: ctx.config.target,
+            type: "mcp",
+          },
+        },
+        durationMs: Date.now() - start,
+        error: err instanceof Error ? err.message : String(err),
+      };
+    }
+  }
 
   // Try agentic discovery first
   let discoveryRuntime: NativeRuntime | null = null;

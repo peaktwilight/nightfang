@@ -1,17 +1,14 @@
 import type { Command } from "commander";
 import chalk from "chalk";
-import type { ScanDepth, OutputFormat, RuntimeMode } from "@pwnkit/shared";
-import { VERSION } from "@pwnkit/shared";
-import { scan } from "@pwnkit/core";
+import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@pwnkit/shared";
 import { renderReplay } from "../formatters/replay.js";
-import { formatReport } from "../formatters/index.js";
-import { checkRuntimeAvailability } from "../utils.js";
+import { runUnified } from "./run.js";
 
 export function registerScanCommand(program: Command): void {
   program
     .command("scan")
-    .description("Run security scan against a URL or API endpoint")
-    .requiredOption("--target <url>", "Target URL")
+    .description("Run security scan against a URL or MCP server")
+    .requiredOption("--target <target>", "Target URL or mcp:// endpoint")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md", "terminal")
     .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, auto", "auto")
@@ -58,51 +55,20 @@ export function registerScanCommand(program: Command): void {
         }
       }
 
-      const format = (opts.format === "md" ? "markdown" : opts.format) as OutputFormat;
-      const runtime = (opts.runtime as RuntimeMode) ?? "auto";
+      const mode = (String(opts.target).startsWith("mcp://") ? "mcp" : "deep") as ScanMode;
 
-      if (format === "terminal") checkRuntimeAvailability();
-
-      // URL targets use the original scanner pipeline (discovery → attack → verify → report)
-      // instead of the unified pipeline which only supports npm-package and source-code targets.
-      let inkUI: { onEvent: (event: any) => void; setReport: (report: any) => void; waitForExit: () => Promise<void> } | null = null;
-      let eventHandler: (event: any) => void = () => {};
-
-      if (format === "terminal") {
-        const { renderScanUI } = await import("../ui/renderScan.js");
-        inkUI = renderScanUI({ version: VERSION, target: opts.target, depth: opts.depth, mode: "scan" });
-        eventHandler = inkUI.onEvent;
-      }
-
-      try {
-        const report = await scan(
-          {
-            target: opts.target,
-            depth: opts.depth as ScanDepth,
-            format,
-            runtime,
-            timeout: parseInt(opts.timeout, 10),
-            verbose: opts.verbose as boolean,
-            apiKey: opts.apiKey as string | undefined,
-            model: opts.model as string | undefined,
-          },
-          eventHandler,
-          opts.dbPath as string | undefined,
-        );
-
-        if (inkUI) {
-          inkUI.setReport(report as any);
-          await inkUI.waitForExit();
-        } else {
-          console.log(formatReport(report, format));
-        }
-
-        if (report.summary.critical > 0 || report.summary.high > 0) {
-          process.exit(1);
-        }
-      } catch (err) {
-        console.error(chalk.red(err instanceof Error ? err.message : String(err)));
-        process.exit(2);
-      }
+      await runUnified({
+        target: opts.target,
+        targetType: "url",
+        mode,
+        depth: opts.depth as ScanDepth,
+        format: (opts.format === "md" ? "markdown" : opts.format) as OutputFormat,
+        runtime: (opts.runtime as RuntimeMode) ?? "auto",
+        timeout: parseInt(opts.timeout, 10),
+        verbose: opts.verbose as boolean,
+        dbPath: opts.dbPath as string | undefined,
+        apiKey: opts.apiKey as string | undefined,
+        model: opts.model as string | undefined,
+      });
     });
 }

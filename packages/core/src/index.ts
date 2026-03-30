@@ -3,10 +3,11 @@ export type { ScanEvent, ScanListener, ScanEventType } from "./scanner.js";
 export { agenticScan } from "./agentic-scanner.js";
 export type { AgenticScanOptions } from "./agentic-scanner.js";
 export { createScanContext, addFinding, addAttackResult, finalize } from "./context.js";
-export { sendPrompt, extractResponseText } from "./http.js";
+export { sendPrompt, extractResponseText, isMcpTarget } from "./http.js";
 export { createRuntime, ProcessRuntime, LlmApiRuntime, RUNTIME_REGISTRY, pickRuntimeForStage, detectAvailableRuntimes, getRuntimeInfo } from "./runtime/index.js";
 export type { Runtime, RuntimeConfig, RuntimeContext, RuntimeResult, RuntimeType, NativeRuntime, NativeMessage, NativeContentBlock, NativeToolDef, NativeRuntimeResult } from "./runtime/index.js";
 export { buildDeepScanPrompt, buildMcpAuditPrompt, buildSourceAnalysisPrompt } from "./prompts.js";
+export { resolveMcpEndpoint, listMcpTools, callMcpTool, discoverMcpTarget, runMcpSecurityChecks } from "./mcp.js";
 
 // Analysis prompts
 export { auditAgentPrompt, reviewAgentPrompt } from "./analysis-prompts.js";

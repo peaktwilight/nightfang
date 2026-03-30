@@ -1,7 +1,11 @@
+import { writeFile } from "node:fs/promises";
+import { join, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { execFile } from "node:child_process";
 import chalk from "chalk";
 import { VERSION } from "@pwnkit/shared";
-import type { ScanDepth, OutputFormat, RuntimeMode } from "@pwnkit/shared";
-import { runPipeline, createRuntime } from "@pwnkit/core";
+import type { ScanDepth, OutputFormat, RuntimeMode, ScanMode } from "@pwnkit/shared";
+import { runPipeline, createRuntime, scan as runScanPipeline } from "@pwnkit/core";
 import { formatAuditReport, formatReviewReport, formatReport } from "../formatters/index.js";
 import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 
@@ -11,12 +15,14 @@ export interface RunOptions {
   depth: ScanDepth;
   format: OutputFormat;
   runtime: RuntimeMode;
+  mode?: ScanMode;
   timeout: number;
   verbose: boolean;
   dbPath?: string;
   apiKey?: string;
   model?: string;
   packageVersion?: string;
+  reportPath?: string;
 }
 
 export async function runUnified(opts: RunOptions): Promise<void> {
@@ -54,19 +60,35 @@ export async function runUnified(opts: RunOptions): Promise<void> {
   }
 
   try {
-    const report = await runPipeline({
-      target,
-      targetType: opts.targetType,
-      depth,
-      format,
-      runtime,
-      onEvent: eventHandler,
-      dbPath: opts.dbPath,
-      apiKey: opts.apiKey,
-      model: opts.model,
-      timeout,
-      packageVersion: opts.packageVersion,
-    });
+    const report = opts.targetType === "url" || opts.targetType === "web-app"
+      ? await runScanPipeline(
+          {
+            target,
+            depth,
+            format,
+            runtime,
+            mode: opts.mode ?? "deep",
+            timeout,
+            verbose: opts.verbose,
+            apiKey: opts.apiKey,
+            model: opts.model,
+          },
+          eventHandler,
+          opts.dbPath,
+        )
+      : await runPipeline({
+          target,
+          targetType: opts.targetType,
+          depth,
+          format,
+          runtime,
+          onEvent: eventHandler,
+          dbPath: opts.dbPath,
+          apiKey: opts.apiKey,
+          model: opts.model,
+          timeout,
+          packageVersion: opts.packageVersion,
+        });
 
     if (inkUI) {
       inkUI.setReport(report as any);
@@ -78,7 +100,18 @@ export async function runUnified(opts: RunOptions): Promise<void> {
         : reportAny.targetType === "source-code"
           ? formatReviewReport(reportAny, format)
           : formatReport(reportAny, format);
-      console.log(output);
+
+      if (format === "html") {
+        const filePath = opts.reportPath
+          ? resolve(opts.reportPath)
+          : join(tmpdir(), `pwnkit-report-${Date.now()}.html`);
+        await writeFile(filePath, output, "utf-8");
+        console.log(chalk.green(`Report saved to: ${filePath}`));
+        const openCmd = process.platform === "darwin" ? "open" : "xdg-open";
+        execFile(openCmd, [filePath], () => {});
+      } else {
+        console.log(output);
+      }
     }
 
     if (report.summary.critical > 0 || report.summary.high > 0) {

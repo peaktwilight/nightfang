@@ -5,6 +5,10 @@ export interface HttpResponse {
   latencyMs: number;
 }
 
+export function isMcpTarget(target: string): boolean {
+  return target.startsWith("mcp://");
+}
+
 export async function sendPrompt(
   target: string,
   prompt: string,

@@ -236,6 +236,31 @@ describe("pwnkit scan integration", () => {
     expect(report.summary.totalFindings).toBe(0);
   });
 
+  it("finds MCP issues on a vulnerable MCP target", async () => {
+    const report = await runScan({
+      target: `mcp://localhost:${new URL(vulnMcpTarget).port}/mcp`,
+      depth: "quick",
+      format: "json",
+      mode: "mcp",
+      timeout: 5000,
+    });
+
+    expect(report.summary.totalFindings).toBeGreaterThan(0);
+    expect(report.findings.some((finding) => finding.title.includes("MCP"))).toBe(true);
+  });
+
+  it("returns a clean report for a safe MCP target", async () => {
+    const report = await runScan({
+      target: `mcp://localhost:${new URL(safeMcpTarget).port}/mcp`,
+      depth: "quick",
+      format: "json",
+      mode: "mcp",
+      timeout: 5000,
+    });
+
+    expect(report.summary.totalFindings).toBe(0);
+  });
+
   it("lists findings from the parent findings command", async () => {
     const dbPath = join(tmpdir(), `pwnkit-findings-${Date.now()}.db`);
 
