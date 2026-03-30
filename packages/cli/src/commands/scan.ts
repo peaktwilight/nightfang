@@ -10,7 +10,7 @@ export function registerScanCommand(program: Command): void {
     .description("Run security scan against a URL or MCP server")
     .requiredOption("--target <target>", "Target URL or mcp:// endpoint")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
-    .option("--format <format>", "Output format: terminal, json, md", "terminal")
+    .option("--format <format>", "Output format: terminal, json, md, sarif", "terminal")
     .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, auto", "auto")
     .option("--mode <mode>", "Scan mode: probe, deep, mcp, web")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
