@@ -1,0 +1,22 @@
+{
+  "target": "express",
+  "targetType": "npm-package",
+  "startedAt": "2026-03-30T19:41:41.702Z",
+  "completedAt": "2026-03-30T19:41:46.469Z",
+  "durationMs": 4767,
+  "summary": {
+    "totalAttacks": 0,
+    "totalFindings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [],
+  "warnings": [],
+  "package": "express",
+  "version": "5.2.1",
+  "npmAuditFindings": [],
+  "semgrepFindings": 0
+}

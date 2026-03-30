@@ -1,0 +1,22 @@
+{
+  "target": "fastify",
+  "targetType": "npm-package",
+  "startedAt": "2026-03-30T19:42:08.189Z",
+  "completedAt": "2026-03-30T19:42:16.773Z",
+  "durationMs": 8584,
+  "summary": {
+    "totalAttacks": 0,
+    "totalFindings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [],
+  "warnings": [],
+  "package": "fastify",
+  "version": "5.8.4",
+  "npmAuditFindings": [],
+  "semgrepFindings": 0
+}

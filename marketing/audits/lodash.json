@@ -1,0 +1,22 @@
+{
+  "target": "lodash",
+  "targetType": "npm-package",
+  "startedAt": "2026-03-30T19:42:08.189Z",
+  "completedAt": "2026-03-30T19:42:14.615Z",
+  "durationMs": 6426,
+  "summary": {
+    "totalAttacks": 0,
+    "totalFindings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [],
+  "warnings": [],
+  "package": "lodash",
+  "version": "4.17.23",
+  "npmAuditFindings": [],
+  "semgrepFindings": 0
+}

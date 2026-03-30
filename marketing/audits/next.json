@@ -1,0 +1,22 @@
+{
+  "target": "next",
+  "targetType": "npm-package",
+  "startedAt": "2026-03-30T19:42:08.189Z",
+  "completedAt": "2026-03-30T19:42:21.320Z",
+  "durationMs": 13131,
+  "summary": {
+    "totalAttacks": 0,
+    "totalFindings": 0,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [],
+  "warnings": [],
+  "package": "next",
+  "version": "16.2.1",
+  "npmAuditFindings": [],
+  "semgrepFindings": 0
+}
