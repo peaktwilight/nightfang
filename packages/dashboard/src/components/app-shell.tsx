@@ -1,6 +1,8 @@
 import { Activity, Command, LayoutDashboard, Radar, ShieldAlert } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import type { DashboardResponse, ScanRecord } from "@/types";
+import { BrandMark } from "@/components/brand-mark";
+import { CardRow } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 function routeLabel(pathname: string): string {
@@ -39,9 +41,9 @@ export function AppShell({
   return (
     <div className="min-h-screen bg-transparent text-[var(--foreground)]">
       <div className="xl:grid xl:min-h-screen xl:grid-cols-[4.5rem_15rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-white/8 bg-black/30 xl:flex xl:flex-col xl:items-center xl:py-5">
+        <aside className="hidden border-r border-[var(--border)] bg-[rgba(6,8,12,0.84)] xl:flex xl:flex-col xl:items-center xl:py-5">
           <div className="flex h-full flex-col items-center gap-4">
-            <BrandGlyph compact />
+            <BrandMark compact />
             <nav className="flex flex-col gap-2">
               <RailNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" />
               <RailNavLink to="/findings" icon={ShieldAlert} label="Findings" />
@@ -55,9 +57,9 @@ export function AppShell({
           </div>
         </aside>
 
-        <aside className="hidden border-r border-white/8 bg-black/18 px-4 py-5 xl:flex xl:flex-col xl:gap-5">
-          <div className="space-y-2 border-b border-white/8 pb-4">
-            <BrandGlyph />
+        <aside className="hidden border-r border-[var(--border)] bg-[rgba(9,11,16,0.78)] px-4 py-5 xl:flex xl:flex-col xl:gap-5">
+          <div className="space-y-2 border-b border-[var(--border)] pb-4">
+            <BrandMark animated />
             <div className="text-xl font-bold tracking-tight text-white">Operator shell</div>
             <div className="text-sm leading-6 text-[var(--muted)]">
               Local mission control for scans, evidence, and triage.
@@ -70,7 +72,7 @@ export function AppShell({
             <ShellNavLink to="/scans" icon={Radar} label="Scans" meta="Runs, events, dossiers" />
           </nav>
 
-          <div className="space-y-2 border-t border-white/8 pt-4">
+          <div className="space-y-2 border-t border-[var(--border)] pt-4">
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
               Situation
             </div>
@@ -78,7 +80,7 @@ export function AppShell({
             <ContextStat label="Active runs" value={String(activeRuns)} />
           </div>
 
-          <div className="mt-auto space-y-2 border-t border-white/8 pt-4 text-xs leading-5 text-[var(--muted)]">
+          <div className="mt-auto space-y-2 border-t border-[var(--border)] pt-4 text-xs leading-5 text-[var(--muted)]">
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
               Hotkeys
             </div>
@@ -89,7 +91,7 @@ export function AppShell({
         </aside>
 
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-white/8 bg-[rgba(9,11,16,0.94)]">
+          <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(9,11,16,0.94)]">
             <div className="mx-auto flex max-w-[1800px] flex-col gap-3 px-4 py-3 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-6">
               <div className="space-y-1">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-foreground)]">
@@ -99,7 +101,7 @@ export function AppShell({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="hidden items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-[var(--muted)] lg:flex">
+                <div className="hidden items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)] lg:flex">
                   <Activity className="size-4 text-[var(--danger)]" />
                   {dashboard?.groups.length ?? 0} families tracked
                 </div>
@@ -125,25 +127,6 @@ export function AppShell({
   );
 }
 
-function BrandGlyph({ compact = false }: { compact?: boolean }) {
-  if (compact) {
-    return (
-      <div className="flex size-10 items-center justify-center rounded-md border border-[var(--accent)]/30 bg-[var(--danger-soft)] text-base font-bold text-[var(--accent)]">
-        ◆
-      </div>
-    );
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-base font-bold text-[var(--accent)]">◆</span>
-      <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
-        pwnkit
-      </span>
-    </div>
-  );
-}
-
 function ShellNavLink({
   to,
   icon: Icon,
@@ -163,7 +146,7 @@ function ShellNavLink({
             "flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm transition",
             isActive
               ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-              : "border-white/0 bg-transparent text-[var(--muted)] hover:border-white/10 hover:bg-white/[0.04] hover:text-white",
+              : "border-transparent bg-transparent text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--panel-soft)] hover:text-white",
           ].join(" ")}
         >
           <Icon className="mt-0.5 size-4" />
@@ -194,7 +177,7 @@ function RailNavLink({
             "flex size-10 items-center justify-center rounded-md border transition",
             isActive
               ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-              : "border-transparent text-[var(--muted)] hover:border-white/10 hover:bg-white/[0.04] hover:text-white",
+              : "border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--panel-soft)] hover:text-white",
           ].join(" ")}
         >
           <Icon className="size-4" />
@@ -206,10 +189,10 @@ function RailNavLink({
 
 function ContextStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between rounded-md border border-white/8 bg-black/18 px-3 py-2.5">
+    <CardRow className="flex items-center justify-between bg-transparent px-3 py-2.5">
       <span className="text-sm text-[var(--muted)]">{label}</span>
       <span className="text-lg font-semibold text-white">{value}</span>
-    </div>
+    </CardRow>
   );
 }
 
@@ -222,7 +205,7 @@ function MobileShellNav({ to, label }: { to: string; label: string }) {
             "rounded-md border px-3 py-2 text-sm whitespace-nowrap",
             isActive
               ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-              : "border-white/10 bg-white/[0.04] text-[var(--muted)]",
+              : "border-[var(--border)] bg-[var(--panel-soft)] text-[var(--muted)]",
           ].join(" ")}
         >
           {label}

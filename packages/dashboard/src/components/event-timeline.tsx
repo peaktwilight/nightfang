@@ -10,7 +10,7 @@ import {
 import type { ScanEventsResponse } from "@/types";
 import { formatTime, summarizePayload } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badges";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardEmpty, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
 
 export function EventTimeline({
   events,
@@ -18,32 +18,25 @@ export function EventTimeline({
   events: ScanEventsResponse["events"];
 }) {
   return (
-    <Card className="overflow-hidden border-white/8 bg-white/[0.025]">
+    <Card className="overflow-hidden">
       <CardHeader>
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-            Activity
-          </div>
+          <CardEyebrow>Activity</CardEyebrow>
           <CardTitle className="mt-2">Timeline</CardTitle>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {events.length === 0 ? (
-          <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
-            No pipeline events recorded.
-          </div>
+          <CardEmpty>No pipeline events recorded.</CardEmpty>
         ) : (
           events.map((event) => {
             const Icon = iconForEvent(event.stage, event.eventType);
 
             return (
-              <article
-                key={event.id}
-                className="rounded-[var(--radius)] border border-white/8 bg-black/10 p-4"
-              >
+              <CardRow key={event.id} className="p-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex gap-3">
-                    <div className="mt-0.5 inline-flex size-10 items-center justify-center rounded-lg border border-white/10 bg-white/6 text-[var(--accent)]">
+                    <div className="mt-0.5 inline-flex size-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel-soft)] text-[var(--accent)]">
                       <Icon className="size-5" />
                     </div>
                     <div className="space-y-2">
@@ -61,7 +54,7 @@ export function EventTimeline({
                     </div>
                   </div>
                   {event.payload ? (
-                    <details className="min-w-[16rem] rounded-lg border border-white/8 bg-white/[0.03] p-3 text-sm text-[var(--muted)]">
+                    <details className="min-w-[16rem] rounded-md border border-[var(--border)] bg-[var(--panel-soft)] p-3 text-sm text-[var(--muted)]">
                       <summary className="cursor-pointer list-none font-medium text-white">Raw payload</summary>
                       <pre className="mt-3 text-xs text-[var(--muted)]">
                         {JSON.stringify(event.payload, null, 2)}
@@ -69,7 +62,7 @@ export function EventTimeline({
                     </details>
                   ) : null}
                 </div>
-              </article>
+              </CardRow>
             );
           })
         )}

@@ -177,7 +177,7 @@ export function CommandPalette({
   return (
     <CommandDialog open={open} onOpenChange={onOpenChange}>
       <Command>
-        <div className="border-b border-white/10 px-5 py-4">
+        <div className="border-b border-[var(--border)] px-5 py-4">
           <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
             Mission command
           </div>
@@ -204,7 +204,7 @@ export function CommandPalette({
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="inline-flex size-9 items-center justify-center rounded-lg border border-white/8 bg-white/6 text-[var(--accent)]">
+                      <div className="inline-flex size-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel-soft)] text-[var(--accent)]">
                         <item.icon className="size-4" />
                       </div>
                       <div>

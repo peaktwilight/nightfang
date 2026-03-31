@@ -3,16 +3,16 @@ import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const badgeVariants = cva(
-  "inline-flex items-center gap-1 rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
+  "inline-flex items-center gap-1 rounded-sm border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]",
   {
     variants: {
       variant: {
-        neutral: "border-white/12 bg-white/5 text-[var(--muted)]",
+        neutral: "border-[var(--border)] bg-[var(--panel-soft)] text-[var(--muted)]",
         accent: "border-[var(--accent)]/25 bg-[var(--accent)]/14 text-[var(--foreground)]",
-        success: "border-[var(--success)]/25 bg-[var(--success)]/14 text-[var(--foreground)]",
-        warning: "border-[var(--warning)]/25 bg-[var(--warning)]/14 text-[var(--foreground)]",
-        danger: "border-[var(--danger)]/25 bg-[var(--danger)]/14 text-[var(--foreground)]",
-        info: "border-[var(--info)]/25 bg-[var(--info)]/14 text-[var(--foreground)]",
+        success: "border-[var(--success)]/25 bg-[var(--success-soft)] text-[var(--foreground)]",
+        warning: "border-[var(--warning)]/25 bg-[var(--warning-soft)] text-[var(--foreground)]",
+        danger: "border-[var(--danger)]/25 bg-[var(--danger-soft)] text-[var(--foreground)]",
+        info: "border-[var(--info)]/25 bg-[var(--info-soft)] text-[var(--foreground)]",
       },
     },
     defaultVariants: {

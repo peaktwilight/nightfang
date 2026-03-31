@@ -4,23 +4,23 @@ import type { ButtonHTMLAttributes } from "react";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition duration-150 outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:pointer-events-none disabled:opacity-50",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md border text-sm font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)] disabled:pointer-events-none disabled:opacity-50",
   {
     variants: {
       variant: {
-        default: "border-white/12 bg-white/4 text-[var(--foreground)] hover:bg-white/8",
-        outline: "border-white/12 bg-transparent text-[var(--foreground)] hover:bg-white/5",
-        ghost: "border-transparent bg-transparent text-[var(--muted)] hover:bg-white/5 hover:text-[var(--foreground)]",
+        default: "border-[var(--border)] bg-[var(--panel-soft)] text-[var(--foreground)] hover:bg-white/[0.06]",
+        outline: "border-[var(--border)] bg-transparent text-[var(--foreground)] hover:bg-white/[0.04]",
+        ghost: "border-transparent bg-transparent text-[var(--muted)] hover:bg-white/[0.04] hover:text-[var(--foreground)]",
         accent: "border-[var(--accent)]/35 bg-[var(--accent)] text-white hover:bg-[#ef4444]",
-        success: "border-[var(--success)]/30 bg-[var(--success)]/14 text-[var(--foreground)] hover:bg-[var(--success)]/20",
-        warning: "border-[var(--warning)]/30 bg-[var(--warning)]/14 text-[var(--foreground)] hover:bg-[var(--warning)]/20",
-        danger: "border-[var(--danger)]/30 bg-[var(--danger)]/14 text-[var(--foreground)] hover:bg-[var(--danger)]/20",
+        success: "border-[var(--success)]/30 bg-[var(--success-soft)] text-[var(--foreground)] hover:bg-[var(--success)]/20",
+        warning: "border-[var(--warning)]/30 bg-[var(--warning-soft)] text-[var(--foreground)] hover:bg-[var(--warning)]/20",
+        danger: "border-[var(--danger)]/30 bg-[var(--danger-soft)] text-[var(--foreground)] hover:bg-[var(--danger)]/20",
       },
       size: {
-        default: "h-11",
-        sm: "h-9 rounded-lg px-3 text-xs",
-        lg: "h-12 px-5",
-        icon: "size-11 rounded-lg px-0",
+        default: "h-9 px-4 py-2",
+        sm: "h-8 px-3 text-xs",
+        lg: "h-10 px-5",
+        icon: "size-9 px-0",
       },
     },
     defaultVariants: {

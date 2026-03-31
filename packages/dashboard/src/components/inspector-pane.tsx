@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function InspectorPane({
   eyebrow,
@@ -16,9 +16,7 @@ export function InspectorPane({
     <Card className="overflow-hidden">
       <CardHeader>
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-            {eyebrow}
-          </div>
+          <CardEyebrow>{eyebrow}</CardEyebrow>
           <CardTitle className="mt-2">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>

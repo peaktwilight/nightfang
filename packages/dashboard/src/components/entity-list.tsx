@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -24,9 +24,7 @@ export function EntityList({
     <Card className="overflow-hidden">
       <CardHeader className="space-y-3">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-            Queue
-          </div>
+          <CardEyebrow>Queue</CardEyebrow>
           <CardTitle className="mt-2">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>
@@ -36,7 +34,7 @@ export function EntityList({
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className="h-10 border-white/10 bg-black/15"
+            className="h-9"
           />
         </label>
       </CardHeader>
@@ -64,19 +62,18 @@ export function EntityListItem({
 }) {
   return (
     <div
-      className={cn(
-        "rounded-[var(--radius)] border border-white/8 bg-white/[0.03] p-3 transition duration-150 hover:border-white/14 hover:bg-white/[0.05]",
-        selected && "border-[var(--accent)]/30 bg-[var(--danger-soft)] shadow-[0_0_0_1px_rgba(255,91,91,0.14)]",
-      )}
+      className={cn("contents")}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="space-y-0.5">
-          <div className="text-sm font-semibold leading-5 text-white">{title}</div>
-          <div className="text-xs leading-5 text-[var(--muted)]">{description}</div>
-          {meta ? <div className="text-xs text-[var(--muted-foreground)]">{meta}</div> : null}
+      <CardRow interactive selected={selected}>
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-0.5">
+            <div className="text-sm font-semibold leading-5 text-white">{title}</div>
+            <div className="text-xs leading-5 text-[var(--muted)]">{description}</div>
+            {meta ? <div className="text-xs text-[var(--muted-foreground)]">{meta}</div> : null}
+          </div>
+          {badges ? <div className="flex max-w-[12rem] flex-wrap justify-end gap-2">{badges}</div> : null}
         </div>
-        {badges ? <div className="flex max-w-[12rem] flex-wrap justify-end gap-2">{badges}</div> : null}
-      </div>
+      </CardRow>
     </div>
   );
 }

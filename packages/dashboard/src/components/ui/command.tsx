@@ -40,7 +40,7 @@ export function CommandInput({
   ...props
 }: ComponentPropsWithoutRef<typeof CommandPrimitive.Input>) {
   return (
-    <div className="flex items-center gap-3 border-b border-white/10 px-5 py-4">
+    <div className="flex items-center gap-3 border-b border-[var(--border)] px-5 py-4">
       <Search className="size-4 text-[var(--muted)]" />
       <CommandPrimitive.Input
         className={cn(
@@ -86,7 +86,7 @@ export function CommandItem({
   return (
     <CommandPrimitive.Item
       className={cn(
-        "relative flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-3 text-sm outline-none transition data-[selected=true]:bg-white/8 data-[selected=true]:text-white",
+        "relative flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-3 text-sm outline-none transition data-[selected=true]:bg-[var(--danger-soft)] data-[selected=true]:text-white",
         className,
       )}
       {...props}
@@ -98,7 +98,7 @@ export function CommandSeparator({
   className,
   ...props
 }: ComponentPropsWithoutRef<typeof CommandPrimitive.Separator>) {
-  return <CommandPrimitive.Separator className={cn("-mx-1 my-2 h-px bg-white/8", className)} {...props} />;
+  return <CommandPrimitive.Separator className={cn("-mx-1 my-2 h-px bg-[var(--border)]", className)} {...props} />;
 }
 
 export function CommandShortcut({
