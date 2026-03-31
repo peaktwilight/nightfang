@@ -12,6 +12,7 @@ import { buildShareUrl, checkRuntimeAvailability } from "../utils.js";
 export interface RunOptions {
   target: string;
   targetType?: "npm-package" | "source-code" | "url" | "web-app";
+  resumeScanId?: string;
   depth: ScanDepth;
   format: OutputFormat;
   runtime: RuntimeMode;
@@ -79,6 +80,7 @@ export async function runUnified(opts: RunOptions): Promise<void> {
       : await runPipeline({
           target,
           targetType: opts.targetType,
+          resumeScanId: opts.resumeScanId,
           depth,
           format,
           runtime,
@@ -88,7 +90,7 @@ export async function runUnified(opts: RunOptions): Promise<void> {
           model: opts.model,
           timeout,
           packageVersion: opts.packageVersion,
-        });
+        } as any);
 
     if (inkUI) {
       inkUI.setReport(report as any);

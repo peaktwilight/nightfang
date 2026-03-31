@@ -32,9 +32,13 @@ export function registerHistoryCommand(program: Command): void {
         const summary = s.summary ? JSON.parse(s.summary) : null;
         const findings = summary?.totalFindings ?? "?";
         const duration = s.durationMs ? `${(s.durationMs / 1000).toFixed(1)}s` : "-";
+        const resumeHint =
+          s.status === "completed"
+            ? ""
+            : ` ${chalk.gray(`resume:${s.id.slice(0, 8)}`)}`;
 
         console.log(
-          `  ${status} ${chalk.white(s.target)} ${chalk.gray(`[${s.depth}]`)} ${chalk.gray(duration)} ${chalk.yellow(`${findings} findings`)} ${chalk.gray(s.startedAt)}`
+          `  ${status} ${chalk.white(s.target)} ${chalk.gray(`[${s.depth}]`)} ${chalk.gray(duration)} ${chalk.yellow(`${findings} findings`)} ${chalk.gray(s.startedAt)}${resumeHint}`
         );
       }
       console.log("");

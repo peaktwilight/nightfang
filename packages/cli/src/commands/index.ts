@@ -1,4 +1,5 @@
 export { registerScanCommand } from "./scan.js";
+export { registerResumeCommand } from "./resume.js";
 export { registerReplayCommand } from "./replay.js";
 export { registerHistoryCommand } from "./history.js";
 export { registerFindingsCommand } from "./findings.js";

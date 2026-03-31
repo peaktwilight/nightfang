@@ -5,6 +5,7 @@ import chalk from "chalk";
 import { VERSION } from "@pwnkit/shared";
 import {
   registerScanCommand,
+  registerResumeCommand,
   registerReplayCommand,
   registerHistoryCommand,
   registerFindingsCommand,
@@ -22,6 +23,7 @@ program
   .version(VERSION);
 
 registerScanCommand(program);
+registerResumeCommand(program);
 registerReplayCommand(program);
 registerHistoryCommand(program);
 registerFindingsCommand(program);
@@ -67,7 +69,7 @@ async function showInteractiveMenu(): Promise<void> {
 
 // ── Entry point ──
 const userArgs = process.argv.slice(2);
-const knownCommands = ["scan", "replay", "history", "findings", "review", "audit", "doctor", "help"];
+const knownCommands = ["scan", "resume", "replay", "history", "findings", "review", "audit", "doctor", "help"];
 
 if (userArgs.length === 0) {
   showInteractiveMenu().catch((err) => {

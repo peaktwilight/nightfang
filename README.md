@@ -78,13 +78,14 @@ Explicit subcommands (`scan`, `audit`, `review`) still work — auto-detect is j
 
 All commands are available via `npx pwnkit-cli <command>`. Explicit subcommands are optional — thanks to auto-detect, `npx pwnkit-cli <target>` works for most use cases (see [Auto-Detect](#auto-detect) above).
 
-pwnkit ships five commands — from quick API probes to deep source-level audits:
+pwnkit ships six commands — from quick API probes to deep source-level audits:
 
 | Command | What It Does | Example |
 |---------|-------------|---------|
 | **`scan`** | Probe LLM endpoints or web apps for vulnerabilities | `npx pwnkit-cli scan --target https://api.example.com/chat` |
 | **`audit`** | Install and security-audit any npm package with static analysis + AI review | `npx pwnkit-cli audit express@4.18.2` |
 | **`review`** | Deep source code security review of a local repo or GitHub URL | `npx pwnkit-cli review https://github.com/user/repo` |
+| **`resume`** | Resume a persisted review/audit scan by scan ID | `npx pwnkit-cli resume <scan-id>` |
 | **`history`** | Browse past scans with status, depth, findings count, and duration | `npx pwnkit-cli history --limit 20` |
 | **`findings`** | Query, filter, and inspect verified findings across all scans | `npx pwnkit-cli findings list --severity critical` |
 

@@ -92,6 +92,18 @@ export class pwnkitDB {
       .run();
   }
 
+  reopenScan(scanId: string): void {
+    this.db
+      .update(schema.scans)
+      .set({
+        status: "running",
+        completedAt: null,
+        durationMs: null,
+      })
+      .where(eq(schema.scans.id, scanId))
+      .run();
+  }
+
   failScan(scanId: string, error: string): void {
     this.db
       .update(schema.scans)

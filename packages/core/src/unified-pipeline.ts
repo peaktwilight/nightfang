@@ -30,6 +30,7 @@ export interface PipelineOptions {
   format: OutputFormat;
   runtime?: RuntimeMode;
   mode?: ScanMode;
+  resumeScanId?: string;
   onEvent?: (event: { type: string; stage?: string; message: string; data?: unknown }) => void;
   dbPath?: string;
   apiKey?: string;
@@ -391,6 +392,27 @@ function buildSummary(findings: Finding[], totalAttacks: number) {
   };
 }
 
+function restorePersistedFinding(row: any): Finding {
+  return {
+    id: row.id,
+    templateId: row.templateId,
+    title: row.title,
+    description: row.description,
+    severity: row.severity,
+    category: row.category,
+    status: row.status,
+    confidence: row.confidence ?? undefined,
+    cvssVector: row.cvssVector ?? undefined,
+    cvssScore: row.cvssScore ?? undefined,
+    evidence: {
+      request: row.evidenceRequest,
+      response: row.evidenceResponse,
+      analysis: row.evidenceAnalysis ?? undefined,
+    },
+    timestamp: row.timestamp,
+  };
+}
+
 function selectVerificationRuntime(
   preferredRuntime: RuntimeMode | undefined,
   hasApiKey: boolean,
@@ -430,19 +452,6 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
   const startTime = Date.now();
   const warnings: Array<{ stage: string; message: string }> = [];
 
-  // ── PHASE 1: PREPARE ──
-  emit({ type: "stage:start", stage: "prepare", message: "Preparing target..." });
-
-  let prepared: PrepareResult;
-  try {
-    prepared = prepareTarget(opts, emit);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    throw new Error(`Prepare failed: ${msg}`);
-  }
-
-  emit({ type: "stage:end", stage: "prepare", message: `Target ready: ${prepared.resolvedType}` });
-
   // Initialize DB (optional, best-effort)
   const db = await (async () => {
     try {
@@ -453,6 +462,41 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     }
   })() as any;
 
+  const existingScan = opts.resumeScanId ? db?.getScan(opts.resumeScanId) : null;
+  if (opts.resumeScanId && !existingScan) {
+    throw new Error(`Scan ${opts.resumeScanId} not found`);
+  }
+
+  let persistedScanId = opts.resumeScanId ?? "";
+  const logPipelineEvent = (
+    stage: string,
+    eventType: string,
+    payload: Record<string, unknown> = {},
+  ): void => {
+    if (!persistedScanId) return;
+    db?.logEvent({
+      scanId: persistedScanId,
+      stage,
+      eventType,
+      payload,
+      timestamp: Date.now(),
+    });
+  };
+
+  // ── PHASE 1: PREPARE ──
+  emit({ type: "stage:start", stage: "prepare", message: opts.resumeScanId ? "Re-preparing target for resume..." : "Preparing target..." });
+
+  let prepared: PrepareResult;
+  try {
+    prepared = prepareTarget(opts, emit);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    logPipelineEvent("prepare", "stage_error", { error: msg });
+    throw new Error(`Prepare failed: ${msg}`);
+  }
+
+  emit({ type: "stage:end", stage: "prepare", message: `Target ready: ${prepared.resolvedType}` });
+
   const scanConfig: ScanConfig = {
     target: prepared.resolvedTarget,
     depth: opts.depth,
@@ -460,11 +504,29 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     runtime: opts.runtime ?? "api",
     mode: opts.mode ?? "deep",
   };
-  const scanId = db?.createScan(scanConfig) ?? `pipeline-${randomUUID().slice(0, 8)}`;
+
+  if (db) {
+    if (opts.resumeScanId) {
+      persistedScanId = opts.resumeScanId;
+      db.reopenScan(persistedScanId);
+      logPipelineEvent("prepare", "scan_resumed", {
+        originalStatus: existingScan?.status ?? null,
+        resumedAt: new Date().toISOString(),
+      });
+    } else {
+      persistedScanId = db.createScan(scanConfig);
+    }
+  }
+  if (!persistedScanId) {
+    persistedScanId = `pipeline-${randomUUID().slice(0, 8)}`;
+  }
+  logPipelineEvent("prepare", "stage_start", { resumed: !!opts.resumeScanId });
+  logPipelineEvent("prepare", "stage_complete", { resolvedType: prepared.resolvedType, resolvedTarget: prepared.resolvedTarget });
 
   try {
     // ── PHASE 2: ANALYZE (static analysis) ──
     emit({ type: "stage:start", stage: "analyze", message: "Running static analysis..." });
+    logPipelineEvent("analyze", "stage_start");
 
     // Intercept inner events — convert to analyze sub-actions
     const analyzeEmit: ScanListener = (event) => {
@@ -487,6 +549,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         warnings.push({ stage: "analyze", message: `Semgrep scan failed: ${msg}` });
+        logPipelineEvent("analyze", "warning", { message: `Semgrep scan failed: ${msg}` });
       }
     }
 
@@ -497,6 +560,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         warnings.push({ stage: "analyze", message: `npm audit failed: ${msg}` });
+        logPipelineEvent("analyze", "warning", { message: `npm audit failed: ${msg}` });
       }
     }
 
@@ -504,6 +568,10 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       type: "stage:end",
       stage: "analyze",
       message: `Analysis complete: ${semgrepFindings.length} semgrep findings, ${npmAuditFindings.length} npm advisories`,
+    });
+    logPipelineEvent("analyze", "stage_complete", {
+      semgrepFindings: semgrepFindings.length,
+      npmAuditFindings: npmAuditFindings.length,
     });
 
     // ── PHASE 3: RESEARCH (single agent: discover + attack + PoC) ──
@@ -522,13 +590,35 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       warnings.push({ stage: "research", message: "No API key or CLI runtime available. AI analysis skipped. Set OPENROUTER_API_KEY, ANTHROPIC_API_KEY, or OPENAI_API_KEY." });
       emit({ type: "stage:end", stage: "research", message: "Skipped — no API key or CLI runtime" });
       emit({ type: "stage:end", stage: "verify", message: "Skipped" });
+      logPipelineEvent("research", "stage_skipped", { reason: "no_runtime" });
+      logPipelineEvent("verify", "stage_skipped", { reason: "no_runtime" });
       // Skip research + verify, go straight to report
     }
 
     let findings: Finding[] = [];
 
     if (hasApiKey || hasCliRuntime) {
-    emit({ type: "stage:start", stage: "research", message: "Researching vulnerabilities..." });
+    const existingResearchSession = opts.resumeScanId ? db?.getSession(persistedScanId, prepared.resolvedType === "npm-package" ? "audit" : "review") : null;
+    const existingPersistedFindings = opts.resumeScanId
+      ? ((db?.getFindings(persistedScanId) ?? []).map((row: any) => restorePersistedFinding(row)) as Finding[])
+      : [];
+    const existingVerifiedFindings = existingPersistedFindings.filter((finding) => finding.status === "verified" || finding.status === "false-positive");
+    const canResumeResearchSession = existingResearchSession?.status === "paused";
+    const canSkipResearch = existingPersistedFindings.length > 0 && !canResumeResearchSession;
+
+    emit({
+      type: "stage:start",
+      stage: "research",
+      message: canResumeResearchSession
+        ? "Resuming AI research session..."
+        : canSkipResearch
+          ? "Reusing persisted research findings..."
+          : "Researching vulnerabilities...",
+    });
+    logPipelineEvent("research", "stage_start", {
+      resumed: canResumeResearchSession,
+      reusedFindings: canSkipResearch,
+    });
 
     const researchEmit: ScanListener = (event) => {
       if (event.type === "stage:start") {
@@ -538,9 +628,9 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       }
     };
 
-    
-
-    if (prepared.resolvedType === "npm-package" || prepared.resolvedType === "source-code") {
+    if (canSkipResearch) {
+      findings = existingPersistedFindings;
+    } else if (prepared.resolvedType === "npm-package" || prepared.resolvedType === "source-code") {
       const targetLabel = prepared.resolvedType === "npm-package"
         ? `npm package ${prepared.packageName}@${prepared.packageVersion}`
         : "repository";
@@ -557,7 +647,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
           role: prepared.resolvedType === "npm-package" ? "audit" : "review",
           scopePath: prepared.scopePath,
           target: prepared.resolvedTarget,
-          scanId,
+          scanId: persistedScanId,
+          sessionId: canResumeResearchSession ? existingResearchSession.id : undefined,
           config: {
             runtime: opts.runtime,
             timeout: opts.timeout,
@@ -580,12 +671,16 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         warnings.push({ stage: "research", message: `AI analysis failed: ${msg}` });
+        logPipelineEvent("research", "warning", { message: `AI analysis failed: ${msg}` });
       }
     } else {
       // URL / web-app targets — not supported yet in unified pipeline
       warnings.push({
         stage: "research",
         message: `Target type "${prepared.resolvedType}" is not yet supported in the unified pipeline. Use 'pwnkit scan' for URL/web-app targets.`,
+      });
+      logPipelineEvent("research", "warning", {
+        message: `Target type "${prepared.resolvedType}" is not yet supported in the unified pipeline.`,
       });
     }
 
@@ -594,10 +689,22 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       stage: "research",
       message: `${findings.length} findings discovered`,
     });
+    logPipelineEvent("research", "stage_complete", { findings: findings.length });
 
     // ── PHASE 4: VERIFY (parallel blind agents) ──
     if (findings.length > 0 && (prepared.resolvedType === "source-code" || prepared.resolvedType === "npm-package")) {
-      emit({ type: "stage:start", stage: "verify", message: `Blind-verifying ${findings.length} findings...` });
+      const canSkipVerify = existingVerifiedFindings.length === findings.length && findings.length > 0;
+      emit({
+        type: "stage:start",
+        stage: "verify",
+        message: canSkipVerify
+          ? `Reusing persisted verification results for ${findings.length} findings...`
+          : `Blind-verifying ${findings.length} findings...`,
+      });
+      logPipelineEvent("verify", "stage_start", {
+        reusedFindings: canSkipVerify,
+        findingCount: findings.length,
+      });
 
       if (!verificationRuntime) {
         warnings.push({
@@ -609,6 +716,22 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
           type: "stage:end",
           stage: "verify",
           message: "Verification skipped — no verifier runtime available",
+        });
+        logPipelineEvent("verify", "stage_skipped", { reason: "no_runtime" });
+      } else {
+      if (canSkipVerify) {
+        findings = existingVerifiedFindings;
+        const confirmedCount = findings.filter((finding: Finding) => finding.status === "verified").length;
+        const rejectedCount = findings.filter((finding: Finding) => finding.status === "false-positive").length;
+        emit({
+          type: "stage:end",
+          stage: "verify",
+          message: `Verification reused: ${confirmedCount} confirmed, ${rejectedCount} rejected`,
+        });
+        logPipelineEvent("verify", "stage_complete", {
+          confirmed: confirmedCount,
+          rejected: rejectedCount,
+          reused: true,
         });
       } else {
       try {
@@ -638,7 +761,7 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
                 role: "review",
                 scopePath: prepared.scopePath,
                 target: prepared.resolvedTarget,
-                scanId: `${scanId}-verify`,
+                scanId: `${persistedScanId}-verify`,
                 config: {
                   runtime: verificationRuntime,
                   timeout: Math.min(opts.timeout ?? 120_000, 120_000),
@@ -691,11 +814,17 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
           stage: "verify",
           message: `Verification complete: ${confirmedCount} confirmed, ${rejectedCount} rejected`,
         });
+        logPipelineEvent("verify", "stage_complete", {
+          confirmed: confirmedCount,
+          rejected: rejectedCount,
+        });
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         warnings.push({ stage: "verify", message: `Verification failed: ${msg}` });
         findings = findings.map((finding) => ({ ...finding, status: "false-positive" as Finding["status"] }));
         emit({ type: "stage:end", stage: "verify", message: `Verification failed: ${msg}` });
+        logPipelineEvent("verify", "warning", { message: `Verification failed: ${msg}` });
+      }
       }
       }
     }
@@ -707,7 +836,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     const durationMs = Date.now() - startTime;
     const summary = buildSummary(confirmedFindings, semgrepFindings.length + npmAuditFindings.length);
 
-    db?.completeScan(scanId, summary);
+    db?.completeScan(persistedScanId, summary);
+    logPipelineEvent("report", "stage_complete", summary as unknown as Record<string, unknown>);
 
     const report: PipelineReport = {
       target: opts.target,
@@ -738,7 +868,8 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     return report;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
-    db?.failScan(scanId, msg);
+    db?.failScan(persistedScanId, msg);
+    logPipelineEvent("report", "stage_error", { error: msg });
     throw err;
   } finally {
     db?.close();

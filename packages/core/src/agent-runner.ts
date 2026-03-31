@@ -20,6 +20,7 @@ export interface AnalysisAgentOptions {
   scopePath: string;
   target: string;
   scanId: string;
+  sessionId?: string;
   config: { runtime?: string; timeout?: number; depth?: string; apiKey?: string; model?: string };
   db: any;
   emit: ScanListener;
@@ -62,7 +63,7 @@ function getMaxTurns(role: "audit" | "review", depth: string | undefined, branch
  * 3. Legacy fallback (runAgentLoop)
  */
 export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Finding[]> {
-  const { role, scopePath, target, scanId, config, db, emit, cliPrompt, agentSystemPrompt, cliSystemPrompt, directApiPrompt } = opts;
+  const { role, scopePath, target, scanId, sessionId, config, db, emit, cliPrompt, agentSystemPrompt, cliSystemPrompt, directApiPrompt } = opts;
 
   const templatePrefix = `cli-${role}`;
   const requestedRuntime = config.runtime as RuntimeType | "auto" | undefined;
@@ -229,6 +230,7 @@ export async function runAnalysisAgent(opts: AnalysisAgentOptions): Promise<Find
           target,
           scanId,
           scopePath,
+          sessionId,
         },
         runtime: apiRuntime as NativeRuntime,
         db,
