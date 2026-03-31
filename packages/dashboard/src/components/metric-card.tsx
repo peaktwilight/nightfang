@@ -1,0 +1,52 @@
+import type { LucideIcon } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+export function MetricCard({
+  icon: Icon,
+  label,
+  value,
+  hint,
+  tone = "neutral",
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: number | string;
+  hint: string;
+  tone?: "neutral" | "danger" | "warning" | "success" | "accent";
+}) {
+  return (
+    <Card
+      className={cn(
+        "overflow-hidden",
+        tone === "danger" && "border-[var(--danger)]/20",
+        tone === "warning" && "border-[var(--warning)]/20",
+        tone === "success" && "border-[var(--success)]/20",
+        tone === "accent" && "border-[var(--accent)]/20",
+      )}
+    >
+      <CardContent className="space-y-5 p-5">
+        <div className="flex items-center justify-between">
+          <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+            {label}
+          </div>
+          <div
+            className={cn(
+              "inline-flex size-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-[var(--muted)]",
+              tone === "danger" && "bg-[var(--danger-soft)] text-[var(--danger)]",
+              tone === "warning" && "bg-[var(--warning-soft)] text-[var(--warning)]",
+              tone === "success" && "bg-[var(--success-soft)] text-[var(--success)]",
+              tone === "accent" && "bg-[var(--accent)]/14 text-[var(--accent)]",
+            )}
+          >
+            <Icon className="size-5" />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <div className="text-4xl font-bold tracking-tight text-white">{value}</div>
+          <div className="text-sm text-[var(--muted)]">{hint}</div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}

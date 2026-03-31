@@ -34,11 +34,10 @@ export class pwnkitDB {
     this.sqlite.pragma("foreign_keys = ON");
     this.db = drizzle(this.sqlite, { schema });
 
-    // Auto-create tables (idempotent)
-    this.sqlite.exec(SCHEMA_SQL);
-
-    // Migrations — add columns that may not exist in older DBs
+    // Create base tables first, then migrate older schemas before adding indexes.
+    this.sqlite.exec(SCHEMA_TABLES_SQL);
     this.migrate();
+    this.sqlite.exec(SCHEMA_INDEXES_SQL);
   }
 
   private migrate(): void {
@@ -73,6 +72,8 @@ export class pwnkitDB {
     if (!colNames.has("triagedAt")) {
       this.sqlite.exec("ALTER TABLE findings ADD COLUMN triagedAt TEXT");
     }
+    this.sqlite.exec("UPDATE findings SET fingerprint = id WHERE fingerprint IS NULL OR fingerprint = ''");
+    this.sqlite.exec("UPDATE findings SET triageStatus = 'new' WHERE triageStatus IS NULL OR triageStatus = ''");
     this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint)");
     this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus)");
   }
@@ -593,7 +594,7 @@ function buildFindingFingerprint(target: string, finding: Finding): string {
 
 // ── Raw SQL for table creation (idempotent, used on init) ──
 
-const SCHEMA_SQL = `
+const SCHEMA_TABLES_SQL = `
 CREATE TABLE IF NOT EXISTS scans (
   id TEXT PRIMARY KEY,
   target TEXT NOT NULL,
@@ -652,15 +653,6 @@ CREATE TABLE IF NOT EXISTS attack_results (
   error TEXT
 );
 
-CREATE INDEX IF NOT EXISTS idx_findings_scanId ON findings(scanId);
-CREATE INDEX IF NOT EXISTS idx_findings_severity ON findings(severity);
-CREATE INDEX IF NOT EXISTS idx_findings_category ON findings(category);
-CREATE INDEX IF NOT EXISTS idx_findings_status ON findings(status);
-CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint);
-CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus);
-CREATE INDEX IF NOT EXISTS idx_attack_results_scanId ON attack_results(scanId);
-CREATE INDEX IF NOT EXISTS idx_targets_url ON targets(url);
-
 CREATE TABLE IF NOT EXISTS verdicts (
   id TEXT PRIMARY KEY,
   findingId TEXT NOT NULL REFERENCES findings(id),
@@ -671,7 +663,6 @@ CREATE TABLE IF NOT EXISTS verdicts (
   reasoning TEXT NOT NULL DEFAULT '',
   timestamp INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_verdicts_findingId ON verdicts(findingId);
 
 CREATE TABLE IF NOT EXISTS pipeline_events (
   id TEXT PRIMARY KEY,
@@ -683,9 +674,6 @@ CREATE TABLE IF NOT EXISTS pipeline_events (
   payload TEXT NOT NULL DEFAULT '{}',
   timestamp INTEGER NOT NULL
 );
-CREATE INDEX IF NOT EXISTS idx_events_scanId ON pipeline_events(scanId);
-CREATE INDEX IF NOT EXISTS idx_events_stage ON pipeline_events(stage);
-CREATE INDEX IF NOT EXISTS idx_events_findingId ON pipeline_events(findingId);
 
 CREATE TABLE IF NOT EXISTS agent_sessions (
   id TEXT PRIMARY KEY,
@@ -698,6 +686,21 @@ CREATE TABLE IF NOT EXISTS agent_sessions (
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL
 );
+`;
+
+const SCHEMA_INDEXES_SQL = `
+CREATE INDEX IF NOT EXISTS idx_findings_scanId ON findings(scanId);
+CREATE INDEX IF NOT EXISTS idx_findings_severity ON findings(severity);
+CREATE INDEX IF NOT EXISTS idx_findings_category ON findings(category);
+CREATE INDEX IF NOT EXISTS idx_findings_status ON findings(status);
+CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint);
+CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus);
+CREATE INDEX IF NOT EXISTS idx_attack_results_scanId ON attack_results(scanId);
+CREATE INDEX IF NOT EXISTS idx_targets_url ON targets(url);
+CREATE INDEX IF NOT EXISTS idx_verdicts_findingId ON verdicts(findingId);
+CREATE INDEX IF NOT EXISTS idx_events_scanId ON pipeline_events(scanId);
+CREATE INDEX IF NOT EXISTS idx_events_stage ON pipeline_events(stage);
+CREATE INDEX IF NOT EXISTS idx_events_findingId ON pipeline_events(findingId);
 CREATE INDEX IF NOT EXISTS idx_sessions_scanId ON agent_sessions(scanId);
 CREATE INDEX IF NOT EXISTS idx_sessions_role ON agent_sessions(agentRole);
 `;

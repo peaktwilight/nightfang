@@ -42,6 +42,7 @@ await build({
 });
 
 cpSync("packages/templates/attacks", `${outdir}/attacks`, { recursive: true });
+cpSync("packages/dashboard/dist", `${outdir}/dashboard`, { recursive: true });
 
 // Fix double shebang
 const bundlePath = `${outdir}/index.js`;
@@ -59,7 +60,7 @@ const publishPkg = {
   type: "module",
   description: rootPkg.description,
   bin: { "pwnkit-cli": "./index.js" },
-  files: ["index.js", "attacks"],
+  files: ["index.js", "attacks", "dashboard"],
   keywords: rootPkg.keywords,
   author: rootPkg.author,
   homepage: rootPkg.homepage,
