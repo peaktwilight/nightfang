@@ -1,11 +1,19 @@
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import { eq, desc, and, sql } from "drizzle-orm";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { join } from "node:path";
 import { homedir } from "node:os";
 import { mkdirSync } from "node:fs";
-import type { Finding, AttackResult, TargetInfo, ScanConfig, AgentVerdict, PipelineEvent } from "@pwnkit/shared";
+import type {
+  Finding,
+  AttackResult,
+  TargetInfo,
+  ScanConfig,
+  AgentVerdict,
+  PipelineEvent,
+  FindingTriageStatus,
+} from "@pwnkit/shared";
 import * as schema from "./schema.js";
 import { findingStatuses, type FindingStatusDB } from "./schema.js";
 
@@ -53,6 +61,20 @@ export class pwnkitDB {
     if (!colNames.has("cvssScore")) {
       this.sqlite.exec("ALTER TABLE findings ADD COLUMN cvssScore REAL");
     }
+    if (!colNames.has("fingerprint")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN fingerprint TEXT");
+    }
+    if (!colNames.has("triageStatus")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN triageStatus TEXT NOT NULL DEFAULT 'new'");
+    }
+    if (!colNames.has("triageNote")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN triageNote TEXT");
+    }
+    if (!colNames.has("triagedAt")) {
+      this.sqlite.exec("ALTER TABLE findings ADD COLUMN triagedAt TEXT");
+    }
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint)");
+    this.sqlite.exec("CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus)");
   }
 
   // ── Scans ──
@@ -189,6 +211,9 @@ export class pwnkitDB {
   // ── Findings ──
 
   saveFinding(scanId: string, finding: Finding): void {
+    const scan = this.getScan(scanId);
+    const fingerprint = finding.fingerprint ?? buildFindingFingerprint(scan?.target ?? scanId, finding);
+    const inheritedTriage = this.getLatestFindingByFingerprint(fingerprint);
     this.db
       .insert(schema.findings)
       .values({
@@ -200,6 +225,10 @@ export class pwnkitDB {
         severity: finding.severity,
         category: finding.category,
         status: finding.status,
+        fingerprint,
+        triageStatus: finding.triageStatus ?? inheritedTriage?.triageStatus ?? "new",
+        triageNote: finding.triageNote ?? inheritedTriage?.triageNote ?? null,
+        triagedAt: finding.triageStatus || inheritedTriage?.triageStatus ? new Date().toISOString() : null,
         confidence: finding.confidence ?? null,
         cvssVector: finding.cvssVector ?? null,
         cvssScore: finding.cvssScore ?? null,
@@ -212,6 +241,7 @@ export class pwnkitDB {
         target: schema.findings.id,
         set: {
           status: finding.status,
+          fingerprint,
           confidence: finding.confidence ?? null,
           cvssVector: finding.cvssVector ?? null,
           cvssScore: finding.cvssScore ?? null,
@@ -245,6 +275,7 @@ export class pwnkitDB {
     severity?: string;
     category?: string;
     status?: string;
+    triageStatus?: string;
     limit?: number;
   }) {
     const conditions = [];
@@ -252,6 +283,7 @@ export class pwnkitDB {
     if (opts?.severity) conditions.push(eq(schema.findings.severity, opts.severity));
     if (opts?.category) conditions.push(eq(schema.findings.category, opts.category));
     if (opts?.status) conditions.push(eq(schema.findings.status, opts.status));
+    if (opts?.triageStatus) conditions.push(eq(schema.findings.triageStatus, opts.triageStatus));
 
     const query = this.db
       .select()
@@ -271,6 +303,7 @@ export class pwnkitDB {
     severity?: string;
     category?: string;
     status?: string;
+    triageStatus?: string;
     limit?: number;
   }) {
     return this.listFindings(opts);
@@ -282,6 +315,47 @@ export class pwnkitDB {
       .set({ status })
       .where(eq(schema.findings.id, findingId))
       .run();
+  }
+
+  updateFindingTriageByFingerprint(
+    fingerprint: string,
+    triageStatus: FindingTriageStatus,
+    triageNote?: string,
+  ): void {
+    this.db
+      .update(schema.findings)
+      .set({
+        triageStatus,
+        triageNote: triageNote ?? null,
+        triagedAt: new Date().toISOString(),
+      })
+      .where(eq(schema.findings.fingerprint, fingerprint))
+      .run();
+  }
+
+  updateFindingTriage(findingId: string, triageStatus: FindingTriageStatus, triageNote?: string): void {
+    const finding = this.getFinding(findingId);
+    if (!finding) throw new Error(`Finding ${findingId} not found`);
+    if (!finding.fingerprint) throw new Error(`Finding ${findingId} has no fingerprint`);
+    this.updateFindingTriageByFingerprint(finding.fingerprint, triageStatus, triageNote);
+  }
+
+  getLatestFindingByFingerprint(fingerprint: string) {
+    return this.db
+      .select()
+      .from(schema.findings)
+      .where(eq(schema.findings.fingerprint, fingerprint))
+      .orderBy(desc(schema.findings.timestamp))
+      .get();
+  }
+
+  getRelatedFindings(fingerprint: string) {
+    return this.db
+      .select()
+      .from(schema.findings)
+      .where(eq(schema.findings.fingerprint, fingerprint))
+      .orderBy(desc(schema.findings.timestamp))
+      .all();
   }
 
   // ── Status Pipeline: discovered → verified → scored → reported ──
@@ -497,6 +571,26 @@ export class pwnkitDB {
   }
 }
 
+function normalizeFingerprintPart(value: string): string {
+  return value
+    .toLowerCase()
+    .replace(/\r/g, "")
+    .replace(/:\d+(?::\d+)?/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildFindingFingerprint(target: string, finding: Finding): string {
+  const key = [
+    normalizeFingerprintPart(target),
+    normalizeFingerprintPart(finding.category),
+    normalizeFingerprintPart(finding.title),
+    normalizeFingerprintPart(finding.evidence.request.split("\n")[0] ?? ""),
+  ].join("::");
+
+  return createHash("sha256").update(key).digest("hex").slice(0, 24);
+}
+
 // ── Raw SQL for table creation (idempotent, used on init) ──
 
 const SCHEMA_SQL = `
@@ -534,6 +628,10 @@ CREATE TABLE IF NOT EXISTS findings (
   severity TEXT NOT NULL,
   category TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'discovered',
+  fingerprint TEXT,
+  triageStatus TEXT NOT NULL DEFAULT 'new',
+  triageNote TEXT,
+  triagedAt TEXT,
   score INTEGER,
   evidenceRequest TEXT NOT NULL,
   evidenceResponse TEXT NOT NULL,
@@ -558,6 +656,8 @@ CREATE INDEX IF NOT EXISTS idx_findings_scanId ON findings(scanId);
 CREATE INDEX IF NOT EXISTS idx_findings_severity ON findings(severity);
 CREATE INDEX IF NOT EXISTS idx_findings_category ON findings(category);
 CREATE INDEX IF NOT EXISTS idx_findings_status ON findings(status);
+CREATE INDEX IF NOT EXISTS idx_findings_fingerprint ON findings(fingerprint);
+CREATE INDEX IF NOT EXISTS idx_findings_triageStatus ON findings(triageStatus);
 CREATE INDEX IF NOT EXISTS idx_attack_results_scanId ON attack_results(scanId);
 CREATE INDEX IF NOT EXISTS idx_targets_url ON targets(url);
 

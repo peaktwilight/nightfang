@@ -273,6 +273,15 @@ Every finding is persisted in a local SQLite database. Query across scans:
 # List critical findings
 npx pwnkit-cli findings list --severity critical
 
+# Group duplicate findings and inspect the family state
+npx pwnkit-cli findings list
+npx pwnkit-cli findings show <finding-id>
+
+# Triage a finding family across scans
+npx pwnkit-cli findings accept <finding-id> --note "confirmed and tracked internally"
+npx pwnkit-cli findings suppress <finding-id> --note "known test fixture"
+npx pwnkit-cli findings reopen <finding-id>
+
 # Filter by category
 npx pwnkit-cli findings list --category prompt-injection --status confirmed
 

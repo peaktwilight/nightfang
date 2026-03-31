@@ -98,6 +98,7 @@ export interface TargetInfo {
 // ── Findings ──
 
 export type FindingStatus = "discovered" | "verified" | "confirmed" | "scored" | "reported" | "false-positive";
+export type FindingTriageStatus = "new" | "accepted" | "suppressed";
 
 export interface Finding {
   id: string;
@@ -108,6 +109,9 @@ export interface Finding {
   category: AttackCategory;
   status: FindingStatus;
   evidence: Evidence;
+  fingerprint?: string;
+  triageStatus?: FindingTriageStatus;
+  triageNote?: string;
   confidence?: number; // 0.0–1.0 agent-assessed confidence
   cvssVector?: string; // CVSS vector string
   cvssScore?: number; // CVSS numeric score (0–10)

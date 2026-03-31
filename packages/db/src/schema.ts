@@ -12,6 +12,9 @@ export const findingStatuses = [
 ] as const;
 export type FindingStatusDB = (typeof findingStatuses)[number];
 
+export const findingTriageStatuses = ["new", "accepted", "suppressed"] as const;
+export type FindingTriageStatusDB = (typeof findingTriageStatuses)[number];
+
 // ── Tables ──
 
 export const scans = sqliteTable("scans", {
@@ -56,6 +59,10 @@ export const findings = sqliteTable(
     severity: text("severity").notNull(),
     category: text("category").notNull(),
     status: text("status").notNull().default("discovered"),
+    fingerprint: text("fingerprint"),
+    triageStatus: text("triageStatus").notNull().default("new"),
+    triageNote: text("triageNote"),
+    triagedAt: text("triagedAt"),
     score: integer("score"), // CVSS-like 0-100 score, set during "scored" stage
     confidence: real("confidence"), // 0.0-1.0 agent-assessed confidence
     cvssVector: text("cvssVector"), // CVSS vector string
@@ -70,6 +77,8 @@ export const findings = sqliteTable(
     index("idx_findings_severity").on(table.severity),
     index("idx_findings_category").on(table.category),
     index("idx_findings_status").on(table.status),
+    index("idx_findings_fingerprint").on(table.fingerprint),
+    index("idx_findings_triageStatus").on(table.triageStatus),
   ]
 );
 

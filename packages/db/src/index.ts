@@ -8,5 +8,7 @@ export {
   pipelineEvents,
   agentSessions,
   findingStatuses,
+  findingTriageStatuses,
   type FindingStatusDB,
+  type FindingTriageStatusDB,
 } from "./schema.js";
