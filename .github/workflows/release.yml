@@ -15,7 +15,6 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: 22
-          cache: pnpm
           registry-url: https://registry.npmjs.org
       - run: corepack enable && corepack prepare pnpm@9 --activate
       - run: pnpm install --frozen-lockfile

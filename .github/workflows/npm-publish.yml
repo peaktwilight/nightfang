@@ -23,7 +23,6 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org
-          cache: pnpm
 
       - name: Enable pnpm
         run: corepack enable && corepack prepare pnpm@9 --activate
