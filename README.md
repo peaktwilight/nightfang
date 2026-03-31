@@ -166,6 +166,9 @@ npx pwnkit-cli audit react --depth deep --runtime claude
 # Review a GitHub repo
 npx pwnkit-cli review https://github.com/user/repo --runtime codex --depth deep
 
+# Diff-aware review against a base branch
+npx pwnkit-cli review ./my-repo --diff-base origin/main --changed-only
+
 # Auto-detect — just give it a target
 npx pwnkit-cli express
 npx pwnkit-cli ./my-repo

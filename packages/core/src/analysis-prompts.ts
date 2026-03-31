@@ -171,6 +171,8 @@ Rate based on REAL exploitability, not theoretical risk:
 export function reviewAgentPrompt(
   repoPath: string,
   semgrepResults: SemgrepFinding[],
+  changedFiles?: string[],
+  changedOnly = false,
 ): string {
   const semgrepSection =
     semgrepResults.length > 0
@@ -182,6 +184,14 @@ export function reviewAgentPrompt(
           )
           .join("\n\n")
       : "No semgrep findings. You must hunt for vulnerabilities manually.";
+
+  const changedFilesSection =
+    changedFiles && changedFiles.length > 0
+      ? changedFiles
+          .slice(0, 200)
+          .map((path, i) => `${i + 1}. ${path}`)
+          .join("\n")
+      : "No diff context provided. Review the full repository.";
 
   return `You are a security researcher performing an authorized deep source code review.
 
@@ -199,6 +209,14 @@ ${semgrepResults.length} findings from automated scan:
 
 ${semgrepSection}
 
+## Diff Context
+
+${changedFilesSection}
+
+${changedOnly
+  ? "This is a diff-aware review. Prioritize vulnerabilities introduced by or reachable from the changed files above. You may read surrounding code outside the changed files to trace data flow, but findings should stay anchored to the changed delta."
+  : "Use the changed files above as a priority queue if provided, but continue expanding outward into the rest of the repository when the investigation requires it."}
+
 ## Review Methodology
 
 ### Phase 0: Recon — Map the Attack Surface
@@ -207,6 +225,8 @@ ${semgrepSection}
 3. Identify the PUBLIC API — exported functions, HTTP routes, CLI handlers
 4. Map where untrusted input enters: HTTP params, CLI args, file uploads, env vars, user-supplied config
 5. Identify high-value targets: auth, crypto, parsing, serialization, file I/O, shell exec, DB queries
+
+If diff context is present, start with the changed files before broadening your search.
 
 ### Phase 1: Triage Semgrep Findings
 For each semgrep finding:

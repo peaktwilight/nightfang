@@ -41,7 +41,7 @@ export function mapSemgrepSeverity(level: string): string {
 export function runSemgrepScan(
   targetPath: string,
   emit: ScanListener,
-  opts?: { noGitIgnore?: boolean },
+  opts?: { noGitIgnore?: boolean; paths?: string[] },
 ): SemgrepFinding[] {
   emit({
     type: "stage:start",
@@ -59,7 +59,7 @@ export function runSemgrepScan(
     "60",
     "--max-target-bytes",
     "1000000",
-    targetPath,
+    ...(opts?.paths && opts.paths.length > 0 ? opts.paths : [targetPath]),
   ];
 
   let rawOutput = "";

@@ -13,12 +13,16 @@ export function registerReviewCommand(program: Command): void {
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider")
     .option("--model <model>", "LLM model to use")
+    .option("--diff-base <ref>", "Git base ref to review against (for diff-aware review)")
+    .option("--changed-only", "Restrict semgrep + prioritization to changed files", false)
     .option("--verbose", "Show detailed output", false)
     .option("--timeout <ms>", "AI agent timeout in milliseconds", "600000")
     .action(async (repo: string, opts: Record<string, string | boolean>) => {
       await runUnified({
         target: repo,
         targetType: "source-code",
+        diffBase: opts.diffBase as string | undefined,
+        changedOnly: opts.changedOnly as boolean,
         depth: (opts.depth as ScanDepth) ?? "default",
         format: (opts.format === "md" ? "markdown" : opts.format) as OutputFormat,
         runtime: (opts.runtime as RuntimeMode) ?? "auto",

@@ -13,6 +13,8 @@ export interface RunOptions {
   target: string;
   targetType?: "npm-package" | "source-code" | "url" | "web-app";
   resumeScanId?: string;
+  diffBase?: string;
+  changedOnly?: boolean;
   depth: ScanDepth;
   format: OutputFormat;
   runtime: RuntimeMode;
@@ -81,6 +83,8 @@ export async function runUnified(opts: RunOptions): Promise<void> {
           target,
           targetType: opts.targetType,
           resumeScanId: opts.resumeScanId,
+          diffBase: opts.diffBase,
+          changedOnly: opts.changedOnly,
           depth,
           format,
           runtime,

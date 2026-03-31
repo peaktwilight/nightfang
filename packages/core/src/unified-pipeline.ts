@@ -31,6 +31,8 @@ export interface PipelineOptions {
   runtime?: RuntimeMode;
   mode?: ScanMode;
   resumeScanId?: string;
+  diffBase?: string;
+  changedOnly?: boolean;
   onEvent?: (event: { type: string; stage?: string; message: string; data?: unknown }) => void;
   dbPath?: string;
   apiKey?: string;
@@ -339,6 +341,8 @@ function buildCliPrompt(
   semgrepFindings: SemgrepFinding[],
   npmAuditFindings: NpmAuditFinding[],
   label: string,
+  changedFiles?: string[],
+  changedOnly = false,
 ): string {
   const semgrepContext = semgrepFindings.length > 0
     ? semgrepFindings
@@ -354,9 +358,16 @@ function buildCliPrompt(
         .join("\n")
     : "  None.";
 
+  const changedFilesContext =
+    changedFiles && changedFiles.length > 0
+      ? `\nChanged files to prioritize:\n${changedFiles.slice(0, 200).map((path) => `  - ${path}`).join("\n")}\n`
+      : "";
+
   return `Audit the ${label} at ${scopePath}.
 
 Read the source code, look for: prototype pollution, ReDoS, path traversal, injection, unsafe deserialization, missing validation. Map data flow from untrusted input to sensitive operations. Report any security findings with severity and PoC suggestions.
+${changedFilesContext}
+${changedOnly ? "\nThis is a diff-aware review. Focus findings on vulnerabilities introduced by or reachable from the changed files above. You may inspect surrounding files for context.\n" : ""}
 
 Semgrep already found these leads:
 ${semgrepContext}
@@ -411,6 +422,25 @@ function restorePersistedFinding(row: any): Finding {
     },
     timestamp: row.timestamp,
   };
+}
+
+function listChangedFiles(scopePath: string, diffBase: string): string[] {
+  const output = execFileSync(
+    "git",
+    ["diff", "--name-only", "--diff-filter=ACMR", `${diffBase}...HEAD`],
+    {
+      cwd: scopePath,
+      timeout: 30_000,
+      stdio: "pipe",
+      encoding: "utf-8",
+    },
+  );
+
+  return output
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((path) => existsSync(join(scopePath, path)));
 }
 
 function selectVerificationRuntime(
@@ -537,6 +567,42 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
 
     let semgrepFindings: SemgrepFinding[] = [];
     let npmAuditFindings: NpmAuditFinding[] = [];
+    let changedFiles: string[] = [];
+
+    if (prepared.resolvedType === "source-code" && opts.diffBase) {
+      try {
+        changedFiles = listChangedFiles(prepared.scopePath, opts.diffBase);
+        if (changedFiles.length > 0) {
+          emit({
+            type: "stage:start",
+            stage: "analyze",
+            message: `Diff context loaded: ${changedFiles.length} changed files from ${opts.diffBase}`,
+          });
+          logPipelineEvent("analyze", "diff_context", {
+            diffBase: opts.diffBase,
+            changedFiles: changedFiles.slice(0, 200),
+            changedOnly: !!opts.changedOnly,
+          });
+        } else {
+          warnings.push({
+            stage: "analyze",
+            message: `No changed files found for diff base '${opts.diffBase}'. Falling back to full review.`,
+          });
+          logPipelineEvent("analyze", "warning", {
+            message: `No changed files found for diff base '${opts.diffBase}'. Falling back to full review.`,
+          });
+        }
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        warnings.push({
+          stage: "analyze",
+          message: `Failed to compute changed files from '${opts.diffBase}': ${msg}`,
+        });
+        logPipelineEvent("analyze", "warning", {
+          message: `Failed to compute changed files from '${opts.diffBase}': ${msg}`,
+        });
+      }
+    }
 
     // Semgrep scan (source-code and npm-package targets)
     if (prepared.resolvedType === "source-code" || prepared.resolvedType === "npm-package") {
@@ -544,7 +610,11 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
         semgrepFindings = runSemgrepScan(
           prepared.scopePath,
           analyzeEmit,
-          prepared.resolvedType === "npm-package" ? { noGitIgnore: true } : undefined,
+          prepared.resolvedType === "npm-package"
+            ? { noGitIgnore: true }
+            : opts.changedOnly && changedFiles.length > 0
+              ? { paths: changedFiles.map((path) => join(prepared.scopePath, path)) }
+              : undefined,
         );
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
@@ -642,6 +712,10 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
         targetLabel,
       );
 
+      const effectiveSystemPrompt = prepared.resolvedType === "source-code"
+        ? reviewAgentPrompt(prepared.scopePath, semgrepFindings, changedFiles, !!opts.changedOnly)
+        : agentSystemPrompt;
+
       try {
         findings = await runAnalysisAgent({
           role: prepared.resolvedType === "npm-package" ? "audit" : "review",
@@ -663,8 +737,10 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
             semgrepFindings,
             npmAuditFindings,
             targetLabel,
+            changedFiles,
+            !!opts.changedOnly,
           ),
-          agentSystemPrompt,
+          agentSystemPrompt: effectiveSystemPrompt,
           cliSystemPrompt:
             "You are a security researcher performing an authorized source code audit. For EACH vulnerability you find, output it using the exact ---FINDING--- / ---END--- format specified in the prompt. Do NOT write prose analysis — only output structured finding blocks. If you find no vulnerabilities, say 'No vulnerabilities found.' and nothing else.",
         });
