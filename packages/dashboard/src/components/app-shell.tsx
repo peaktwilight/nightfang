@@ -41,9 +41,7 @@ export function AppShell({
       <div className="xl:grid xl:min-h-screen xl:grid-cols-[4.5rem_15rem_minmax(0,1fr)]">
         <aside className="hidden border-r border-white/8 bg-black/30 xl:flex xl:flex-col xl:items-center xl:py-5">
           <div className="flex h-full flex-col items-center gap-4">
-            <div className="flex size-10 items-center justify-center rounded-md border border-[var(--accent)]/30 bg-[var(--danger-soft)] text-sm font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
-              P
-            </div>
+            <BrandGlyph compact />
             <nav className="flex flex-col gap-2">
               <RailNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" />
               <RailNavLink to="/findings" icon={ShieldAlert} label="Findings" />
@@ -59,9 +57,7 @@ export function AppShell({
 
         <aside className="hidden border-r border-white/8 bg-black/18 px-4 py-5 xl:flex xl:flex-col xl:gap-5">
           <div className="space-y-2 border-b border-white/8 pb-4">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
-              pwnkit
-            </div>
+            <BrandGlyph />
             <div className="text-xl font-bold tracking-tight text-white">Operator shell</div>
             <div className="text-sm leading-6 text-[var(--muted)]">
               Local mission control for scans, evidence, and triage.
@@ -125,6 +121,25 @@ export function AppShell({
           </main>
         </div>
       </div>
+    </div>
+  );
+}
+
+function BrandGlyph({ compact = false }: { compact?: boolean }) {
+  if (compact) {
+    return (
+      <div className="flex size-10 items-center justify-center rounded-md border border-[var(--accent)]/30 bg-[var(--danger-soft)] text-base font-bold text-[var(--accent)]">
+        ◆
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-base font-bold text-[var(--accent)]">◆</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
+        pwnkit
+      </span>
     </div>
   );
 }

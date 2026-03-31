@@ -11,7 +11,7 @@ const buttonVariants = cva(
         default: "border-white/12 bg-white/4 text-[var(--foreground)] hover:bg-white/8",
         outline: "border-white/12 bg-transparent text-[var(--foreground)] hover:bg-white/5",
         ghost: "border-transparent bg-transparent text-[var(--muted)] hover:bg-white/5 hover:text-[var(--foreground)]",
-        accent: "border-[var(--accent)]/35 bg-[var(--accent)] text-white hover:bg-[#ff4a4a]",
+        accent: "border-[var(--accent)]/35 bg-[var(--accent)] text-white hover:bg-[#ef4444]",
         success: "border-[var(--success)]/30 bg-[var(--success)]/14 text-[var(--foreground)] hover:bg-[var(--success)]/20",
         warning: "border-[var(--warning)]/30 bg-[var(--warning)]/14 text-[var(--foreground)] hover:bg-[var(--warning)]/20",
         danger: "border-[var(--danger)]/30 bg-[var(--danger)]/14 text-[var(--foreground)] hover:bg-[var(--danger)]/20",

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 export function EntityList({
@@ -29,13 +30,13 @@ export function EntityList({
           <CardTitle className="mt-2">{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
         </div>
-        <label className="flex items-center gap-3 rounded-md border border-white/10 bg-black/15 px-3 py-2.5">
+        <label className="flex items-center gap-3">
           <Search className="size-4 text-[var(--muted)]" />
-          <input
+          <Input
             value={searchValue}
             onChange={(event) => onSearchChange(event.target.value)}
             placeholder={searchPlaceholder}
-            className="w-full bg-transparent text-sm text-white outline-none placeholder:text-[var(--muted-foreground)]"
+            className="h-10 border-white/10 bg-black/15"
           />
         </label>
       </CardHeader>

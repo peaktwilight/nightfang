@@ -23,7 +23,7 @@ export function InspectorPane({
           <CardDescription>{description}</CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="space-y-5">{children}</CardContent>
+      <CardContent className="space-y-4">{children}</CardContent>
     </Card>
   );
 }

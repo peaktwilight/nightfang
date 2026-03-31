@@ -48,7 +48,9 @@ import { SeverityBadge, StatusBadge } from "@/components/status-badges";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
+import { Workspace, WorkspacePane, WorkspaceSecondaryPane } from "@/components/workspace";
 import { formatDuration, formatTime } from "@/lib/format";
 import type {
   DashboardResponse,
@@ -360,7 +362,8 @@ function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
         summary="Deduplicate recurring findings, inspect evidence, and triage families without losing context."
       />
 
-      <section className="grid min-h-[42rem] gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <Workspace>
+        <WorkspacePane>
         <EntityList
           title={`${dashboard.groups.length} grouped findings`}
           description="Search by title, severity, category, or fingerprint."
@@ -393,16 +396,25 @@ function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
             ))
           )}
         </EntityList>
+        </WorkspacePane>
 
         {!selectedFingerprint ? (
-          <EmptyState
-            title="No finding family selected"
-            body="Choose a family from the inbox to inspect evidence."
-          />
+          <>
+            <WorkspacePane className="xl:col-span-2">
+              <EmptyState
+                title="No finding family selected"
+                body="Choose a family from the inbox to inspect evidence."
+              />
+            </WorkspacePane>
+          </>
         ) : familyQuery.isLoading ? (
-          <LoadingState label="Finding family" />
+          <WorkspacePane className="xl:col-span-2">
+            <LoadingState label="Finding family" />
+          </WorkspacePane>
         ) : familyQuery.error ? (
-          <ErrorState error={familyQuery.error} />
+          <WorkspacePane className="xl:col-span-2">
+            <ErrorState error={familyQuery.error} />
+          </WorkspacePane>
         ) : familyQuery.data ? (
           <FindingFamilyDetail
             data={familyQuery.data}
@@ -412,12 +424,14 @@ function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
             }
           />
         ) : (
-          <EmptyState
-            title="Finding family unavailable"
-            body="The selected family could not be loaded from the local database."
-          />
+          <WorkspacePane className="xl:col-span-2">
+            <EmptyState
+              title="Finding family unavailable"
+              body="The selected family could not be loaded from the local database."
+            />
+          </WorkspacePane>
         )}
-      </section>
+      </Workspace>
     </div>
   );
 }
@@ -438,119 +452,107 @@ function FindingFamilyDetail({
   }, [data.fingerprint, data.latest.triageNote]);
 
   return (
-    <div className="space-y-4">
-      <InspectorPane
-        eyebrow="Evidence"
-        title={data.latest.title}
-        description={data.latest.description}
-      >
-        <div className="flex flex-wrap gap-2">
-          <SeverityBadge severity={data.latest.severity} />
-          <StatusBadge value={data.latest.status} />
-          <StatusBadge value={data.latest.triageStatus} />
-        </div>
+    <>
+      <WorkspacePane>
+        <InspectorPane
+          eyebrow="Evidence"
+          title={data.latest.title}
+          description={data.latest.description}
+        >
+          <div className="flex flex-wrap gap-2">
+            <SeverityBadge severity={data.latest.severity} />
+            <StatusBadge value={data.latest.status} />
+            <StatusBadge value={data.latest.triageStatus} />
+          </div>
 
-        <div className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
+          <EvidenceTabs
+            request={data.latest.evidenceRequest}
+            response={data.latest.evidenceResponse}
+            analysis={data.latest.evidenceAnalysis}
+          />
+        </InspectorPane>
+      </WorkspacePane>
+
+      <WorkspaceSecondaryPane className="space-y-4">
+        <InspectorPane
+          eyebrow="Inspector"
+          title="Family posture"
+          description="Keep triage controls and family metadata in a dedicated secondary pane."
+        >
           <label className="block space-y-2">
             <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
               Triage note
             </div>
-            <textarea
+            <Textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              className="min-h-28 w-full rounded-[var(--radius)] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               placeholder="Capture why this family is actionable, benign, or still needs work."
             />
           </label>
 
-          <Card className="border-white/8 bg-white/[0.03]">
-            <CardHeader>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-                  Family posture
-                </div>
-                <CardTitle className="mt-2">Quick state</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg border border-white/8 bg-black/10 px-4 py-3">
-                <span className="text-sm text-[var(--muted)]">Fingerprint</span>
-                <span className="font-mono text-xs text-white">{data.fingerprint}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-white/8 bg-black/10 px-4 py-3">
-                <span className="text-sm text-[var(--muted)]">Occurrences</span>
-                <span className="text-sm text-white">{data.rows.length}</span>
-              </div>
-              <div className="flex items-center justify-between rounded-lg border border-white/8 bg-black/10 px-4 py-3">
-                <span className="text-sm text-[var(--muted)]">Category</span>
-                <span className="text-sm text-white">{data.latest.category}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant="success"
-            onClick={() => onTriage("accepted", note)}
-            disabled={isSaving}
-          >
-            <ShieldCheck className="size-4" />
-            Accept
-          </Button>
-          <Button
-            variant="warning"
-            onClick={() => onTriage("suppressed", note)}
-            disabled={isSaving}
-          >
-            <ShieldOff className="size-4" />
-            Suppress
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => onTriage("new", note)}
-            disabled={isSaving}
-          >
-            <ShieldQuestion className="size-4" />
-            Reopen
-          </Button>
-        </div>
-
-        <EvidenceTabs
-          request={data.latest.evidenceRequest}
-          response={data.latest.evidenceResponse}
-          analysis={data.latest.evidenceAnalysis}
-        />
-      </InspectorPane>
-
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-              Occurrences
-            </div>
-            <CardTitle className="mt-2">Matching findings</CardTitle>
-            <CardDescription>Each row is an occurrence grouped into this family.</CardDescription>
+          <div className="space-y-2">
+            <MetaTile label="Fingerprint" value={data.fingerprint} mono />
+            <MetaTile label="Occurrences" value={String(data.rows.length)} />
+            <MetaTile label="Category" value={data.latest.category} />
           </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {data.rows.map((row) => (
-            <div
-              key={row.id}
-              className="flex items-center justify-between gap-4 rounded-[var(--radius)] border border-white/8 bg-black/10 p-4"
+
+          <div className="grid gap-2">
+            <Button
+              variant="success"
+              onClick={() => onTriage("accepted", note)}
+              disabled={isSaving}
             >
-              <div className="space-y-1">
-                <div className="font-mono text-xs text-white">{row.id.slice(0, 8)}</div>
-                <div className="text-sm text-[var(--muted)]">
-                  scan {row.scanId.slice(0, 8)} · {formatTime(row.timestamp)}
-                </div>
+              <ShieldCheck className="size-4" />
+              Accept
+            </Button>
+            <Button
+              variant="warning"
+              onClick={() => onTriage("suppressed", note)}
+              disabled={isSaving}
+            >
+              <ShieldOff className="size-4" />
+              Suppress
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => onTriage("new", note)}
+              disabled={isSaving}
+            >
+              <ShieldQuestion className="size-4" />
+              Reopen
+            </Button>
+          </div>
+        </InspectorPane>
+
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+                Occurrences
               </div>
-              <StatusBadge value={row.status} />
+              <CardTitle className="mt-2">Matching findings</CardTitle>
+              <CardDescription>Each row is an occurrence grouped into this family.</CardDescription>
             </div>
-          ))}
-        </CardContent>
-      </Card>
-    </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {data.rows.map((row) => (
+              <div
+                key={row.id}
+                className="flex items-center justify-between gap-4 rounded-[var(--radius)] border border-white/8 bg-black/10 p-3"
+              >
+                <div className="space-y-0.5">
+                  <div className="font-mono text-xs text-white">{row.id.slice(0, 8)}</div>
+                  <div className="text-xs text-[var(--muted)]">
+                    scan {row.scanId.slice(0, 8)} · {formatTime(row.timestamp)}
+                  </div>
+                </div>
+                <StatusBadge value={row.status} />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </WorkspaceSecondaryPane>
+    </>
   );
 }
 
@@ -599,7 +601,8 @@ function ScansPage({ scans }: { scans: ScanRecord[] }) {
         summary="Inspect each run as a dossier with metadata, timeline, and grouped findings side by side."
       />
 
-      <section className="grid min-h-[42rem] gap-4 xl:grid-cols-[22rem_minmax(0,1fr)]">
+      <Workspace>
+        <WorkspacePane>
         <EntityList
           title={`${scans.length} scans`}
           description="Search by target, runtime, mode, depth, or status."
@@ -632,27 +635,38 @@ function ScansPage({ scans }: { scans: ScanRecord[] }) {
             ))
           )}
         </EntityList>
+        </WorkspacePane>
 
         {!selectedScanId ? (
-          <EmptyState
-            title="No scan selected"
-            body="Choose a scan from the run history to inspect details."
-          />
+          <WorkspacePane className="xl:col-span-2">
+            <EmptyState
+              title="No scan selected"
+              body="Choose a scan from the run history to inspect details."
+            />
+          </WorkspacePane>
         ) : eventsQuery.isLoading || findingsQuery.isLoading ? (
-          <LoadingState label="Scan detail" />
+          <WorkspacePane className="xl:col-span-2">
+            <LoadingState label="Scan detail" />
+          </WorkspacePane>
         ) : eventsQuery.error ? (
-          <ErrorState error={eventsQuery.error} />
+          <WorkspacePane className="xl:col-span-2">
+            <ErrorState error={eventsQuery.error} />
+          </WorkspacePane>
         ) : findingsQuery.error ? (
-          <ErrorState error={findingsQuery.error} />
+          <WorkspacePane className="xl:col-span-2">
+            <ErrorState error={findingsQuery.error} />
+          </WorkspacePane>
         ) : eventsQuery.data && findingsQuery.data ? (
           <ScanDetail events={eventsQuery.data} findings={findingsQuery.data} />
         ) : (
-          <EmptyState
-            title="Scan unavailable"
-            body="The selected scan could not be loaded from the local database."
-          />
+          <WorkspacePane className="xl:col-span-2">
+            <EmptyState
+              title="Scan unavailable"
+              body="The selected scan could not be loaded from the local database."
+            />
+          </WorkspacePane>
         )}
-      </section>
+      </Workspace>
     </div>
   );
 }
@@ -667,106 +681,112 @@ function ScanDetail({
   const scan = events.scan;
 
   return (
-    <div className="space-y-4">
-      <InspectorPane
-        eyebrow="Run detail"
-        title={scan.target}
-        description={`Started ${formatTime(scan.startedAt)} · ${scan.runtime} runtime · ${scan.mode} mode`}
-      >
-        <div className="flex flex-wrap gap-2">
-          <StatusBadge value={scan.status} />
-          <Badge>{scan.depth}</Badge>
-          <Badge>{scan.runtime}</Badge>
-          <Badge>{scan.mode}</Badge>
-        </div>
+    <>
+      <WorkspacePane className="space-y-4">
+        <InspectorPane
+          eyebrow="Run detail"
+          title={scan.target}
+          description={`Started ${formatTime(scan.startedAt)} · ${scan.runtime} runtime · ${scan.mode} mode`}
+        >
+          <div className="flex flex-wrap gap-2">
+            <StatusBadge value={scan.status} />
+            <Badge>{scan.depth}</Badge>
+            <Badge>{scan.runtime}</Badge>
+            <Badge>{scan.mode}</Badge>
+          </div>
 
-        <section className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
-          <MetricCard
-            icon={Activity}
-            label="Findings"
-            value={scan.summary.totalFindings}
-            hint="Grouped and raw findings"
-            tone="accent"
-          />
-          <MetricCard
-            icon={Siren}
-            label="Critical"
-            value={scan.summary.critical}
-            hint="Critical-severity findings"
-            tone="danger"
-          />
-          <MetricCard
-            icon={AlertCircle}
-            label="High"
-            value={scan.summary.high}
-            hint="High-severity findings"
-            tone="warning"
-          />
-          <MetricCard
-            icon={Sparkles}
-            label="Duration"
-            value={formatDuration(scan.durationMs)}
-            hint="Elapsed runtime"
-            tone="success"
-          />
-        </section>
+          <section className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-4">
+            <MetricCard
+              icon={Activity}
+              label="Findings"
+              value={scan.summary.totalFindings}
+              hint="Grouped and raw findings"
+              tone="accent"
+            />
+            <MetricCard
+              icon={Siren}
+              label="Critical"
+              value={scan.summary.critical}
+              hint="Critical-severity findings"
+              tone="danger"
+            />
+            <MetricCard
+              icon={AlertCircle}
+              label="High"
+              value={scan.summary.high}
+              hint="High-severity findings"
+              tone="warning"
+            />
+            <MetricCard
+              icon={Sparkles}
+              label="Duration"
+              value={formatDuration(scan.durationMs)}
+              hint="Elapsed runtime"
+              tone="success"
+            />
+          </section>
 
-        <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
           <EventTimeline events={events.events} />
+        </InspectorPane>
+      </WorkspacePane>
 
-          <Card className="overflow-hidden border-white/8 bg-white/[0.025]">
-            <CardHeader>
-              <div>
-                <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-                  Grouped findings
-                </div>
-                <CardTitle className="mt-2">Families in this run</CardTitle>
-                <CardDescription>Deduplicated findings produced by this scan.</CardDescription>
+      <WorkspaceSecondaryPane className="space-y-4">
+        <InspectorPane
+          eyebrow="Secondary"
+          title="Run metadata"
+          description="Grouped findings and runtime metadata for the selected scan."
+        >
+          <div className="space-y-2">
+            <MetaTile label="Scan id" value={scan.id} mono />
+            <MetaTile label="Started" value={formatTime(scan.startedAt)} />
+            <MetaTile
+              label="Completed"
+              value={scan.completedAt ? formatTime(scan.completedAt) : "In progress"}
+            />
+            <MetaTile label="Mode" value={`${scan.mode} / ${scan.depth}`} />
+          </div>
+        </InspectorPane>
+
+        <Card className="overflow-hidden border-white/8 bg-white/[0.025]">
+          <CardHeader>
+            <div>
+              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+                Grouped findings
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {findings.groups.length === 0 ? (
-                <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
-                  No finding families recorded for this run.
-                </div>
-              ) : (
-                findings.groups.map((group) => (
-                  <div
-                    key={group.fingerprint}
-                    className="rounded-[var(--radius)] border border-white/8 bg-black/10 p-4"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="space-y-1">
-                        <div className="text-sm font-semibold text-white">{group.latest.title}</div>
-                        <div className="text-sm text-[var(--muted)]">
-                          {group.latest.category} · {group.count} occurrences
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap justify-end gap-2">
-                        <SeverityBadge severity={group.latest.severity} />
-                        <StatusBadge value={group.latest.triageStatus} />
+              <CardTitle className="mt-2">Families in this run</CardTitle>
+              <CardDescription>Deduplicated findings produced by this scan.</CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {findings.groups.length === 0 ? (
+              <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
+                No finding families recorded for this run.
+              </div>
+            ) : (
+              findings.groups.map((group) => (
+                <div
+                  key={group.fingerprint}
+                  className="rounded-[var(--radius)] border border-white/8 bg-black/10 p-3"
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-semibold text-white">{group.latest.title}</div>
+                      <div className="text-xs text-[var(--muted)]">
+                        {group.latest.category} · {group.count} occurrences
                       </div>
                     </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <SeverityBadge severity={group.latest.severity} />
+                      <StatusBadge value={group.latest.triageStatus} />
+                    </div>
                   </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
-        <Separator />
-
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <MetaTile label="Scan id" value={scan.id} mono />
-          <MetaTile label="Started" value={formatTime(scan.startedAt)} />
-          <MetaTile
-            label="Completed"
-            value={scan.completedAt ? formatTime(scan.completedAt) : "In progress"}
-          />
-          <MetaTile label="Mode" value={`${scan.mode} / ${scan.depth}`} />
-        </div>
-      </InspectorPane>
-    </div>
+                </div>
+              ))
+            )}
+          </CardContent>
+        </Card>
+      </WorkspaceSecondaryPane>
+    </>
   );
 }
 
