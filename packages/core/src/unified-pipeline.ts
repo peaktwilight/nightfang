@@ -396,12 +396,12 @@ function selectVerificationRuntime(
   hasApiKey: boolean,
   availableRuntimes: Set<RuntimeType>,
 ): RuntimeMode | null {
-  if (hasApiKey) {
-    return "api";
-  }
-
   if (preferredRuntime && preferredRuntime !== "api" && preferredRuntime !== "auto") {
     return availableRuntimes.has(preferredRuntime) ? preferredRuntime : null;
+  }
+
+  if (hasApiKey) {
+    return "api";
   }
 
   if (availableRuntimes.size > 0) {
