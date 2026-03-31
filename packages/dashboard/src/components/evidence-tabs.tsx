@@ -23,7 +23,7 @@ export function EvidenceTabs({
             key={value}
             value={value}
             className={cn(
-              "rounded-full border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)] transition",
+              "rounded-md border border-white/10 px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--muted)] transition",
               "data-[state=active]:border-[var(--accent)]/25 data-[state=active]:bg-[var(--accent)]/12 data-[state=active]:text-white",
             )}
           >

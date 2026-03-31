@@ -204,7 +204,7 @@ export function CommandPalette({
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="inline-flex size-9 items-center justify-center rounded-2xl border border-white/8 bg-white/6 text-[var(--accent)]">
+                      <div className="inline-flex size-9 items-center justify-center rounded-lg border border-white/8 bg-white/6 text-[var(--accent)]">
                         <item.icon className="size-4" />
                       </div>
                       <div>

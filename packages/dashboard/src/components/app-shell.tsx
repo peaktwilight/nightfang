@@ -38,67 +38,73 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-transparent text-[var(--foreground)]">
-      <div className="xl:grid xl:min-h-screen xl:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-white/10 bg-black/15 px-5 py-6 backdrop-blur-xl xl:flex xl:flex-col xl:gap-6">
-          <div className="space-y-4">
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-foreground)]">
-                pwnkit
-              </div>
-              <div className="mt-2 text-2xl font-bold tracking-tight text-white">Operator shell</div>
-              <div className="mt-2 text-sm text-[var(--muted)]">
-                Local mission control for scans, evidence, and triage.
-              </div>
+      <div className="xl:grid xl:min-h-screen xl:grid-cols-[4.5rem_15rem_minmax(0,1fr)]">
+        <aside className="hidden border-r border-white/8 bg-black/30 xl:flex xl:flex-col xl:items-center xl:py-5">
+          <div className="flex h-full flex-col items-center gap-4">
+            <div className="flex size-10 items-center justify-center rounded-md border border-[var(--accent)]/30 bg-[var(--danger-soft)] text-sm font-bold uppercase tracking-[0.22em] text-[var(--accent)]">
+              P
             </div>
-
-            <nav className="space-y-2">
-              <ShellNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" />
-              <ShellNavLink to="/findings" icon={ShieldAlert} label="Findings" />
-              <ShellNavLink to="/scans" icon={Radar} label="Scans" />
+            <nav className="flex flex-col gap-2">
+              <RailNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" />
+              <RailNavLink to="/findings" icon={ShieldAlert} label="Findings" />
+              <RailNavLink to="/scans" icon={Radar} label="Scans" />
             </nav>
-          </div>
-
-          <div className="space-y-3">
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-                Live state
-              </div>
-              <div className="mt-4 space-y-3">
-                <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
-                  <span className="text-sm text-[var(--muted)]">New families</span>
-                  <span className="text-xl font-semibold text-white">{newFamilies}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
-                  <span className="text-sm text-[var(--muted)]">Active runs</span>
-                  <span className="text-xl font-semibold text-white">{activeRuns}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-[1.4rem] border border-white/10 bg-white/[0.04] p-4 text-sm text-[var(--muted)]">
-              <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-                Hotkeys
-              </div>
-              <div className="mt-3">`Cmd/Ctrl+K` command palette</div>
-              <div>`/` quick launch</div>
-              <div>`Esc` close overlays</div>
+            <div className="mt-auto">
+              <Button variant="ghost" size="icon" onClick={onOpenPalette} aria-label="Open launchpad">
+                <Command className="size-4" />
+              </Button>
             </div>
           </div>
         </aside>
 
+        <aside className="hidden border-r border-white/8 bg-black/18 px-4 py-5 xl:flex xl:flex-col xl:gap-5">
+          <div className="space-y-2 border-b border-white/8 pb-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">
+              pwnkit
+            </div>
+            <div className="text-xl font-bold tracking-tight text-white">Operator shell</div>
+            <div className="text-sm leading-6 text-[var(--muted)]">
+              Local mission control for scans, evidence, and triage.
+            </div>
+          </div>
+
+          <nav className="space-y-1">
+            <ShellNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" meta="Snapshot and priorities" />
+            <ShellNavLink to="/findings" icon={ShieldAlert} label="Findings" meta="Families, evidence, triage" />
+            <ShellNavLink to="/scans" icon={Radar} label="Scans" meta="Runs, events, dossiers" />
+          </nav>
+
+          <div className="space-y-2 border-t border-white/8 pt-4">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+              Situation
+            </div>
+            <ContextStat label="New families" value={String(newFamilies)} />
+            <ContextStat label="Active runs" value={String(activeRuns)} />
+          </div>
+
+          <div className="mt-auto space-y-2 border-t border-white/8 pt-4 text-xs leading-5 text-[var(--muted)]">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
+              Hotkeys
+            </div>
+            <div>`Cmd/Ctrl+K` launchpad</div>
+            <div>`/` search</div>
+            <div>`Esc` close overlays</div>
+          </div>
+        </aside>
+
         <div className="min-w-0">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-[rgba(7,16,24,0.78)] backdrop-blur-xl">
-            <div className="mx-auto flex max-w-[1800px] flex-col gap-4 px-4 py-4 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-8">
+          <header className="sticky top-0 z-20 border-b border-white/8 bg-[rgba(9,11,16,0.94)]">
+            <div className="mx-auto flex max-w-[1800px] flex-col gap-3 px-4 py-3 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-6">
               <div className="space-y-1">
                 <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-foreground)]">
                   {routeLabel(location.pathname)}
                 </div>
-                <div className="text-lg font-semibold text-white">{routeSummary(location.pathname)}</div>
+                <div className="text-base font-semibold text-white">{routeSummary(location.pathname)}</div>
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="hidden items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-2 text-sm text-[var(--muted)] lg:flex">
-                  <Activity className="size-4 text-[var(--accent)]" />
+                <div className="hidden items-center gap-2 rounded-md border border-white/10 bg-white/[0.03] px-3 py-2 text-sm text-[var(--muted)] lg:flex">
+                  <Activity className="size-4 text-[var(--danger)]" />
                   {dashboard?.groups.length ?? 0} families tracked
                 </div>
                 <Button variant="accent" onClick={onOpenPalette}>
@@ -109,7 +115,7 @@ export function AppShell({
             </div>
           </header>
 
-          <main className="mx-auto flex max-w-[1800px] flex-col gap-6 px-4 py-6 sm:px-6 xl:px-8">
+          <main className="mx-auto flex max-w-[1800px] flex-col gap-5 px-4 py-5 sm:px-6 xl:px-6">
             <nav className="flex gap-2 overflow-x-auto pb-1 xl:hidden">
               <MobileShellNav to="/dashboard" label="Overview" />
               <MobileShellNav to="/findings" label="Findings" />
@@ -127,27 +133,68 @@ function ShellNavLink({
   to,
   icon: Icon,
   label,
+  meta,
 }: {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
+  meta: string;
 }) {
   return (
     <NavLink to={to}>
       {({ isActive }) => (
         <div
           className={[
-            "flex items-center gap-3 rounded-2xl border px-4 py-3 text-sm transition",
+            "flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm transition",
             isActive
-              ? "border-[var(--accent)]/25 bg-[var(--accent)]/12 text-white"
+              ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
               : "border-white/0 bg-transparent text-[var(--muted)] hover:border-white/10 hover:bg-white/[0.04] hover:text-white",
           ].join(" ")}
         >
-          <Icon className="size-4" />
-          <span>{label}</span>
+          <Icon className="mt-0.5 size-4" />
+          <div className="min-w-0">
+            <div className="font-medium">{label}</div>
+            <div className="text-xs text-[var(--muted-foreground)]">{meta}</div>
+          </div>
         </div>
       )}
     </NavLink>
+  );
+}
+
+function RailNavLink({
+  to,
+  icon: Icon,
+  label,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+}) {
+  return (
+    <NavLink to={to} aria-label={label} title={label}>
+      {({ isActive }) => (
+        <div
+          className={[
+            "flex size-10 items-center justify-center rounded-md border transition",
+            isActive
+              ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
+              : "border-transparent text-[var(--muted)] hover:border-white/10 hover:bg-white/[0.04] hover:text-white",
+          ].join(" ")}
+        >
+          <Icon className="size-4" />
+        </div>
+      )}
+    </NavLink>
+  );
+}
+
+function ContextStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-center justify-between rounded-md border border-white/8 bg-black/18 px-3 py-2.5">
+      <span className="text-sm text-[var(--muted)]">{label}</span>
+      <span className="text-lg font-semibold text-white">{value}</span>
+    </div>
   );
 }
 
@@ -157,9 +204,9 @@ function MobileShellNav({ to, label }: { to: string; label: string }) {
       {({ isActive }) => (
         <div
           className={[
-            "rounded-full border px-3 py-2 text-sm whitespace-nowrap",
+            "rounded-md border px-3 py-2 text-sm whitespace-nowrap",
             isActive
-              ? "border-[var(--accent)]/25 bg-[var(--accent)]/12 text-white"
+              ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
               : "border-white/10 bg-white/[0.04] text-[var(--muted)]",
           ].join(" ")}
         >

@@ -223,7 +223,7 @@ function DashboardPage({ data }: { data: DashboardResponse }) {
           </CardHeader>
           <CardContent className="space-y-3">
             {recentGroups.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 px-4 py-10 text-sm text-[var(--muted)]">
+              <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-sm text-[var(--muted)]">
                 No findings recorded yet.
               </div>
             ) : (
@@ -231,7 +231,7 @@ function DashboardPage({ data }: { data: DashboardResponse }) {
                 <NavLink
                   key={group.fingerprint}
                   to={`/findings/${group.fingerprint}`}
-                  className="block rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.05]"
+                  className="block rounded-[var(--radius)] border border-white/8 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.05]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
@@ -266,7 +266,7 @@ function DashboardPage({ data }: { data: DashboardResponse }) {
           </CardHeader>
           <CardContent className="space-y-3">
             {recentScans.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-white/10 px-4 py-10 text-sm text-[var(--muted)]">
+              <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-sm text-[var(--muted)]">
                 No scans recorded yet.
               </div>
             ) : (
@@ -274,7 +274,7 @@ function DashboardPage({ data }: { data: DashboardResponse }) {
                 <NavLink
                   key={scan.id}
                   to={`/scans/${scan.id}`}
-                  className="block rounded-[1.2rem] border border-white/8 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.05]"
+                  className="block rounded-[var(--radius)] border border-white/8 bg-white/[0.03] p-4 transition hover:-translate-y-0.5 hover:border-white/14 hover:bg-white/[0.05]"
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="space-y-1">
@@ -369,7 +369,7 @@ function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
           searchPlaceholder="Filter finding families"
         >
           {filteredGroups.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-[var(--muted)]">
+            <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-[var(--muted)]">
               No findings match the current filter.
             </div>
           ) : (
@@ -458,7 +458,7 @@ function FindingFamilyDetail({
             <textarea
               value={note}
               onChange={(event) => setNote(event.target.value)}
-              className="min-h-28 w-full rounded-[1.2rem] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
+              className="min-h-28 w-full rounded-[var(--radius)] border border-white/10 bg-black/20 px-4 py-3 text-sm text-white outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]"
               placeholder="Capture why this family is actionable, benign, or still needs work."
             />
           </label>
@@ -473,15 +473,15 @@ function FindingFamilyDetail({
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-white/8 bg-black/10 px-4 py-3">
                 <span className="text-sm text-[var(--muted)]">Fingerprint</span>
                 <span className="font-mono text-xs text-white">{data.fingerprint}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-white/8 bg-black/10 px-4 py-3">
                 <span className="text-sm text-[var(--muted)]">Occurrences</span>
                 <span className="text-sm text-white">{data.rows.length}</span>
               </div>
-              <div className="flex items-center justify-between rounded-2xl border border-white/8 bg-black/10 px-4 py-3">
+              <div className="flex items-center justify-between rounded-lg border border-white/8 bg-black/10 px-4 py-3">
                 <span className="text-sm text-[var(--muted)]">Category</span>
                 <span className="text-sm text-white">{data.latest.category}</span>
               </div>
@@ -537,7 +537,7 @@ function FindingFamilyDetail({
           {data.rows.map((row) => (
             <div
               key={row.id}
-              className="flex items-center justify-between gap-4 rounded-[1.2rem] border border-white/8 bg-black/10 p-4"
+              className="flex items-center justify-between gap-4 rounded-[var(--radius)] border border-white/8 bg-black/10 p-4"
             >
               <div className="space-y-1">
                 <div className="font-mono text-xs text-white">{row.id.slice(0, 8)}</div>
@@ -608,7 +608,7 @@ function ScansPage({ scans }: { scans: ScanRecord[] }) {
           searchPlaceholder="Filter scan runs"
         >
           {filteredScans.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-white/10 px-4 py-8 text-center text-sm text-[var(--muted)]">
+            <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-8 text-center text-sm text-[var(--muted)]">
               No scans match the current filter.
             </div>
           ) : (
@@ -726,14 +726,14 @@ function ScanDetail({
             </CardHeader>
             <CardContent className="space-y-3">
               {findings.groups.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
+                <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
                   No finding families recorded for this run.
                 </div>
               ) : (
                 findings.groups.map((group) => (
                   <div
                     key={group.fingerprint}
-                    className="rounded-[1.2rem] border border-white/8 bg-black/10 p-4"
+                    className="rounded-[var(--radius)] border border-white/8 bg-black/10 p-4"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="space-y-1">
@@ -780,7 +780,7 @@ function MetaTile({
   mono?: boolean;
 }) {
   return (
-    <div className="rounded-[1.2rem] border border-white/8 bg-black/10 p-4">
+    <div className="rounded-[var(--radius)] border border-white/8 bg-black/10 p-4">
       <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
         {label}
       </div>

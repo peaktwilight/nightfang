@@ -29,7 +29,7 @@ export function EventTimeline({
       </CardHeader>
       <CardContent className="space-y-4">
         {events.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
+          <div className="rounded-[var(--radius)] border border-dashed border-white/10 px-4 py-10 text-center text-sm text-[var(--muted)]">
             No pipeline events recorded.
           </div>
         ) : (
@@ -39,11 +39,11 @@ export function EventTimeline({
             return (
               <article
                 key={event.id}
-                className="rounded-[1.2rem] border border-white/8 bg-black/10 p-4"
+                className="rounded-[var(--radius)] border border-white/8 bg-black/10 p-4"
               >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="flex gap-3">
-                    <div className="mt-0.5 inline-flex size-10 items-center justify-center rounded-2xl border border-white/10 bg-white/6 text-[var(--accent)]">
+                    <div className="mt-0.5 inline-flex size-10 items-center justify-center rounded-lg border border-white/10 bg-white/6 text-[var(--accent)]">
                       <Icon className="size-5" />
                     </div>
                     <div className="space-y-2">
@@ -61,7 +61,7 @@ export function EventTimeline({
                     </div>
                   </div>
                   {event.payload ? (
-                    <details className="min-w-[16rem] rounded-2xl border border-white/8 bg-white/[0.03] p-3 text-sm text-[var(--muted)]">
+                    <details className="min-w-[16rem] rounded-lg border border-white/8 bg-white/[0.03] p-3 text-sm text-[var(--muted)]">
                       <summary className="cursor-pointer list-none font-medium text-white">Raw payload</summary>
                       <pre className="mt-3 text-xs text-[var(--muted)]">
                         {JSON.stringify(event.payload, null, 2)}

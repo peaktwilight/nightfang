@@ -25,14 +25,14 @@ export function MetricCard({
         tone === "accent" && "border-[var(--accent)]/20",
       )}
     >
-      <CardContent className="space-y-5 p-5">
+      <CardContent className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
             {label}
           </div>
           <div
             className={cn(
-              "inline-flex size-10 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-[var(--muted)]",
+              "inline-flex size-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[var(--muted)]",
               tone === "danger" && "bg-[var(--danger-soft)] text-[var(--danger)]",
               tone === "warning" && "bg-[var(--warning-soft)] text-[var(--warning)]",
               tone === "success" && "bg-[var(--success-soft)] text-[var(--success)]",
@@ -43,8 +43,8 @@ export function MetricCard({
           </div>
         </div>
         <div className="space-y-1">
-          <div className="text-4xl font-bold tracking-tight text-white">{value}</div>
-          <div className="text-sm text-[var(--muted)]">{hint}</div>
+          <div className="text-3xl font-bold tracking-tight text-white">{value}</div>
+          <div className="text-xs leading-5 text-[var(--muted)]">{hint}</div>
         </div>
       </CardContent>
     </Card>

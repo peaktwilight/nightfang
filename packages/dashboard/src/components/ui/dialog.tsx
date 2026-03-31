@@ -38,14 +38,14 @@ export function DialogContent({
       <DialogOverlay />
       <DialogPrimitive.Content
         className={cn(
-          "fixed left-1/2 top-1/2 z-50 w-[min(92vw,54rem)] -translate-x-1/2 -translate-y-1/2 rounded-[1.75rem] border border-white/12 bg-[var(--panel-strong)] shadow-[var(--shadow-overlay)] outline-none",
+          "fixed left-1/2 top-1/2 z-50 w-[min(92vw,54rem)] -translate-x-1/2 -translate-y-1/2 rounded-[1rem] border border-white/12 bg-[var(--panel-strong)] shadow-[var(--shadow-overlay)] outline-none",
           className,
         )}
         {...props}
       >
         {children}
         {showClose ? (
-          <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-[var(--muted)] transition hover:bg-white/10 hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]">
+          <DialogPrimitive.Close className="absolute right-4 top-4 inline-flex size-9 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-[var(--muted)] transition hover:bg-white/10 hover:text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)]">
             <X className="size-4" />
           </DialogPrimitive.Close>
         ) : null}

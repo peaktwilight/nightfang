@@ -5,29 +5,29 @@
 
 :root {
   color-scheme: dark;
-  --background: #071018;
+  --background: #090b10;
   --foreground: #ebf2f7;
-  --muted: #97a9b8;
-  --muted-foreground: #6f8495;
-  --panel: rgba(9, 18, 27, 0.8);
-  --panel-strong: rgba(12, 22, 34, 0.94);
-  --panel-soft: rgba(255, 255, 255, 0.035);
-  --border: rgba(255, 255, 255, 0.09);
-  --border-strong: rgba(255, 255, 255, 0.18);
-  --ring: rgba(117, 201, 255, 0.42);
-  --accent: #66d9ff;
-  --accent-foreground: #04131a;
-  --danger: #ff6f61;
-  --danger-soft: rgba(255, 111, 97, 0.14);
+  --muted: #94a0b2;
+  --muted-foreground: #667386;
+  --panel: rgba(13, 16, 22, 0.92);
+  --panel-strong: rgba(16, 19, 26, 0.98);
+  --panel-soft: rgba(255, 255, 255, 0.025);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-strong: rgba(255, 255, 255, 0.14);
+  --ring: rgba(255, 91, 91, 0.28);
+  --accent: #ff5b5b;
+  --accent-foreground: #ffffff;
+  --danger: #ff5b5b;
+  --danger-soft: rgba(255, 91, 91, 0.12);
   --warning: #f6bf63;
   --warning-soft: rgba(246, 191, 99, 0.14);
   --success: #57d89a;
   --success-soft: rgba(87, 216, 154, 0.14);
-  --info: #84a8ff;
-  --info-soft: rgba(132, 168, 255, 0.14);
-  --radius: 1.35rem;
-  --shadow-panel: 0 24px 80px rgba(0, 0, 0, 0.28);
-  --shadow-overlay: 0 40px 120px rgba(0, 0, 0, 0.44);
+  --info: #8b96a8;
+  --info-soft: rgba(139, 150, 168, 0.14);
+  --radius: 0.65rem;
+  --shadow-panel: 0 10px 32px rgba(0, 0, 0, 0.22);
+  --shadow-overlay: 0 28px 80px rgba(0, 0, 0, 0.4);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -50,9 +50,7 @@
   body {
     min-height: 100vh;
     background:
-      radial-gradient(circle at top left, rgba(102, 217, 255, 0.14), transparent 28%),
-      radial-gradient(circle at top right, rgba(255, 111, 97, 0.14), transparent 24%),
-      linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 24%),
+      radial-gradient(circle at top right, rgba(255, 91, 91, 0.08), transparent 18%),
       var(--background);
     color: var(--foreground);
     font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
@@ -85,6 +83,6 @@
   }
 
   ::selection {
-    background: rgba(102, 217, 255, 0.22);
+    background: rgba(255, 91, 91, 0.22);
   }
 }
