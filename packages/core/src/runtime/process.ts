@@ -17,19 +17,21 @@ function formatToolDetail(input: unknown): string {
   return "";
 }
 
-let _onToolCall: ((name: string, detail: string) => void) | null = null;
-
-function showToolCall(name: string | undefined, input: unknown): void {
+function showToolCall(
+  onToolCall: ((name: string, detail: string) => void) | undefined,
+  name: string | undefined,
+  input: unknown,
+): void {
   const toolName = name || "tool";
   const detail = formatToolDetail(input);
 
   // Callback for structured consumers (Ink UI)
-  if (_onToolCall) {
-    _onToolCall(toolName, detail);
+  if (onToolCall) {
+    onToolCall(toolName, detail);
   }
 
   // Fallback: write to stderr for raw terminal display
-  if (process.stderr.isTTY && !_onToolCall) {
+  if (process.stderr.isTTY && !onToolCall) {
     process.stderr.write(dim(`    ${toolName}${detail ? ": " + detail : ""}\n`));
   }
 }
@@ -56,8 +58,7 @@ export class ProcessRuntime implements Runtime {
     const args = this.buildArgs(prompt, context);
     const env = this.buildEnv(context);
 
-    // Set the tool call callback for this execution
-    _onToolCall = this.config.onToolCall ?? null;
+    const onToolCall = this.config.onToolCall;
 
     return new Promise((resolve) => {
       let stdout = "";
@@ -89,7 +90,7 @@ export class ProcessRuntime implements Runtime {
                     resultText += block.text;
                     this.config.onThinking?.(block.text);
                   } else if (block.type === "tool_use") {
-                    showToolCall(block.name, block.input);
+                    showToolCall(onToolCall, block.name, block.input);
                   }
                 }
               } else if (event.type === "result") {
@@ -98,7 +99,7 @@ export class ProcessRuntime implements Runtime {
 
               // Codex JSONL format
               if (event.type === "item.started" && event.item?.type === "command_execution") {
-                showToolCall("shell", { command: event.item.command });
+                showToolCall(onToolCall, "shell", { command: event.item.command });
               }
               if (event.type === "item.completed" && event.item) {
                 if (event.item.type === "agent_message" && event.item.text) {

@@ -67,6 +67,7 @@ export async function runNativeAgentLoop(
     attackResults: [],
     targetInfo: {},
     scopePath: config.scopePath,
+    persistFindings: db !== null,
   };
 
   const executor = new ToolExecutor(toolCtx, db);

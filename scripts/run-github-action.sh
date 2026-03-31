@@ -31,9 +31,9 @@ case "$DEPTH" in
 esac
 
 case "$RUNTIME" in
-  api|claude|codex|gemini|opencode|auto) ;;
+  api|claude|codex|gemini|auto) ;;
   *)
-    echo "::error::Invalid runtime '$RUNTIME'. Expected api, claude, codex, gemini, opencode, or auto."
+    echo "::error::Invalid runtime '$RUNTIME'. Expected api, claude, codex, gemini, or auto."
     exit 1
     ;;
 esac
@@ -126,7 +126,9 @@ if [[ $CLI_EXIT -ne 0 ]]; then
   echo "::warning::pwnkit-cli exited with code $CLI_EXIT but produced a report. Continuing so findings can be surfaced."
 fi
 
-node "${GITHUB_ACTION_PATH}/scripts/render-github-action-output.mjs" \
+ACTION_ROOT="${PWNKIT_ACTION_ROOT:-${GITHUB_ACTION_PATH}}"
+
+node "${ACTION_ROOT}/scripts/render-github-action-output.mjs" \
   "$JSON_REPORT" \
   "$SARIF_REPORT" \
   "$PRIMARY_FORMAT" \

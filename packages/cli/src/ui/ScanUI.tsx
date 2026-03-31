@@ -43,6 +43,7 @@ export interface ScanUIProps {
   stages: StageState[];
   summary: ScanSummary | null;
   thinking: string | null;
+  exitHint?: string | null;
 }
 
 // ── Colors ──
@@ -183,6 +184,7 @@ function SummaryBar({ summary }: { summary: ScanSummary }) {
           {summary.medium} medium
         </Text>
         <Text color={GRAY}>{summary.low} low</Text>
+        <Text color={GRAY}>{summary.info ?? 0} info</Text>
       </Box>
       {summary.duration !== undefined && (
         <Box marginLeft={2}>
@@ -201,7 +203,7 @@ function SummaryBar({ summary }: { summary: ScanSummary }) {
 
 // ── Main ──
 
-export function ScanUI({ stages, summary, thinking }: ScanUIProps) {
+export function ScanUI({ stages, summary, thinking, exitHint }: ScanUIProps) {
   return (
     <Box flexDirection="column">
       {stages.map((stage) => (
@@ -213,6 +215,11 @@ export function ScanUI({ stages, summary, thinking }: ScanUIProps) {
         </Box>
       )}
       {summary && <SummaryBar summary={summary} />}
+      {summary && exitHint && (
+        <Box marginTop={1} marginLeft={2}>
+          <Text color={GRAY} dimColor>{exitHint}</Text>
+        </Box>
+      )}
     </Box>
   );
 }

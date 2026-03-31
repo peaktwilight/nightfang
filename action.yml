@@ -32,7 +32,7 @@ inputs:
     required: false
     default: "default"
   runtime:
-    description: "Runtime: api, claude, codex, gemini, opencode, auto"
+    description: "Runtime: api, claude, codex, gemini, auto"
     required: false
     default: "api"
   timeout:
@@ -110,6 +110,7 @@ runs:
         INPUT_SEVERITY_THRESHOLD: ${{ inputs.severity-threshold }}
         INPUT_THRESHOLD: ${{ inputs.threshold }}
         INPUT_REPORT_DIR: ${{ inputs.report-dir }}
+        PWNKIT_ACTION_ROOT: ${{ github.action_path }}
 
     - name: Find existing PR comment
       if: github.event_name == 'pull_request' && inputs.comment-pr == 'true'

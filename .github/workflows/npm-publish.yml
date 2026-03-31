@@ -36,8 +36,9 @@ jobs:
       - name: Build
         run: pnpm build
 
-      - name: Publish workspace packages
+      - name: Publish bundled CLI
         env:
           DIST_TAG: ${{ inputs['dist-tag'] }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: pnpm -r publish --access public --no-git-checks --tag "$DIST_TAG"
+        run: npm publish --access public --tag "$DIST_TAG"
+        working-directory: dist

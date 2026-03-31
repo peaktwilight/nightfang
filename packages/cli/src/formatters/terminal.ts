@@ -1,5 +1,6 @@
 import chalk from "chalk";
 import type { ScanReport, Finding, Severity } from "@pwnkit/shared";
+import { buildShareUrl } from "../utils.js";
 
 // ── Severity Design System ──
 
@@ -140,6 +141,7 @@ export function formatTerminal(report: ScanReport): string {
   ].join(chalk.gray("  "));
   lines.push(`  ${sev}`);
   lines.push(`  ${chalk.white.bold(String(summary.totalFindings))} findings ${chalk.gray("in")} ${chalk.white(formatDuration(report.durationMs))}`);
+  lines.push(`  ${chalk.gray("Share:")} ${chalk.cyan(buildShareUrl(report))}`);
   lines.push("");
 
   return lines.join("\n");

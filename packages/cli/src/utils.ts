@@ -1,27 +1,45 @@
 import { gzipSync } from "zlib";
 import chalk from "chalk";
-import type { ScanReport, AuditReport, ReviewReport, ScanDepth } from "@pwnkit/shared";
+import type { ScanReport, AuditReport, ReviewReport, ScanDepth, RuntimeMode } from "@pwnkit/shared";
 
-/**
- * Check if an API key or CLI runtime is available for AI analysis.
- * Prints a warning if not — the scan will still run but without AI.
- */
-export function checkRuntimeAvailability(): void {
+export interface RuntimeAvailability {
+  hasApiKey: boolean;
+  availableRuntimes: string[];
+}
+
+export async function getRuntimeAvailability(): Promise<RuntimeAvailability> {
   const hasApiKey = !!(
     process.env.OPENROUTER_API_KEY ||
     process.env.ANTHROPIC_API_KEY ||
     process.env.OPENAI_API_KEY
   );
 
-  if (!hasApiKey) {
-    console.log("");
-    console.log(chalk.yellow("  Warning: No API key set. AI agent analysis will be skipped."));
-    console.log(chalk.gray("  Set one of:"));
-    console.log(chalk.gray("    export OPENROUTER_API_KEY=sk-or-..."));
-    console.log(chalk.gray("    export ANTHROPIC_API_KEY=sk-ant-..."));
-    console.log(chalk.gray("    export OPENAI_API_KEY=sk-..."));
-    console.log("");
+  const { detectAvailableRuntimes } = await import("@pwnkit/core");
+  const availableRuntimes = [...(await detectAvailableRuntimes())];
+
+  return { hasApiKey, availableRuntimes };
+}
+
+/**
+ * Check if an API key or CLI runtime is available for AI analysis.
+ * Prints a warning if not — the scan will still run but without AI.
+ */
+export async function checkRuntimeAvailability(runtime: RuntimeMode): Promise<void> {
+  const availability = await getRuntimeAvailability();
+  const { hasApiKey, availableRuntimes } = availability;
+
+  if (hasApiKey) return;
+
+  console.log("");
+  if (runtime === "api") {
+    console.log(chalk.yellow("  Warning: `--runtime api` needs an API key. AI analysis may be skipped."));
+  } else if (availableRuntimes.length > 0) {
+    console.log(chalk.cyan(`  Using local runtime(s): ${availableRuntimes.join(", ")}`));
+  } else {
+    console.log(chalk.yellow("  Warning: No API key or local agent runtime detected. AI analysis will be skipped."));
   }
+  console.log(chalk.gray("  API keys: OPENROUTER_API_KEY, ANTHROPIC_API_KEY, OPENAI_API_KEY"));
+  console.log("");
 }
 
 /**

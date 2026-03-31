@@ -44,13 +44,13 @@ export async function runUnified(opts: RunOptions): Promise<void> {
     }
   }
 
-  if (format === "terminal") checkRuntimeAvailability();
+  if (format === "terminal") await checkRuntimeAvailability(runtime);
 
   // Ink TUI for terminal, silent for json/md
   let inkUI: { onEvent: (event: any) => void; setReport: (report: any) => void; waitForExit: () => Promise<void> } | null = null;
   let eventHandler: (event: any) => void = () => {};
 
-  if (format === "terminal") {
+  if (format === "terminal" && process.stdout.isTTY && process.stdin.isTTY) {
     const { renderScanUI } = await import("../ui/renderScan.js");
     const mode = opts.targetType === "npm-package" ? "audit"
       : opts.targetType === "source-code" ? "review"
