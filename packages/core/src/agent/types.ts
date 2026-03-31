@@ -74,4 +74,5 @@ export interface ToolContext {
   attackResults: AttackResult[];
   targetInfo: Partial<TargetInfo>;
   scopePath?: string;
+  persistFindings?: boolean;
 }

@@ -18,6 +18,8 @@ import { runAnalysisAgent } from "./agent-runner.js";
 import { auditAgentPrompt, reviewAgentPrompt } from "./analysis-prompts.js";
 import { researchPrompt, blindVerifyPrompt } from "./agent/prompts.js";
 import { runSemgrepScan, bufferToString } from "./shared-analysis.js";
+import { detectAvailableRuntimes } from "./runtime/registry.js";
+import type { RuntimeType } from "./runtime/types.js";
 
 // ── Public types ──
 
@@ -389,6 +391,26 @@ function buildSummary(findings: Finding[], totalAttacks: number) {
   };
 }
 
+function selectVerificationRuntime(
+  preferredRuntime: RuntimeMode | undefined,
+  hasApiKey: boolean,
+  availableRuntimes: Set<RuntimeType>,
+): RuntimeMode | null {
+  if (preferredRuntime && preferredRuntime !== "api" && preferredRuntime !== "auto") {
+    return availableRuntimes.has(preferredRuntime) ? preferredRuntime : null;
+  }
+
+  if (hasApiKey) {
+    return "api";
+  }
+
+  if (availableRuntimes.size > 0) {
+    return "auto";
+  }
+
+  return null;
+}
+
 // ── Main entry point ──
 
 /**
@@ -487,9 +509,9 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     // ── PHASE 3: RESEARCH (single agent: discover + attack + PoC) ──
     // Check if AI analysis is available
     const hasApiKey = !!(opts.apiKey || process.env.OPENROUTER_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY);
-    const { detectAvailableRuntimes } = await import("./runtime/registry.js");
     const availableRuntimes = await detectAvailableRuntimes();
     const hasCliRuntime = availableRuntimes.size > 0;
+    const verificationRuntime = selectVerificationRuntime(opts.runtime, hasApiKey, availableRuntimes);
 
     // Log pipeline decisions to stderr for CI visibility
     if (process.env.CI || process.env.PWNKIT_DEBUG) {
@@ -577,6 +599,18 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
     if (findings.length > 0 && (prepared.resolvedType === "source-code" || prepared.resolvedType === "npm-package")) {
       emit({ type: "stage:start", stage: "verify", message: `Blind-verifying ${findings.length} findings...` });
 
+      if (!verificationRuntime) {
+        warnings.push({
+          stage: "verify",
+          message: "Verification skipped because no verifier runtime is available. Findings were dropped rather than fail open.",
+        });
+        findings = findings.map((finding) => ({ ...finding, status: "false-positive" as Finding["status"] }));
+        emit({
+          type: "stage:end",
+          stage: "verify",
+          message: "Verification skipped — no verifier runtime available",
+        });
+      } else {
       try {
         const verifyResults = await Promise.all(
           findings.map(async (finding) => {
@@ -604,15 +638,15 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
                 role: "review",
                 scopePath: prepared.scopePath,
                 target: prepared.resolvedTarget,
-                scanId,
+                scanId: `${scanId}-verify`,
                 config: {
-                  runtime: "api", // API runtime: cheaper and faster for focused verification
+                  runtime: verificationRuntime,
                   timeout: Math.min(opts.timeout ?? 120_000, 120_000),
                   depth: "quick",
                   apiKey: opts.apiKey,
                   model: opts.model,
                 },
-                db,
+                db: null,
                 emit: verifyEmit,
                 cliPrompt: `Verify this vulnerability in ${filePath}:\n\nPoC:\n${poc}\n\nClaimed severity: ${claimedSeverity}\n\nRead the file, trace data flow, confirm or reject.`,
                 agentSystemPrompt: verifySystemPrompt,
@@ -623,10 +657,9 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
               const rejectionReason = confirmed ? undefined : "Could not independently reproduce";
               return { finding, confirmed, verifiedFinding: verifiedFindings[0] ?? null, rejectionReason };
             } catch (err) {
-              // If verification fails, keep the finding (fail-open)
               const msg = err instanceof Error ? err.message : String(err);
               warnings.push({ stage: "verify", message: `Verification failed for "${finding.title}": ${msg}` });
-              return { finding, confirmed: true, verifiedFinding: null };
+              return { finding, confirmed: false, verifiedFinding: null, rejectionReason: `Verifier error: ${msg}` };
             }
           }),
         );
@@ -661,7 +694,9 @@ export async function runPipeline(opts: PipelineOptions): Promise<PipelineReport
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         warnings.push({ stage: "verify", message: `Verification failed: ${msg}` });
+        findings = findings.map((finding) => ({ ...finding, status: "false-positive" as Finding["status"] }));
         emit({ type: "stage:end", stage: "verify", message: `Verification failed: ${msg}` });
+      }
       }
     }
 

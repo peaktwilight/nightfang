@@ -3,6 +3,8 @@ import { spawnSync } from "node:child_process";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
+import { detectAndRoute } from "../../packages/cli/src/routing.js";
+import { ToolExecutor } from "../../packages/core/src/agent/tools.js";
 
 const thisDir = fileURLToPath(new URL(".", import.meta.url));
 const cliPath = join(thisDir, "../../packages/cli/dist/index.js");
@@ -34,9 +36,38 @@ describe("CLI E2E", () => {
     const result = run(["--help"]);
     expect(result.status).toBe(0);
     expect(result.stdout).toContain("pwnkit");
-    for (const cmd of ["scan", "audit", "review", "history", "findings", "replay"]) {
+    for (const cmd of ["scan", "audit", "review", "history", "findings", "replay", "doctor"]) {
       expect(result.stdout).toContain(cmd);
     }
+  });
+
+  it("auto-routes an existing bare relative path to review", () => {
+    expect(detectAndRoute("src")).toEqual(["review", "src"]);
+  });
+
+  it("allows piped analysis commands without invoking shell operators", async () => {
+    const executor = new ToolExecutor({
+      target: "http://example.com",
+      scanId: "test",
+      findings: [],
+      attackResults: [],
+      targetInfo: {},
+      scopePath: projectRoot,
+      persistFindings: false,
+    }, null);
+
+    const ok = await executor.execute({
+      name: "run_command",
+      arguments: { command: "cat package.json | head -n 1" },
+    });
+    expect(ok.success).toBe(true);
+
+    const blocked = await executor.execute({
+      name: "run_command",
+      arguments: { command: "cat package.json || head -n 1" },
+    });
+    expect(blocked.success).toBe(false);
+    expect(String(blocked.error)).toContain("Empty pipe segments");
   });
 
   it("--version shows version", () => {

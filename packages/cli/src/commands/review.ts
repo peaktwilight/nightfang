@@ -8,7 +8,7 @@ export function registerReviewCommand(program: Command): void {
     .description("Deep source code security review of a repository")
     .argument("<repo>", "Local path or git URL to review")
     .option("--depth <depth>", "Review depth: quick, default, deep", "default")
-    .option("--format <format>", "Output format: terminal, json, md, sarif", "terminal")
+    .option("--format <format>", "Output format: terminal, json, md, html, sarif", "terminal")
     .option("--runtime <runtime>", "Runtime: auto, claude, codex, gemini, api", "auto")
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider")

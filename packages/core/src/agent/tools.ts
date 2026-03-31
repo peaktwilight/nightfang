@@ -192,8 +192,8 @@ const ALLOWED_COMMANDS = new Set([
   "npm",
 ]);
 
-// Block dangerous shell chars but allow | for piping (useful for grep|head etc.)
-const DISALLOWED_SHELL_CHARS = /[;<>`$\n\r]/;
+// Block dangerous shell chars. Piping is handled manually without invoking a shell.
+const DISALLOWED_SHELL_CHARS = /[;&<>`$\n\r]/;
 const ALLOWED_NPM_SUBCOMMANDS = new Set(["audit", "view", "ls", "list"]);
 
 function tokenizeCommand(command: string): string[] {
@@ -273,6 +273,44 @@ function validateCommandTokens(tokens: string[]): void {
       }
     }
   }
+}
+
+function executePipeline(
+  segments: string[][],
+  cwd: string,
+  timeout: number,
+): ToolResult {
+  let stdin: string | Buffer | undefined;
+
+  for (const tokens of segments) {
+    const result = spawnSync(tokens[0], tokens.slice(1), {
+      cwd,
+      timeout,
+      input: stdin,
+      maxBuffer: 1024 * 1024,
+      encoding: "utf-8",
+    });
+
+    if (result.error) {
+      throw result.error;
+    }
+
+    const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
+    if (result.status !== 0) {
+      return {
+        success: false,
+        output: null,
+        error: output.slice(0, 2_000) || `Command exited with status ${result.status}`,
+      };
+    }
+
+    stdin = result.stdout ?? "";
+  }
+
+  return {
+    success: true,
+    output: typeof stdin === "string" ? stdin.slice(0, 10_000) : "",
+  };
 }
 
 function resolveScopedPath(scopePath: string, inputPath: string): string {
@@ -455,7 +493,7 @@ export class ToolExecutor {
     };
 
     this.ctx.findings.push(finding);
-    if (this.db) {
+    if (this.db && this.ctx.persistFindings !== false) {
       this.db.saveFinding(this.ctx.scanId, finding);
     }
 
@@ -530,19 +568,29 @@ export class ToolExecutor {
       };
     }
 
-    const command = args.command as string;
+    const command = (args.command as string).trim();
     if (DISALLOWED_SHELL_CHARS.test(command)) {
       return {
         success: false,
         output: null,
-        error: `Shell operators (;, <, >, \`, $) are not allowed. Use pipe (|) for chaining. Permitted commands: ${[...ALLOWED_COMMANDS].join(", ")}`,
+        error: `Shell operators (;, &, <, >, \`, $) are not allowed. Use pipe (|) for chaining. Permitted commands: ${[...ALLOWED_COMMANDS].join(", ")}`,
       };
     }
 
-    // Split on pipe to support "grep foo | head -5" style commands
-    const segments = command.split("|").map((s) => s.trim()).filter(Boolean);
+    // Split on pipe to support "grep foo | head -5" style commands.
+    // Empty segments indicate shell operators like || or malformed pipes.
+    const rawSegments = command.split("|");
+    if (rawSegments.some((segment) => segment.trim().length === 0)) {
+      return { success: false, output: null, error: "Empty pipe segments are not allowed" };
+    }
+
+    const segments = rawSegments.map((s) => s.trim());
+    if (segments.length === 0) {
+      return { success: false, output: null, error: "Command cannot be empty" };
+    }
 
     // Validate each segment
+    const tokenizedSegments: string[][] = [];
     for (const segment of segments) {
       let tokens: string[];
       try {
@@ -550,6 +598,10 @@ export class ToolExecutor {
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, output: null, error: msg };
+      }
+
+      if (tokens.length === 0) {
+        return { success: false, output: null, error: "Empty pipe segments are not allowed" };
       }
 
       if (!isCommandAllowed(tokens)) {
@@ -567,6 +619,8 @@ export class ToolExecutor {
         const msg = err instanceof Error ? err.message : String(err);
         return { success: false, output: null, error: msg };
       }
+
+      tokenizedSegments.push(tokens);
     }
 
     const requestedCwd = args.cwd as string | undefined;
@@ -574,44 +628,7 @@ export class ToolExecutor {
     const cwd = resolveScopedPath(this.ctx.scopePath, requestedCwd ?? ".");
 
     try {
-      // Use shell execution for piped commands, direct spawn for simple ones
-      const useShell = segments.length > 1;
-
-      if (useShell) {
-        const result = spawnSync("sh", ["-c", command], {
-          cwd,
-          timeout,
-          maxBuffer: 1024 * 1024,
-          encoding: "utf-8",
-        });
-
-        if (result.error) throw result.error;
-        const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-        return result.status === 0
-          ? { success: true, output: output.slice(0, 10_000) }
-          : { success: false, output: null, error: output.slice(0, 2_000) || `Exit ${result.status}` };
-      }
-
-      const tokens = tokenizeCommand(segments[0]);
-      const result = spawnSync(tokens[0], tokens.slice(1), {
-        cwd,
-        timeout,
-        maxBuffer: 1024 * 1024,
-        encoding: "utf-8",
-      });
-
-      if (result.error) throw result.error;
-
-      const output = `${result.stdout ?? ""}${result.stderr ?? ""}`;
-      if (result.status !== 0) {
-        return {
-          success: false,
-          output: null,
-          error: output.slice(0, 2_000) || `Command exited with status ${result.status}`,
-        };
-      }
-
-      return { success: true, output: output.slice(0, 10_000) };
+      return executePipeline(tokenizedSegments, cwd, timeout);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, output: null, error: msg.slice(0, 2_000) };

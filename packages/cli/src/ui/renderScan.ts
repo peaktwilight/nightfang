@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { render } from "ink";
+import { render, useInput } from "ink";
 import { readFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
@@ -40,6 +40,7 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   let summary: ScanSummary | null = null;
   let thinking: string | null = null;
   let rerender: (() => void) | null = null;
+  let resolveExit: (() => void) | null = null;
 
 
   // Static banner — printed once before Ink takes over
@@ -54,7 +55,18 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
       rerender = () => setTick((t) => t + 1);
       return () => { rerender = null; };
     }, []);
-    return React.createElement(ScanUI, { stages, summary, thinking });
+    useInput((input, key) => {
+      if (!summary) return;
+      if (key.return || key.escape || input.toLowerCase() === "q") {
+        resolveExit?.();
+      }
+    });
+    return React.createElement(ScanUI, {
+      stages,
+      summary,
+      thinking,
+      exitHint: summary ? "Press Enter, Esc, or q to close." : null,
+    });
   }
 
   const instance = render(React.createElement(App));
@@ -195,8 +207,17 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   }
 
   async function waitForExit(): Promise<void> {
-    await new Promise((r) => setTimeout(r, 150));
-    instance.unmount();
+    await new Promise<void>((resolve) => {
+      resolveExit = () => {
+        resolveExit = null;
+        instance.unmount();
+        resolve();
+      };
+
+      if (!process.stdin.isTTY) {
+        setTimeout(() => resolveExit?.(), 1500);
+      }
+    });
     await instance.waitUntilExit();
   }
 

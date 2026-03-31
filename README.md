@@ -143,7 +143,7 @@ npx pwnkit-cli scan --target https://your-app.com/api/chat --verbose
 | `default` | ~50 | ~3 min |
 | `deep` | ~150 | ~10 min |
 
-pwnkit is an agentic harness — bring your own AI. Use your API key (OpenRouter, Anthropic, OpenAI, Ollama), or use the Claude Code CLI or Codex CLI with your existing subscription via `--runtime claude` or `--runtime codex`.
+pwnkit is an agentic harness — bring your own AI. Use your API key (OpenRouter, Anthropic, OpenAI), or use the Claude Code CLI, Codex CLI, or Gemini CLI with your existing subscription via `--runtime claude`, `--runtime codex`, or `--runtime gemini`.
 
 ```bash
 # Quick scan for CI

@@ -10,7 +10,9 @@ import {
   registerFindingsCommand,
   registerReviewCommand,
   registerAuditCommand,
+  registerDoctorCommand,
 } from "./commands/index.js";
+import { detectAndRoute } from "./routing.js";
 
 const program = new Command();
 
@@ -25,6 +27,7 @@ registerHistoryCommand(program);
 registerFindingsCommand(program);
 registerReviewCommand(program);
 registerAuditCommand(program);
+registerDoctorCommand(program);
 
 // ── Interactive menu (Ink) ──
 async function showInteractiveMenu(): Promise<void> {
@@ -33,6 +36,18 @@ async function showInteractiveMenu(): Promise<void> {
 
   if (action === "history") {
     process.argv = [process.argv[0], process.argv[1], "history"];
+    await program.parseAsync();
+    return;
+  }
+
+  if (action === "doctor") {
+    process.argv = [process.argv[0], process.argv[1], "doctor"];
+    await program.parseAsync();
+    return;
+  }
+
+  if (action === "replay") {
+    process.argv = [process.argv[0], process.argv[1], "replay"];
     await program.parseAsync();
     return;
   }
@@ -50,29 +65,9 @@ async function showInteractiveMenu(): Promise<void> {
   await program.parseAsync();
 }
 
-// ── Smart target detection: pwnkit <target> auto-routes ──
-function detectAndRoute(target: string): string[] | null {
-  if (target.startsWith("mcp://")) {
-    return ["scan", "--target", target];
-  }
-  if (target.startsWith("./") || target.startsWith("/") || target === ".") {
-    return ["review", target];
-  }
-  if (target.startsWith("https://github.com/") || target.startsWith("git@")) {
-    return ["review", target];
-  }
-  if (target.startsWith("http://") || target.startsWith("https://")) {
-    return ["scan", "--target", target];
-  }
-  if (/^(@[a-z0-9-]+\/)?[a-z0-9][a-z0-9._-]*(@.*)?$/.test(target)) {
-    return ["audit", target];
-  }
-  return null;
-}
-
 // ── Entry point ──
 const userArgs = process.argv.slice(2);
-const knownCommands = ["scan", "replay", "history", "findings", "review", "audit", "help"];
+const knownCommands = ["scan", "replay", "history", "findings", "review", "audit", "doctor", "help"];
 
 if (userArgs.length === 0) {
   showInteractiveMenu().catch((err) => {
