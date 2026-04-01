@@ -1,9 +1,8 @@
 import type { ReactNode } from "react";
 import { Search } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEyebrow, CardHeader, CardList, CardListItem, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
 
 export function EntityList({
   title,
@@ -40,7 +39,7 @@ export function EntityList({
       </CardHeader>
       <CardContent className="pt-3">
         <ScrollArea className="h-[calc(100vh-21rem)] pr-4">
-          <div className="space-y-2">{children}</div>
+          <CardList>{children}</CardList>
         </ScrollArea>
       </CardContent>
     </Card>
@@ -61,19 +60,15 @@ export function EntityListItem({
   selected?: boolean;
 }) {
   return (
-    <div
-      className={cn("contents")}
-    >
-      <CardRow interactive selected={selected}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-0.5">
-            <div className="text-sm font-semibold leading-5 text-white">{title}</div>
-            <div className="text-xs leading-5 text-[var(--muted)]">{description}</div>
-            {meta ? <div className="text-xs text-[var(--muted-foreground)]">{meta}</div> : null}
-          </div>
-          {badges ? <div className="flex max-w-[12rem] flex-wrap justify-end gap-2">{badges}</div> : null}
+    <CardListItem interactive selected={selected}>
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-0.5">
+          <div className="text-sm font-semibold leading-5 text-white">{title}</div>
+          <div className="text-xs leading-5 text-[var(--muted)]">{description}</div>
+          {meta ? <div className="text-xs text-[var(--muted-foreground)]">{meta}</div> : null}
         </div>
-      </CardRow>
-    </div>
+        {badges ? <div className="flex max-w-[12rem] flex-wrap justify-end gap-2">{badges}</div> : null}
+      </div>
+    </CardListItem>
   );
 }

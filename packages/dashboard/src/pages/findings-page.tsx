@@ -10,7 +10,7 @@ import { MetaTile } from "@/components/meta-tile";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-panel";
 import { SeverityBadge, StatusBadge } from "@/components/status-badges";
-import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardList, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -202,11 +202,11 @@ function FindingFamilyDetail({
             />
           </label>
 
-          <div className="space-y-2">
+          <CardList>
             <MetaTile label="Fingerprint" value={data.fingerprint} mono />
             <MetaTile label="Occurrences" value={String(data.rows.length)} />
             <MetaTile label="Category" value={data.latest.category} />
-          </div>
+          </CardList>
 
           <div className="grid gap-2">
             <Button

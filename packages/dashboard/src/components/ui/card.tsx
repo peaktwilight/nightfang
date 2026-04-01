@@ -73,6 +73,38 @@ export function CardRow({
   return <div className={cn(cardRowVariants({ className, interactive, selected }))} {...props} />;
 }
 
+export function CardList({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn("divide-y divide-[var(--border)]", className)} {...props} />;
+}
+
+const cardListItemVariants = cva("px-4 py-3 text-sm transition-colors", {
+  variants: {
+    interactive: {
+      true: "hover:bg-white/[0.03]",
+      false: "",
+    },
+    selected: {
+      true: "bg-[var(--danger-soft)] shadow-[inset_2px_0_0_var(--accent)]",
+      false: "",
+    },
+  },
+  defaultVariants: {
+    interactive: false,
+    selected: false,
+  },
+});
+
+type CardListItemProps = HTMLAttributes<HTMLDivElement> & VariantProps<typeof cardListItemVariants>;
+
+export function CardListItem({
+  className,
+  interactive,
+  selected,
+  ...props
+}: CardListItemProps) {
+  return <div className={cn(cardListItemVariants({ className, interactive, selected }))} {...props} />;
+}
+
 export function CardEmpty({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div

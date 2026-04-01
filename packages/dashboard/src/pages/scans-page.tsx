@@ -12,7 +12,7 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-panel";
 import { SeverityBadge, StatusBadge } from "@/components/status-badges";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardList, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Workspace, WorkspacePane, WorkspaceSecondaryPane } from "@/components/workspace";
 import { formatDuration, formatTime } from "@/lib/format";
@@ -196,7 +196,7 @@ function ScanDetail({
           title="Run metadata"
           description="Grouped findings and runtime metadata for the selected scan."
         >
-          <div className="space-y-2">
+          <CardList>
             <MetaTile label="Scan id" value={scan.id} mono />
             <MetaTile label="Started" value={formatTime(scan.startedAt)} />
             <MetaTile
@@ -204,7 +204,7 @@ function ScanDetail({
               value={scan.completedAt ? formatTime(scan.completedAt) : "In progress"}
             />
             <MetaTile label="Mode" value={`${scan.mode} / ${scan.depth}`} />
-          </div>
+          </CardList>
         </InspectorPane>
 
         <Card className="overflow-hidden">
