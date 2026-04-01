@@ -16,15 +16,7 @@ export function MetricCard({
   tone?: "neutral" | "danger" | "warning" | "success" | "accent";
 }) {
   return (
-    <Card
-      className={cn(
-        "overflow-hidden",
-        tone === "danger" && "border-[var(--danger)]/20",
-        tone === "warning" && "border-[var(--warning)]/20",
-        tone === "success" && "border-[var(--success)]/20",
-        tone === "accent" && "border-[var(--accent)]/20",
-      )}
-    >
+    <Card className="overflow-hidden">
       <CardContent className="space-y-4 p-4">
         <div className="flex items-center justify-between">
           <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
@@ -33,10 +25,10 @@ export function MetricCard({
           <div
             className={cn(
               "inline-flex size-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel-soft)] text-[var(--muted)]",
-              tone === "danger" && "bg-[var(--danger-soft)] text-[var(--danger)]",
-              tone === "warning" && "bg-[var(--warning-soft)] text-[var(--warning)]",
-              tone === "success" && "bg-[var(--success-soft)] text-[var(--success)]",
-              tone === "accent" && "bg-[var(--accent)]/14 text-[var(--accent)]",
+              tone === "danger" && "border-[var(--danger)]/20 bg-[var(--danger-soft)] text-[var(--danger)]",
+              tone === "warning" && "border-[var(--warning)]/20 bg-[var(--warning-soft)] text-[var(--warning)]",
+              tone === "success" && "border-[var(--success)]/20 bg-[var(--success-soft)] text-[var(--success)]",
+              tone === "accent" && "border-[var(--accent)]/20 bg-[var(--accent)]/14 text-[var(--accent)]",
             )}
           >
             <Icon className="size-5" />

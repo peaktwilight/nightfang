@@ -1,9 +1,37 @@
-import { Activity, Command, LayoutDashboard, Radar, ShieldAlert } from "lucide-react";
+import { Activity, Command, LayoutDashboard, Menu, Radar, ShieldAlert } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import type { DashboardResponse, ScanRecord } from "@/types";
 import { BrandMark } from "@/components/brand-mark";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { CardRow } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+} from "@/components/ui/sidebar";
 
 function routeLabel(pathname: string): string {
   if (pathname.startsWith("/findings")) return "Finding workbench";
@@ -21,6 +49,12 @@ function routeSummary(pathname: string): string {
   }
 
   return "Overview of scans, findings, and operator state.";
+}
+
+function routePage(pathname: string): string {
+  if (pathname.startsWith("/findings")) return "Findings";
+  if (pathname.startsWith("/scans")) return "Scans";
+  return "Overview";
 }
 
 export function AppShell({
@@ -57,46 +91,104 @@ export function AppShell({
           </div>
         </aside>
 
-        <aside className="hidden border-r border-[var(--border)] bg-[rgba(9,11,16,0.78)] px-4 py-5 xl:flex xl:flex-col xl:gap-5">
-          <div className="space-y-2 border-b border-[var(--border)] pb-4">
+        <Sidebar className="hidden xl:flex">
+          <SidebarHeader className="space-y-2">
             <BrandMark animated />
             <div className="text-xl font-bold tracking-tight text-white">Operator shell</div>
             <div className="text-sm leading-6 text-[var(--muted)]">
               Local mission control for scans, evidence, and triage.
             </div>
-          </div>
+          </SidebarHeader>
 
-          <nav className="space-y-1">
-            <ShellNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" meta="Snapshot and priorities" />
-            <ShellNavLink to="/findings" icon={ShieldAlert} label="Findings" meta="Families, evidence, triage" />
-            <ShellNavLink to="/scans" icon={Radar} label="Scans" meta="Runs, events, dossiers" />
-          </nav>
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <ShellNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" meta="Snapshot and priorities" />
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <ShellNavLink to="/findings" icon={ShieldAlert} label="Findings" meta="Families, evidence, triage" />
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <ShellNavLink to="/scans" icon={Radar} label="Scans" meta="Runs, events, dossiers" />
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
 
-          <div className="space-y-2 border-t border-[var(--border)] pt-4">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-              Situation
-            </div>
-            <ContextStat label="New families" value={String(newFamilies)} />
-            <ContextStat label="Active runs" value={String(activeRuns)} />
-          </div>
+            <SidebarGroup>
+              <SidebarGroupLabel>Situation</SidebarGroupLabel>
+              <SidebarGroupContent className="space-y-2">
+                <ContextStat label="New families" value={String(newFamilies)} />
+                <ContextStat label="Active runs" value={String(activeRuns)} />
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
 
-          <div className="mt-auto space-y-2 border-t border-[var(--border)] pt-4 text-xs leading-5 text-[var(--muted)]">
-            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--muted-foreground)]">
-              Hotkeys
-            </div>
+          <SidebarFooter className="space-y-2 text-xs leading-5 text-[var(--muted)]">
+            <SidebarGroupLabel className="px-0">Hotkeys</SidebarGroupLabel>
             <div>`Cmd/Ctrl+K` launchpad</div>
             <div>`/` search</div>
             <div>`Esc` close overlays</div>
-          </div>
-        </aside>
+          </SidebarFooter>
+        </Sidebar>
 
-        <div className="min-w-0">
+        <SidebarInset>
           <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[rgba(9,11,16,0.94)]">
             <div className="mx-auto flex max-w-[1800px] flex-col gap-3 px-4 py-3 sm:px-6 xl:flex-row xl:items-center xl:justify-between xl:px-6">
-              <div className="space-y-1">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--muted-foreground)]">
-                  {routeLabel(location.pathname)}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 xl:hidden">
+                  <Sheet>
+                    <SheetTrigger asChild>
+                      <Button variant="outline" size="icon" aria-label="Open navigation">
+                        <Menu className="size-4" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="left" className="w-[18rem] p-0">
+                      <SheetHeader className="border-b border-[var(--border)] p-4 pr-12">
+                        <SheetTitle className="text-left text-base font-semibold text-white">Operator shell</SheetTitle>
+                        <SheetDescription className="text-left text-sm text-[var(--muted)]">
+                          Navigation, triage context, and scan state.
+                        </SheetDescription>
+                      </SheetHeader>
+                      <Sidebar className="border-r-0 bg-transparent">
+                        <SidebarContent>
+                          <SidebarGroup>
+                            <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                            <SidebarGroupContent>
+                              <SidebarMenu>
+                                <SidebarMenuItem>
+                                  <ShellNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" meta="Snapshot and priorities" />
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                  <ShellNavLink to="/findings" icon={ShieldAlert} label="Findings" meta="Families, evidence, triage" />
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                  <ShellNavLink to="/scans" icon={Radar} label="Scans" meta="Runs, events, dossiers" />
+                                </SidebarMenuItem>
+                              </SidebarMenu>
+                            </SidebarGroupContent>
+                          </SidebarGroup>
+                        </SidebarContent>
+                      </Sidebar>
+                    </SheetContent>
+                  </Sheet>
+                  <BrandMark compact />
                 </div>
+
+                <Breadcrumb>
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{routeLabel(location.pathname)}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                    <BreadcrumbSeparator />
+                    <BreadcrumbItem>
+                      <BreadcrumbPage>{routePage(location.pathname)}</BreadcrumbPage>
+                    </BreadcrumbItem>
+                  </BreadcrumbList>
+                </Breadcrumb>
                 <div className="text-base font-semibold text-white">{routeSummary(location.pathname)}</div>
               </div>
 
@@ -114,14 +206,14 @@ export function AppShell({
           </header>
 
           <main className="mx-auto flex max-w-[1800px] flex-col gap-5 px-4 py-5 sm:px-6 xl:px-6">
-            <nav className="flex gap-2 overflow-x-auto pb-1 xl:hidden">
+            <nav className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--panel-soft)] p-1 xl:hidden">
               <MobileShellNav to="/dashboard" label="Overview" />
               <MobileShellNav to="/findings" label="Findings" />
               <MobileShellNav to="/scans" label="Scans" />
             </nav>
             {children}
           </main>
-        </div>
+        </SidebarInset>
       </div>
     </div>
   );
@@ -141,20 +233,15 @@ function ShellNavLink({
   return (
     <NavLink to={to}>
       {({ isActive }) => (
-        <div
-          className={[
-            "flex items-start gap-3 rounded-md border px-3 py-2.5 text-sm transition",
-            isActive
-              ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-              : "border-transparent bg-transparent text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--panel-soft)] hover:text-white",
-          ].join(" ")}
-        >
-          <Icon className="mt-0.5 size-4" />
-          <div className="min-w-0">
-            <div className="font-medium">{label}</div>
-            <div className="text-xs text-[var(--muted-foreground)]">{meta}</div>
+        <SidebarMenuButton asChild isActive={isActive}>
+          <div>
+            <Icon className="mt-0.5 size-4" />
+            <div className="min-w-0">
+              <div className="font-medium">{label}</div>
+              <div className="text-xs text-[var(--muted-foreground)]">{meta}</div>
+            </div>
           </div>
-        </div>
+        </SidebarMenuButton>
       )}
     </NavLink>
   );
@@ -200,16 +287,13 @@ function MobileShellNav({ to, label }: { to: string; label: string }) {
   return (
     <NavLink to={to}>
       {({ isActive }) => (
-        <div
-          className={[
-            "rounded-md border px-3 py-2 text-sm whitespace-nowrap",
-            isActive
-              ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-              : "border-[var(--border)] bg-[var(--panel-soft)] text-[var(--muted)]",
-          ].join(" ")}
+        <Button
+          variant={isActive ? "accent" : "ghost"}
+          size="sm"
+          className="h-8 whitespace-nowrap border-0"
         >
           {label}
-        </div>
+        </Button>
       )}
     </NavLink>
   );
