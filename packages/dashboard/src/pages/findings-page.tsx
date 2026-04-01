@@ -10,9 +10,10 @@ import { MetaTile } from "@/components/meta-tile";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-panel";
 import { SeverityBadge, StatusBadge } from "@/components/status-badges";
-import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Workspace, WorkspacePane, WorkspaceSecondaryPane } from "@/components/workspace";
 import { formatTime } from "@/lib/format";
 import type { DashboardResponse, FindingFamilyResponse } from "@/types";
@@ -243,18 +244,27 @@ function FindingFamilyDetail({
               <CardDescription>Each row is an occurrence grouped into this family.</CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
-            {data.rows.map((row) => (
-              <CardRow key={row.id} className="flex items-center justify-between gap-4">
-                <div className="space-y-0.5">
-                  <div className="font-mono text-xs text-white">{row.id.slice(0, 8)}</div>
-                  <div className="text-xs text-[var(--muted)]">
-                    scan {row.scanId.slice(0, 8)} · {formatTime(row.timestamp)}
-                  </div>
-                </div>
-                <StatusBadge value={row.status} />
-              </CardRow>
-            ))}
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead>Finding</TableHead>
+                  <TableHead>Scan</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead className="w-[8rem]">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.rows.map((row) => (
+                  <TableRow key={row.id}>
+                    <TableCell className="font-mono text-xs text-white">{row.id.slice(0, 8)}</TableCell>
+                    <TableCell className="font-mono text-xs text-[var(--muted)]">{row.scanId.slice(0, 8)}</TableCell>
+                    <TableCell className="text-xs text-[var(--muted)]">{formatTime(row.timestamp)}</TableCell>
+                    <TableCell><StatusBadge value={row.status} /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </CardContent>
         </Card>
       </WorkspaceSecondaryPane>

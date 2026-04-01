@@ -12,7 +12,8 @@ import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, LoadingState } from "@/components/state-panel";
 import { SeverityBadge, StatusBadge } from "@/components/status-badges";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Workspace, WorkspacePane, WorkspaceSecondaryPane } from "@/components/workspace";
 import { formatDuration, formatTime } from "@/lib/format";
 import type { ScanEventsResponse, ScanFindingsResponse, ScanRecord } from "@/types";
@@ -214,26 +215,35 @@ function ScanDetail({
               <CardDescription>Deduplicated findings produced by this scan.</CardDescription>
             </div>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent>
             {findings.groups.length === 0 ? (
               <CardEmpty>No finding families recorded for this run.</CardEmpty>
             ) : (
-              findings.groups.map((group) => (
-                <CardRow key={group.fingerprint}>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-0.5">
-                      <div className="text-sm font-semibold text-white">{group.latest.title}</div>
-                      <div className="text-xs text-[var(--muted)]">
-                        {group.latest.category} · {group.count} occurrences
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <SeverityBadge severity={group.latest.severity} />
-                      <StatusBadge value={group.latest.triageStatus} />
-                    </div>
-                  </div>
-                </CardRow>
-              ))
+              <Table>
+                <TableHeader>
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead>Family</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Count</TableHead>
+                    <TableHead className="w-[12rem]">Posture</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {findings.groups.map((group) => (
+                    <TableRow key={group.fingerprint}>
+                      <TableCell className="font-medium text-white">{group.latest.title}</TableCell>
+                      <TableCell className="text-[var(--muted)]">{group.latest.category}</TableCell>
+                      <TableCell className="text-[var(--muted)]">{group.count}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-wrap gap-2">
+                          <SeverityBadge severity={group.latest.severity} />
+                          <StatusBadge value={group.latest.triageStatus} />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>

@@ -10,7 +10,8 @@ import {
 import type { ScanEventsResponse } from "@/types";
 import { formatTime, summarizePayload } from "@/lib/format";
 import { StatusBadge } from "@/components/status-badges";
-import { Card, CardContent, CardEmpty, CardEyebrow, CardHeader, CardRow, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardEmpty, CardEyebrow, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export function EventTimeline({
   events,
@@ -29,42 +30,64 @@ export function EventTimeline({
         {events.length === 0 ? (
           <CardEmpty>No pipeline events recorded.</CardEmpty>
         ) : (
-          events.map((event) => {
-            const Icon = iconForEvent(event.stage, event.eventType);
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Event</TableHead>
+                <TableHead>Summary</TableHead>
+                <TableHead className="w-[10rem]">Time</TableHead>
+                <TableHead className="w-[14rem]">Payload</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {events.map((event) => {
+                const Icon = iconForEvent(event.stage, event.eventType);
 
-            return (
-              <CardRow key={event.id} className="p-4">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex gap-3">
-                    <div className="mt-0.5 inline-flex size-9 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel-soft)] text-[var(--accent)]">
-                      <Icon className="size-5" />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-sm font-semibold text-white">
-                          {event.stage} · {event.eventType}
+                return (
+                  <TableRow key={event.id}>
+                    <TableCell>
+                      <div className="flex items-start gap-3">
+                        <div className="mt-0.5 inline-flex size-8 items-center justify-center rounded-md border border-[var(--border)] bg-[var(--panel-soft)] text-[var(--accent)]">
+                          <Icon className="size-4" />
                         </div>
-                        {event.agentRole ? <StatusBadge value={event.agentRole} /> : null}
+                        <div className="space-y-1">
+                          <div className="font-medium text-white">
+                            {event.stage} · {event.eventType}
+                          </div>
+                          {event.agentRole ? <StatusBadge value={event.agentRole} /> : null}
+                        </div>
                       </div>
-                      <div className="text-sm text-[var(--muted)]">{summarizePayload(event.payload)}</div>
-                      <div className="text-xs text-[var(--muted-foreground)]">
-                        {event.findingId ? `Finding ${event.findingId.slice(0, 8)} · ` : ""}
-                        {formatTime(event.timestamp)}
+                    </TableCell>
+                    <TableCell className="text-[var(--muted)]">
+                      <div className="space-y-1">
+                        <div>{summarizePayload(event.payload)}</div>
+                        {event.findingId ? (
+                          <div className="font-mono text-xs text-[var(--muted-foreground)]">
+                            finding {event.findingId.slice(0, 8)}
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
-                  </div>
-                  {event.payload ? (
-                    <details className="min-w-[16rem] rounded-md border border-[var(--border)] bg-[var(--panel-soft)] p-3 text-sm text-[var(--muted)]">
-                      <summary className="cursor-pointer list-none font-medium text-white">Raw payload</summary>
-                      <pre className="mt-3 text-xs text-[var(--muted)]">
-                        {JSON.stringify(event.payload, null, 2)}
-                      </pre>
-                    </details>
-                  ) : null}
-                </div>
-              </CardRow>
-            );
-          })
+                    </TableCell>
+                    <TableCell className="text-xs text-[var(--muted-foreground)]">
+                      {formatTime(event.timestamp)}
+                    </TableCell>
+                    <TableCell>
+                      {event.payload ? (
+                        <details className="rounded-md border border-[var(--border)] bg-[var(--panel-soft)] p-2 text-sm text-[var(--muted)]">
+                          <summary className="cursor-pointer list-none font-medium text-white">View raw</summary>
+                          <pre className="mt-3 text-xs text-[var(--muted)]">
+                            {JSON.stringify(event.payload, null, 2)}
+                          </pre>
+                        </details>
+                      ) : (
+                        <span className="text-xs text-[var(--muted-foreground)]">No payload</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
         )}
       </CardContent>
     </Card>
