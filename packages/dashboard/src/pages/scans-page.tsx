@@ -14,7 +14,7 @@ import { SeverityBadge, StatusBadge } from "@/components/status-badges";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader, CardList, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Workspace, WorkspacePane, WorkspaceSecondaryPane } from "@/components/workspace";
+import { Workspace, WorkspaceAside, WorkspaceMain, WorkspaceSidebar } from "@/components/workspace";
 import { formatDuration, formatTime } from "@/lib/format";
 import type { ScanEventsResponse, ScanFindingsResponse, ScanRecord } from "@/types";
 
@@ -64,7 +64,7 @@ export function ScansPage({ scans }: { scans: ScanRecord[] }) {
       />
 
       <Workspace>
-        <WorkspacePane>
+        <WorkspaceSidebar>
           <EntityList
             title={`${scans.length} scans`}
             description="Search by target, runtime, mode, depth, or status."
@@ -95,36 +95,36 @@ export function ScansPage({ scans }: { scans: ScanRecord[] }) {
               ))
             )}
           </EntityList>
-        </WorkspacePane>
+        </WorkspaceSidebar>
 
         {!selectedScanId ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <EmptyState
               title="No scan selected"
               body="Choose a scan from the run history to inspect details."
             />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : eventsQuery.isLoading || findingsQuery.isLoading ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <LoadingState label="Scan detail" />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : eventsQuery.error ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <ErrorState error={eventsQuery.error} />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : findingsQuery.error ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <ErrorState error={findingsQuery.error} />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : eventsQuery.data && findingsQuery.data ? (
           <ScanDetail events={eventsQuery.data} findings={findingsQuery.data} />
         ) : (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <EmptyState
               title="Scan unavailable"
               body="The selected scan could not be loaded from the local database."
             />
-          </WorkspacePane>
+          </WorkspaceMain>
         )}
       </Workspace>
     </div>
@@ -142,7 +142,7 @@ function ScanDetail({
 
   return (
     <>
-      <WorkspacePane className="space-y-4">
+      <WorkspaceMain className="space-y-4">
         <InspectorPane
           eyebrow="Run detail"
           title={scan.target}
@@ -188,9 +188,9 @@ function ScanDetail({
 
           <EventTimeline events={events.events} />
         </InspectorPane>
-      </WorkspacePane>
+      </WorkspaceMain>
 
-      <WorkspaceSecondaryPane className="space-y-4">
+      <WorkspaceAside className="space-y-4">
         <InspectorPane
           eyebrow="Secondary"
           title="Run metadata"
@@ -247,7 +247,7 @@ function ScanDetail({
             )}
           </CardContent>
         </Card>
-      </WorkspaceSecondaryPane>
+      </WorkspaceAside>
     </>
   );
 }

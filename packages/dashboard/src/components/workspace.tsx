@@ -15,7 +15,7 @@ export function Workspace({
   );
 }
 
-export function WorkspacePane({
+export function WorkspaceSidebar({
   children,
   className,
 }: {
@@ -25,7 +25,19 @@ export function WorkspacePane({
   return <div className={cn("min-w-0", className)}>{children}</div>;
 }
 
-export function WorkspaceSecondaryPane({
+export function WorkspaceMain({
+  children,
+  className,
+  span = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  span?: boolean;
+}) {
+  return <div className={cn("min-w-0", span && "xl:col-span-2", className)}>{children}</div>;
+}
+
+export function WorkspaceAside({
   children,
   className,
 }: {
@@ -34,3 +46,7 @@ export function WorkspaceSecondaryPane({
 }) {
   return <div className={cn("min-w-0 xl:sticky xl:top-[5.25rem] xl:self-start", className)}>{children}</div>;
 }
+
+// Backwards-compatible aliases while pages are being normalized.
+export const WorkspacePane = WorkspaceMain;
+export const WorkspaceSecondaryPane = WorkspaceAside;

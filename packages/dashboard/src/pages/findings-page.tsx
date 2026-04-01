@@ -14,7 +14,7 @@ import { Card, CardContent, CardDescription, CardEmpty, CardEyebrow, CardHeader,
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Workspace, WorkspacePane, WorkspaceSecondaryPane } from "@/components/workspace";
+import { Workspace, WorkspaceAside, WorkspaceMain, WorkspaceSidebar } from "@/components/workspace";
 import { formatTime } from "@/lib/format";
 import type { DashboardResponse, FindingFamilyResponse } from "@/types";
 
@@ -81,7 +81,7 @@ export function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
       />
 
       <Workspace>
-        <WorkspacePane>
+        <WorkspaceSidebar>
           <EntityList
             title={`${dashboard.groups.length} grouped findings`}
             description="Search by title, severity, category, or fingerprint."
@@ -112,23 +112,23 @@ export function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
               ))
             )}
           </EntityList>
-        </WorkspacePane>
+        </WorkspaceSidebar>
 
         {!selectedFingerprint ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <EmptyState
               title="No finding family selected"
               body="Choose a family from the inbox to inspect evidence."
             />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : familyQuery.isLoading ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <LoadingState label="Finding family" />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : familyQuery.error ? (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <ErrorState error={familyQuery.error} />
-          </WorkspacePane>
+          </WorkspaceMain>
         ) : familyQuery.data ? (
           <FindingFamilyDetail
             data={familyQuery.data}
@@ -138,12 +138,12 @@ export function FindingsPage({ dashboard }: { dashboard: DashboardResponse }) {
             }
           />
         ) : (
-          <WorkspacePane className="xl:col-span-2">
+          <WorkspaceMain span>
             <EmptyState
               title="Finding family unavailable"
               body="The selected family could not be loaded from the local database."
             />
-          </WorkspacePane>
+          </WorkspaceMain>
         )}
       </Workspace>
     </div>
@@ -167,7 +167,7 @@ function FindingFamilyDetail({
 
   return (
     <>
-      <WorkspacePane>
+      <WorkspaceMain>
         <InspectorPane
           eyebrow="Evidence"
           title={data.latest.title}
@@ -185,9 +185,9 @@ function FindingFamilyDetail({
             analysis={data.latest.evidenceAnalysis}
           />
         </InspectorPane>
-      </WorkspacePane>
+      </WorkspaceMain>
 
-      <WorkspaceSecondaryPane className="space-y-4">
+      <WorkspaceAside className="space-y-4">
         <InspectorPane
           eyebrow="Inspector"
           title="Family posture"
@@ -267,7 +267,7 @@ function FindingFamilyDetail({
             </Table>
           </CardContent>
         </Card>
-      </WorkspaceSecondaryPane>
+      </WorkspaceAside>
     </>
   );
 }
