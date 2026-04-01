@@ -18,7 +18,7 @@ export function BrandMark({
       <img
         alt="pwnkit"
         src={imageUrl}
-        className={cn("size-9 rounded-md bg-black object-cover shadow-[0_6px_18px_rgba(0,0,0,0.26)]", className)}
+        className={cn("size-9 rounded-md object-cover shadow-[0_6px_18px_rgba(0,0,0,0.22)]", className)}
       />
     );
   }
@@ -28,7 +28,7 @@ export function BrandMark({
       <img
         alt="pwnkit"
         src={imageUrl}
-        className="size-10 rounded-md bg-black object-cover shadow-[0_8px_20px_rgba(0,0,0,0.3)]"
+        className="size-10 rounded-md object-cover shadow-[0_8px_20px_rgba(0,0,0,0.26)]"
       />
       <div className="space-y-0.5">
         <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--accent)]">

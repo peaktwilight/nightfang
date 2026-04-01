@@ -26,7 +26,7 @@ export function TableRow({ className, ...props }: HTMLAttributes<HTMLTableRowEle
   return (
     <tr
       className={cn(
-        "transition-colors hover:bg-white/[0.03] data-[state=selected]:bg-[var(--accent)]",
+        "transition-colors hover:bg-[var(--accent-soft)] data-[state=selected]:bg-[var(--accent-soft)]",
         className,
       )}
       {...props}

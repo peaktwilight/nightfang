@@ -72,10 +72,10 @@ export function SidebarMenuButton({
   return (
     <Comp
       className={cn(
-        "flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors",
+        "flex w-full items-start gap-3 rounded-md px-3 py-2 text-left text-[13px] font-medium transition-colors",
         isActive
-          ? "bg-[var(--danger-soft)] text-white"
-          : "text-[var(--muted)] hover:bg-white/[0.04] hover:text-white",
+          ? "bg-[var(--accent-soft)] text-[var(--foreground)]"
+          : "text-[color:rgba(235,242,247,0.8)] hover:bg-[var(--accent-soft)] hover:text-[var(--foreground)]",
         className,
       )}
       {...props}

@@ -86,7 +86,7 @@ export function CommandItem({
   return (
     <CommandPrimitive.Item
       className={cn(
-        "relative flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-3 text-sm outline-none transition data-[selected=true]:bg-[var(--danger-soft)] data-[selected=true]:text-white",
+        "relative flex cursor-pointer items-center justify-between gap-3 rounded-md px-3 py-3 text-sm outline-none transition hover:bg-[var(--accent-soft)] data-[selected=true]:bg-[var(--accent-soft)] data-[selected=true]:text-white",
         className,
       )}
       {...props}

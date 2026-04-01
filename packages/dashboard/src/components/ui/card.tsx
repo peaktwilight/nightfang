@@ -43,15 +43,15 @@ export function CardEyebrow({ className, ...props }: HTMLAttributes<HTMLDivEleme
 }
 
 const cardRowVariants = cva(
-  "rounded-md border border-[var(--border)] bg-[var(--secondary)] px-4 py-3 text-sm transition-colors",
+  "rounded-md bg-[var(--secondary)] px-4 py-3 text-sm transition-colors",
   {
     variants: {
       interactive: {
-        true: "hover:border-[var(--border-strong)] hover:bg-white/[0.05]",
+        true: "hover:bg-[var(--accent-soft)]",
         false: "",
       },
       selected: {
-        true: "border-[var(--accent)]/35 bg-[var(--danger-soft)] shadow-[0_0_0_1px_rgba(220,38,38,0.16)]",
+        true: "bg-[var(--accent-soft)] shadow-[inset_2px_0_0_var(--accent)]",
         false: "",
       },
     },
@@ -80,11 +80,11 @@ export function CardList({ className, ...props }: HTMLAttributes<HTMLDivElement>
 const cardListItemVariants = cva("px-4 py-3 text-sm transition-colors", {
   variants: {
     interactive: {
-      true: "hover:bg-white/[0.03]",
+      true: "hover:bg-[var(--accent-soft)] hover:text-[var(--foreground)]",
       false: "",
     },
     selected: {
-      true: "bg-[var(--danger-soft)] shadow-[inset_2px_0_0_var(--accent)]",
+      true: "bg-[var(--accent-soft)] shadow-[inset_2px_0_0_var(--accent)]",
       false: "",
     },
   },
@@ -109,7 +109,7 @@ export function CardEmpty({ className, ...props }: HTMLAttributes<HTMLDivElement
   return (
     <div
       className={cn(
-        "rounded-md border border-dashed border-[var(--border)] px-4 py-10 text-center text-sm text-[var(--muted)]",
+        "rounded-md border border-dashed border-[var(--border)] bg-[var(--secondary)]/40 px-4 py-10 text-center text-sm text-[var(--muted)]",
         className,
       )}
       {...props}

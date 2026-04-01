@@ -179,7 +179,7 @@ export function AppShell({
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
-                <div className="hidden items-center gap-2 rounded-md border border-[var(--border)] bg-[var(--panel-soft)] px-3 py-2 text-sm text-[var(--muted)] lg:flex">
+                <div className="hidden items-center gap-2 px-1 text-sm text-[var(--muted)] lg:flex">
                   <Activity className="size-4 text-[var(--danger)]" />
                   {dashboard?.groups.length ?? 0} families tracked
                 </div>
@@ -192,11 +192,6 @@ export function AppShell({
           </header>
 
           <main className="mx-auto flex max-w-[1800px] flex-col gap-5 px-4 py-5 sm:px-6 xl:px-6">
-            <nav className="inline-flex w-fit max-w-full gap-1 overflow-x-auto rounded-md border border-[var(--border)] bg-[var(--panel-soft)] p-1 xl:hidden">
-              <MobileShellNav to="/dashboard" label="Overview" />
-              <MobileShellNav to="/findings" label="Findings" />
-              <MobileShellNav to="/scans" label="Scans" />
-            </nav>
             {children}
           </main>
         </SidebarInset>
@@ -224,7 +219,9 @@ function ShellNavLink({
             <Icon className="mt-0.5 size-4" />
             <div className="min-w-0">
               <div className="font-medium">{label}</div>
-              <div className="text-xs text-[var(--muted-foreground)]">{meta}</div>
+              <div className={isActive ? "text-xs text-[color:rgba(235,242,247,0.72)]" : "text-xs text-[var(--muted-foreground)]"}>
+                {meta}
+              </div>
             </div>
           </div>
         </SidebarMenuButton>
@@ -235,25 +232,9 @@ function ShellNavLink({
 
 function ContextStat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between px-3 py-2.5 text-sm">
+    <div className="flex items-center justify-between px-3 py-2 text-sm">
       <span className="text-sm text-[var(--muted)]">{label}</span>
       <span className="text-base font-semibold text-white">{value}</span>
     </div>
-  );
-}
-
-function MobileShellNav({ to, label }: { to: string; label: string }) {
-  return (
-    <NavLink to={to}>
-      {({ isActive }) => (
-        <Button
-          variant={isActive ? "accent" : "ghost"}
-          size="sm"
-          className="h-8 whitespace-nowrap border-0"
-        >
-          {label}
-        </Button>
-      )}
-    </NavLink>
   );
 }
