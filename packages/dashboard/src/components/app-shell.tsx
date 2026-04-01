@@ -9,7 +9,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { CardRow } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -74,23 +73,7 @@ export function AppShell({
 
   return (
     <div className="min-h-screen bg-transparent text-[var(--foreground)]">
-      <div className="xl:grid xl:min-h-screen xl:grid-cols-[4.5rem_15rem_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[var(--border)] bg-[rgba(6,8,12,0.84)] xl:flex xl:flex-col xl:items-center xl:py-5">
-          <div className="flex h-full flex-col items-center gap-4">
-            <BrandMark compact />
-            <nav className="flex flex-col gap-2">
-              <RailNavLink to="/dashboard" icon={LayoutDashboard} label="Overview" />
-              <RailNavLink to="/findings" icon={ShieldAlert} label="Findings" />
-              <RailNavLink to="/scans" icon={Radar} label="Scans" />
-            </nav>
-            <div className="mt-auto">
-              <Button variant="ghost" size="icon" onClick={onOpenPalette} aria-label="Open launchpad">
-                <Command className="size-4" />
-              </Button>
-            </div>
-          </div>
-        </aside>
-
+      <div className="xl:grid xl:min-h-screen xl:grid-cols-[18rem_minmax(0,1fr)]">
         <Sidebar className="hidden xl:flex">
           <SidebarHeader className="space-y-2">
             <BrandMark animated />
@@ -120,7 +103,7 @@ export function AppShell({
 
             <SidebarGroup>
               <SidebarGroupLabel>Situation</SidebarGroupLabel>
-              <SidebarGroupContent className="space-y-2">
+              <SidebarGroupContent className="space-y-1">
                 <ContextStat label="New families" value={String(newFamilies)} />
                 <ContextStat label="Active runs" value={String(activeRuns)} />
               </SidebarGroupContent>
@@ -148,6 +131,9 @@ export function AppShell({
                     </SheetTrigger>
                     <SheetContent side="left" className="w-[18rem] p-0">
                       <SheetHeader className="border-b border-[var(--border)] p-4 pr-12">
+                        <div className="mb-2">
+                          <BrandMark />
+                        </div>
                         <SheetTitle className="text-left text-base font-semibold text-white">Operator shell</SheetTitle>
                         <SheetDescription className="text-left text-sm text-[var(--muted)]">
                           Navigation, triage context, and scan state.
@@ -247,39 +233,12 @@ function ShellNavLink({
   );
 }
 
-function RailNavLink({
-  to,
-  icon: Icon,
-  label,
-}: {
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-}) {
-  return (
-    <NavLink to={to} aria-label={label} title={label}>
-      {({ isActive }) => (
-        <div
-          className={[
-            "flex size-10 items-center justify-center rounded-md border transition",
-            isActive
-              ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-              : "border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--panel-soft)] hover:text-white",
-          ].join(" ")}
-        >
-          <Icon className="size-4" />
-        </div>
-      )}
-    </NavLink>
-  );
-}
-
 function ContextStat({ label, value }: { label: string; value: string }) {
   return (
-    <CardRow className="flex items-center justify-between bg-transparent px-3 py-2.5">
+    <div className="flex items-center justify-between px-3 py-2.5 text-sm">
       <span className="text-sm text-[var(--muted)]">{label}</span>
-      <span className="text-lg font-semibold text-white">{value}</span>
-    </CardRow>
+      <span className="text-base font-semibold text-white">{value}</span>
+    </div>
   );
 }
 

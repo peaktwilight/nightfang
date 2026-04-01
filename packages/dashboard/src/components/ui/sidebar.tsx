@@ -23,7 +23,7 @@ export function SidebarHeader({ className, ...props }: HTMLAttributes<HTMLDivEle
 }
 
 export function SidebarContent({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex min-h-0 flex-1 flex-col gap-4 p-4", className)} {...props} />;
+  return <div className={cn("flex min-h-0 flex-1 flex-col gap-6 p-4", className)} {...props} />;
 }
 
 export function SidebarFooter({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
@@ -72,10 +72,10 @@ export function SidebarMenuButton({
   return (
     <Comp
       className={cn(
-        "flex w-full items-start gap-3 rounded-md border px-3 py-2.5 text-left text-sm transition-colors",
+        "flex w-full items-start gap-3 rounded-md px-3 py-2.5 text-left text-sm transition-colors",
         isActive
-          ? "border-[var(--accent)]/35 bg-[var(--danger-soft)] text-white"
-          : "border-transparent text-[var(--muted)] hover:border-[var(--border)] hover:bg-[var(--panel-soft)] hover:text-white",
+          ? "bg-[var(--danger-soft)] text-white"
+          : "text-[var(--muted)] hover:bg-white/[0.04] hover:text-white",
         className,
       )}
       {...props}
