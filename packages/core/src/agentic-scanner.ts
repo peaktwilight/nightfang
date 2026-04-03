@@ -6,7 +6,7 @@ import { detectAvailableRuntimes } from "./runtime/registry.js";
 // DB lazy-loaded to avoid native module issues
 import { runAgentLoop } from "./agent/loop.js";
 import { runNativeAgentLoop } from "./agent/native-loop.js";
-import { getToolsForRole } from "./agent/tools.js";
+import { getToolsForRole, TOOL_DEFINITIONS } from "./agent/tools.js";
 import {
   discoveryPrompt,
   attackPrompt,
@@ -14,6 +14,7 @@ import {
   reportPrompt,
   webPentestDiscoveryPrompt,
   webPentestAttackPrompt,
+  shellPentestPrompt,
 } from "./agent/prompts.js";
 import type { ScanEvent, ScanListener } from "./scanner.js";
 import type { NativeRuntime } from "./runtime/types.js";
@@ -619,20 +620,25 @@ async function runNativeAttack(
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
 
-  // For web targets, build a discovery summary from targetInfo to feed the attack prompt
+  // Shell-first for web targets: minimal tool set (shell_exec + save_finding + done)
+  // The agent uses curl/python/etc directly — proven to outperform structured tools
+  // on XBOW benchmarks (4/4 challenges cracked vs 0/4 with structured tools).
   const systemPrompt = isWeb
-    ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo))
+    ? shellPentestPrompt(config.target)
     : attackPrompt(config.target, targetInfo, categories);
-  const tools = isWeb
-    ? getToolsForRole("attack", { webMode: true })
-    : getToolsForRole("attack");
+
+  const shellTools: import("./agent/types.js").ToolDefinition[] = ["shell_exec", "save_finding", "done"]
+    .map((n) => TOOL_DEFINITIONS[n])
+    .filter((t): t is import("./agent/types.js").ToolDefinition => t !== undefined);
+
+  const tools = isWeb ? shellTools : getToolsForRole("attack");
 
   const state = await runNativeAgentLoop({
     config: {
       role: "attack",
       systemPrompt,
       tools,
-      maxTurns: isWeb ? Math.max(maxTurns, 25) : maxTurns,
+      maxTurns: isWeb ? Math.max(maxTurns, 15) : maxTurns,
       target: config.target,
       scanId,
       sessionId: db.getSession(scanId, "attack")?.id,
