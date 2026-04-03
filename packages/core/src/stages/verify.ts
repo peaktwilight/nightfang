@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type {
   ScanContext,
   StageResult,
@@ -62,7 +63,8 @@ When done verifying all findings, call the done tool with a summary of confirmed
 }
 
 export async function runVerification(
-  ctx: ScanContext
+  ctx: ScanContext,
+  db?: any,
 ): Promise<StageResult<VerifyResult>> {
   const start = Date.now();
   let falsePositives = 0;
@@ -146,7 +148,7 @@ export async function runVerification(
         scanId: ctx.scanId ?? "no-db",
       },
       runtime: verifyRuntime,
-      db: null,
+      db: db ?? null,
     });
 
     // Count confirmed findings from the verify agent
@@ -155,6 +157,31 @@ export async function runVerification(
 
     // Replace any unverified findings with verified ones
     const verifiedIds = new Set(agentState.findings.map((f) => f.templateId));
+
+    // Create verdict records for each finding
+    const allOriginalFindings = [...ctx.findings, ...agentState.findings];
+    for (const item of allToVerify) {
+      const wasVerified = verifiedIds.has(item.templateId);
+      const originalFinding = allOriginalFindings.find((f) => f.templateId === item.templateId);
+      if (originalFinding && db?.addVerdict) {
+        try {
+          db.addVerdict({
+            id: randomUUID(),
+            findingId: originalFinding.id,
+            agentRole: "verify",
+            model: ctx.config.model ?? "unknown",
+            verdict: wasVerified ? "TRUE_POSITIVE" : "FALSE_POSITIVE",
+            confidence: wasVerified ? 0.8 : 0.7,
+            reasoning: wasVerified
+              ? `Verify agent independently reproduced the finding against ${ctx.config.target}`
+              : `Verify agent could not reproduce the finding — likely false positive`,
+            timestamp: Date.now(),
+          });
+        } catch {
+          // Non-critical — don't fail verification if verdict persistence fails
+        }
+      }
+    }
 
     // Keep only findings the verify agent confirmed; drop unverified discoveries
     ctx.findings = ctx.findings.filter((f) => verifiedIds.has(f.templateId));

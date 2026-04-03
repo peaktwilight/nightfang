@@ -144,7 +144,7 @@ export async function scan(
 
   // Stage 3: Verify
   emit({ type: "stage:start", stage: "verify", message: "Verifying findings..." });
-  const verifyResult = await runVerification(ctx);
+  const verifyResult = await runVerification(ctx, db);
   emit({
     type: "stage:end",
     stage: "verify",

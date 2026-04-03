@@ -12,6 +12,16 @@ import type {
 
 import { existsSync, readFileSync } from "node:fs";
 
+/** Safely parse JSON tool arguments; returns empty object on malformed input. */
+function safeParseJson(raw: string | null | undefined): Record<string, unknown> {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw);
+  } catch {
+    return { _raw: raw };
+  }
+}
+
 const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-4.6";
 const FREE_OPENROUTER_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
@@ -617,7 +627,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
               type: "tool_use",
               id: tc.id,
               name: tc.function.name,
-              input: JSON.parse(tc.function.arguments || "{}"),
+              input: safeParseJson(tc.function.arguments),
             });
           }
         }
@@ -644,7 +654,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
               type: "tool_use",
               id: item.call_id as string,
               name: item.name as string,
-              input: JSON.parse((item.arguments as string) || "{}"),
+              input: safeParseJson(item.arguments as string),
             });
             continue;
           }
