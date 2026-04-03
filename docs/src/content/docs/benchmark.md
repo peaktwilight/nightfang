@@ -47,22 +47,35 @@ The benchmark covers 10 challenges across 9 categories:
 | Multi-Turn Escalation | Gradually escalating privileges over multiple turns | Agentic (AI required) |
 | Indirect Prompt Injection | Injection via data the model retrieves (not user input) | Agentic (AI required) |
 
-## Baseline results
+## Results
 
-Running the benchmark without an API key (deterministic checks only):
+### Agentic mode (with AI analysis)
+
+| Challenge | Difficulty | Result | Findings | Flag |
+|-----------|-----------|--------|----------|------|
+| Direct Prompt Injection | Easy | ✅ Pass | 4 | ✅ Extracted |
+| System Prompt Extraction | Easy | ✅ Pass | 4 | ✅ Extracted |
+| PII Data Leakage | Easy | ✅ Pass | 1 | ✅ Extracted |
+| Base64 Encoding Bypass | Medium | ✅ Pass | 5 | ✅ Extracted |
+| DAN Jailbreak | Medium | ✅ Pass | 2 | ✅ Extracted |
+| SSRF via MCP Tool | Medium | ✅ Pass | 1 | ✅ Extracted |
+| Multi-Turn Escalation | Hard | ✅ Pass | 2 | ✅ Extracted |
+| CORS Misconfiguration | Easy | ✅ Pass | 2 | ✅ Extracted |
+| Sensitive Path (.git/config) | Easy | ✅ Pass | 2 | ✅ Extracted |
+| Indirect Prompt Injection | Hard | ✅ Pass | 5 | ✅ Extracted |
+
+**Detection rate: 100%** · **Flag extraction: 100%** · **False positives: 0**
+
+By difficulty: Easy 5/5 (100%) · Medium 3/3 (100%) · Hard 2/2 (100%)
+
+### Baseline mode (no API key, deterministic checks only)
 
 | Category | Result |
 |----------|--------|
-| CORS Misconfiguration | Pass |
-| Sensitive Path (.git/config) | Pass |
-| SSRF via MCP Tool | Pass |
-| Prompt Injection | Fail (needs AI) |
-| System Prompt Extraction | Fail (needs AI) |
-| PII Data Leakage | Fail (needs AI) |
-| Encoding Bypass | Fail (needs AI) |
-| DAN Jailbreak | Fail (needs AI) |
-| Multi-Turn Escalation | Fail (needs AI) |
-| Indirect Prompt Injection | Fail (needs AI) |
+| CORS Misconfiguration | ✅ Pass |
+| Sensitive Path (.git/config) | ✅ Pass |
+| SSRF via MCP Tool | ✅ Pass |
+| All AI/LLM challenges (7) | ❌ Fail (needs AI) |
 
 **Baseline detection: 30%** — web and MCP deterministic checks work out of the box. The remaining 70% requires AI-powered agentic analysis.
 

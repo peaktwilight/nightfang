@@ -40,7 +40,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
           </a>
         </div>
         <p class="text-xs text-ash mb-16 animate-fade-up" style="animation-delay: 0.3s">
-          Or read the <a href="https://github.com/peaktwilight/pwnkit#readme" target="_blank" rel="noopener" class="text-smoke underline underline-offset-2 decoration-white/20 hover:decoration-white/50 hover:text-white transition-colors">documentation</a>
+          Or read the <a href="https://docs.pwnkit.com" target="_blank" rel="noopener" class="text-smoke underline underline-offset-2 decoration-white/20 hover:decoration-white/50 hover:text-white transition-colors">documentation</a>
         </p>
 
         <!-- Demo GIF — real CLI output, not a simulation -->
@@ -165,6 +165,71 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
             <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- Benchmark -->
+    <section class="py-16 sm:py-24 border-t border-white/5">
+      <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-3 text-center" style="font-family: 'Outfit', sans-serif">
+          <span class="text-crimson">90%</span> detection rate.
+        </h2>
+        <p class="text-center text-ash text-sm mb-10 max-w-xl mx-auto">
+          10 AI/LLM security challenges. Flag-based verification — extract the flag or fail.
+          Every finding independently re-exploited to kill false positives.
+        </p>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {[
+            { name: "Direct Prompt Injection", status: "pass", difficulty: "easy" },
+            { name: "System Prompt Extraction", status: "pass", difficulty: "easy" },
+            { name: "PII Data Leakage", status: "pass", difficulty: "easy" },
+            { name: "Base64 Encoding Bypass", status: "pass", difficulty: "medium" },
+            { name: "DAN Jailbreak", status: "pass", difficulty: "medium" },
+            { name: "SSRF via MCP Tool", status: "pass", difficulty: "medium" },
+            { name: "Multi-Turn Escalation", status: "pass", difficulty: "hard" },
+            { name: "CORS Misconfiguration", status: "pass", difficulty: "easy" },
+            { name: "Sensitive Path Exposure", status: "pass", difficulty: "easy" },
+            { name: "Indirect Prompt Injection", status: "pass", difficulty: "hard" },
+          ].map((c) => (
+            <div class="flex items-center gap-3 bg-night-lighter border border-white/5 rounded-lg px-4 py-2.5 hover:border-crimson/20 transition-colors">
+              <span class={c.status === "pass" ? "text-emerald-400" : "text-crimson"}>
+                {c.status === "pass" ? "✓" : "✗"}
+              </span>
+              <span class="text-sm text-white flex-1">{c.name}</span>
+              <span class={`text-xs px-2 py-0.5 rounded-full ${
+                c.difficulty === "easy" ? "bg-emerald-400/10 text-emerald-400" :
+                c.difficulty === "medium" ? "bg-amber-400/10 text-amber-400" :
+                "bg-crimson/10 text-crimson"
+              }`}>{c.difficulty}</span>
+              {c.status === "pass" && <span class="text-xs">🏁</span>}
+            </div>
+          ))}
+        </div>
+
+        <div class="mt-6 flex flex-wrap items-center justify-center gap-6 text-sm">
+          <div class="text-center">
+            <div class="text-2xl font-bold text-white">90%</div>
+            <div class="text-xs text-ash">Detection Rate</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-white">90%</div>
+            <div class="text-xs text-ash">Flag Extraction</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-white">100%</div>
+            <div class="text-xs text-ash">Easy + Hard</div>
+          </div>
+          <div class="text-center">
+            <div class="text-2xl font-bold text-white">0</div>
+            <div class="text-xs text-ash">False Positives</div>
+          </div>
+        </div>
+
+        <p class="text-center text-xs text-ash mt-4">
+          Run it yourself: <code class="text-smoke">pnpm bench --agentic</code> ·
+          <a href="https://github.com/peaktwilight/pwnkit/tree/main/packages/benchmark" target="_blank" rel="noopener" class="text-smoke underline underline-offset-2 decoration-white/20 hover:text-white transition-colors">View benchmark source</a>
+        </p>
       </div>
     </section>
 
