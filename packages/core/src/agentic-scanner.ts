@@ -12,6 +12,8 @@ import {
   attackPrompt,
   verifyPrompt,
   reportPrompt,
+  webPentestDiscoveryPrompt,
+  webPentestAttackPrompt,
 } from "./agent/prompts.js";
 import type { ScanEvent, ScanListener } from "./scanner.js";
 import type { NativeRuntime } from "./runtime/types.js";
@@ -573,12 +575,20 @@ async function runNativeDiscovery(
   scanId: string,
   emit: ScanListener,
 ): Promise<AgentOutput> {
+  const isWeb = config.mode === "web";
+  const systemPrompt = isWeb
+    ? webPentestDiscoveryPrompt(config.target)
+    : discoveryPrompt(config.target);
+  const tools = isWeb
+    ? getToolsForRole("discovery", { webMode: true })
+    : getToolsForRole("discovery");
+
   const state = await runNativeAgentLoop({
     config: {
       role: "discovery",
-      systemPrompt: discoveryPrompt(config.target),
-      tools: getToolsForRole("discovery"),
-      maxTurns: 8,
+      systemPrompt,
+      tools,
+      maxTurns: isWeb ? 12 : 8,
       target: config.target,
       scanId,
       sessionId: db.getSession(scanId, "discovery")?.id,
@@ -607,12 +617,22 @@ async function runNativeAttack(
   maxTurns: number,
   emit: ScanListener,
 ): Promise<AgentOutput> {
+  const isWeb = config.mode === "web";
+
+  // For web targets, build a discovery summary from targetInfo to feed the attack prompt
+  const systemPrompt = isWeb
+    ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo))
+    : attackPrompt(config.target, targetInfo, categories);
+  const tools = isWeb
+    ? getToolsForRole("attack", { webMode: true })
+    : getToolsForRole("attack");
+
   const state = await runNativeAgentLoop({
     config: {
       role: "attack",
-      systemPrompt: attackPrompt(config.target, targetInfo, categories),
-      tools: getToolsForRole("attack"),
-      maxTurns,
+      systemPrompt,
+      tools,
+      maxTurns: isWeb ? Math.max(maxTurns, 25) : maxTurns,
       target: config.target,
       scanId,
       sessionId: db.getSession(scanId, "attack")?.id,
@@ -637,6 +657,23 @@ async function runNativeAttack(
     summary: state.summary,
     turnCount: state.turnCount,
   };
+}
+
+/** Format targetInfo from the discovery stage into a human-readable summary for the web attack prompt. */
+function formatWebDiscoveryInfo(targetInfo: Partial<import("@pwnkit/shared").TargetInfo>): string {
+  const parts: string[] = [];
+  if (targetInfo.type) parts.push(`Type: ${targetInfo.type}`);
+  if (targetInfo.model) parts.push(`Server/Framework: ${targetInfo.model}`);
+  if (targetInfo.endpoints?.length) {
+    parts.push(`Discovered endpoints:\n${targetInfo.endpoints.map((e) => `  - ${e}`).join("\n")}`);
+  }
+  if (targetInfo.detectedFeatures?.length) {
+    parts.push(`Features: ${targetInfo.detectedFeatures.join(", ")}`);
+  }
+  if (targetInfo.systemPrompt) {
+    parts.push(`Additional info: ${targetInfo.systemPrompt.slice(0, 1000)}`);
+  }
+  return parts.length > 0 ? parts.join("\n") : "No prior discovery information available. Start by crawling the target.";
 }
 
 async function runNativeVerify(
@@ -672,12 +709,20 @@ async function runLegacyDiscovery(
   emit: ScanListener,
   dbPath?: string,
 ): Promise<AgentOutput> {
+  const isWeb = config.mode === "web";
+  const systemPrompt = isWeb
+    ? webPentestDiscoveryPrompt(config.target)
+    : discoveryPrompt(config.target);
+  const tools = isWeb
+    ? getToolsForRole("discovery", { webMode: true })
+    : getToolsForRole("discovery");
+
   const state = await runAgentLoop({
     config: {
       role: "discovery",
-      systemPrompt: discoveryPrompt(config.target),
-      tools: getToolsForRole("discovery"),
-      maxTurns: 8,
+      systemPrompt,
+      tools,
+      maxTurns: isWeb ? 12 : 8,
       target: config.target,
       scanId,
       sessionId: db?.getSession(scanId, "discovery")?.id,
@@ -713,12 +758,20 @@ async function runLegacyAttack(
   emit: ScanListener,
   dbPath?: string,
 ): Promise<AgentOutput> {
+  const isWeb = config.mode === "web";
+  const systemPrompt = isWeb
+    ? webPentestAttackPrompt(config.target, formatWebDiscoveryInfo(targetInfo))
+    : attackPrompt(config.target, targetInfo, categories);
+  const tools = isWeb
+    ? getToolsForRole("attack", { webMode: true })
+    : getToolsForRole("attack");
+
   const state = await runAgentLoop({
     config: {
       role: "attack",
-      systemPrompt: attackPrompt(config.target, targetInfo, categories),
-      tools: getToolsForRole("attack"),
-      maxTurns,
+      systemPrompt,
+      tools,
+      maxTurns: isWeb ? Math.max(maxTurns, 25) : maxTurns,
       target: config.target,
       scanId,
       sessionId: db?.getSession(scanId, "attack")?.id,

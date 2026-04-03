@@ -162,6 +162,43 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     },
   },
 
+  crawl: {
+    name: "crawl",
+    description:
+      "Crawl a web page: fetch HTML, extract links, forms (with inputs), script sources, and cookies. Only follows same-origin links. Use this to map the attack surface of a web application.",
+    parameters: {
+      url: { type: "string", description: "URL to crawl" },
+      depth: {
+        type: "number",
+        description: "Crawl depth (default 1, max 3). Depth 1 fetches only the given URL. Depth 2 also fetches same-origin links found on that page, etc.",
+      },
+    },
+    required: ["url"],
+  },
+
+  submit_form: {
+    name: "submit_form",
+    description:
+      "Submit an HTML form. Sends application/x-www-form-urlencoded data (not JSON). Use this after crawl discovers forms on the target.",
+    parameters: {
+      url: { type: "string", description: "Form action URL" },
+      method: {
+        type: "string",
+        description: "HTTP method (default POST)",
+        enum: ["GET", "POST"],
+      },
+      fields: {
+        type: "object",
+        description: "Form field key-value pairs to submit",
+      },
+      headers: {
+        type: "object",
+        description: "Additional headers (e.g. Cookie for session persistence)",
+      },
+    },
+    required: ["url", "fields"],
+  },
+
   done: {
     name: "done",
     description:
@@ -416,6 +453,10 @@ export class ToolExecutor {
           return this.readFile(call.arguments);
         case "run_command":
           return this.runCommand(call.arguments);
+        case "crawl":
+          return await this.crawl(call.arguments);
+        case "submit_form":
+          return await this.submitForm(call.arguments);
         case "update_target":
           return this.updateTarget(call.arguments);
         case "done":
@@ -500,6 +541,263 @@ export class ToolExecutor {
       });
     } catch {
       // Non-critical — don't fail the tool call if artifact persistence fails
+    }
+  }
+
+  // ── Crawl helpers ──
+
+  private parseHtml(html: string, baseUrl: string): {
+    links: string[];
+    forms: Array<{ action: string; method: string; inputs: Array<{ name: string; type: string }> }>;
+    scripts: string[];
+  } {
+    const base = new URL(baseUrl);
+    const links: string[] = [];
+    const scripts: string[] = [];
+    const forms: Array<{ action: string; method: string; inputs: Array<{ name: string; type: string }> }> = [];
+
+    // Extract links
+    const hrefRe = /<a\b[^>]*\bhref\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = hrefRe.exec(html)) !== null) {
+      try {
+        const resolved = new URL(m[1], baseUrl);
+        if (resolved.hostname === base.hostname) {
+          links.push(resolved.toString());
+        }
+      } catch { /* skip malformed URLs */ }
+    }
+
+    // Extract script sources
+    const scriptRe = /<script\b[^>]*\bsrc\s*=\s*["']([^"']+)["'][^>]*>/gi;
+    while ((m = scriptRe.exec(html)) !== null) {
+      try {
+        scripts.push(new URL(m[1], baseUrl).toString());
+      } catch { /* skip */ }
+    }
+
+    // Extract forms with their inputs
+    const formRe = /<form\b([^>]*)>([\s\S]*?)<\/form>/gi;
+    while ((m = formRe.exec(html)) !== null) {
+      const attrs = m[1];
+      const body = m[2];
+
+      const actionMatch = /action\s*=\s*["']([^"']*)["']/i.exec(attrs);
+      const methodMatch = /method\s*=\s*["']([^"']*)["']/i.exec(attrs);
+
+      let action = baseUrl;
+      if (actionMatch) {
+        try { action = new URL(actionMatch[1], baseUrl).toString(); } catch { /* keep default */ }
+      }
+      const method = (methodMatch?.[1] ?? "GET").toUpperCase();
+
+      const inputs: Array<{ name: string; type: string }> = [];
+      const inputRe = /<(?:input|textarea|select)\b([^>]*)>/gi;
+      let im: RegExpExecArray | null;
+      while ((im = inputRe.exec(body)) !== null) {
+        const iattrs = im[1];
+        const nameMatch = /name\s*=\s*["']([^"']*)["']/i.exec(iattrs);
+        const typeMatch = /type\s*=\s*["']([^"']*)["']/i.exec(iattrs);
+        if (nameMatch) {
+          inputs.push({ name: nameMatch[1], type: typeMatch?.[1] ?? "text" });
+        }
+      }
+
+      forms.push({ action, method, inputs });
+    }
+
+    return { links: [...new Set(links)], forms, scripts: [...new Set(scripts)] };
+  }
+
+  private parseCookies(headers: Headers): string[] {
+    const cookies: string[] = [];
+    headers.forEach((value, key) => {
+      if (key.toLowerCase() === "set-cookie") {
+        cookies.push(value);
+      }
+    });
+    return cookies;
+  }
+
+  private async crawl(args: Record<string, unknown>): Promise<ToolResult> {
+    const startUrl = args.url as string;
+    const maxDepth = Math.min(Math.max((args.depth as number) ?? 1, 1), 3);
+
+    // Validate the URL scheme and resolve against target origin for relative URLs
+    let resolved: URL;
+    try {
+      resolved = new URL(startUrl, this.ctx.target);
+    } catch {
+      return { success: false, output: null, error: `Invalid URL: ${startUrl}` };
+    }
+
+    if (!["http:", "https:"].includes(resolved.protocol)) {
+      return { success: false, output: null, error: `Unsupported protocol: ${resolved.protocol}` };
+    }
+
+    const originHost = resolved.hostname;
+    const visited = new Set<string>();
+    const results: Array<{
+      url: string;
+      status: number;
+      links: string[];
+      forms: Array<{ action: string; method: string; inputs: Array<{ name: string; type: string }> }>;
+      scripts: string[];
+      cookies: string[];
+    }> = [];
+
+    const queue: Array<{ url: string; depth: number }> = [{ url: resolved.toString(), depth: 1 }];
+
+    while (queue.length > 0) {
+      const item = queue.shift()!;
+      const normalizedUrl = item.url.split("#")[0]; // strip fragment
+      if (visited.has(normalizedUrl)) continue;
+      visited.add(normalizedUrl);
+
+      // Same-origin check
+      let parsed: URL;
+      try {
+        parsed = new URL(normalizedUrl);
+      } catch { continue; }
+      if (parsed.hostname !== originHost) continue;
+
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10_000);
+
+      try {
+        const res = await fetch(normalizedUrl, {
+          method: "GET",
+          signal: controller.signal,
+          redirect: "follow",
+          headers: { "User-Agent": "pwnkit-crawler/1.0" },
+        });
+        clearTimeout(timer);
+
+        const contentType = res.headers.get("content-type") ?? "";
+        if (!contentType.includes("html") && !contentType.includes("text")) {
+          results.push({
+            url: normalizedUrl,
+            status: res.status,
+            links: [],
+            forms: [],
+            scripts: [],
+            cookies: this.parseCookies(res.headers),
+          });
+          continue;
+        }
+
+        const html = await res.text();
+        const { links, forms, scripts } = this.parseHtml(html.slice(0, 500_000), normalizedUrl);
+        const cookies = this.parseCookies(res.headers);
+
+        results.push({ url: normalizedUrl, status: res.status, links, forms, scripts, cookies });
+
+        // Enqueue discovered links for deeper crawling
+        if (item.depth < maxDepth) {
+          for (const link of links) {
+            queue.push({ url: link, depth: item.depth + 1 });
+          }
+        }
+      } catch (err) {
+        clearTimeout(timer);
+        const msg = err instanceof Error ? err.message : String(err);
+        results.push({
+          url: normalizedUrl,
+          status: 0,
+          links: [],
+          forms: [],
+          scripts: [],
+          cookies: [],
+        });
+        // Include the error inline so the agent sees partial results
+        (results[results.length - 1] as Record<string, unknown>).error = msg;
+      }
+    }
+
+    this.persistToolArtifact("crawl", {
+      startUrl: resolved.toString(),
+      depth: maxDepth,
+      pagesVisited: results.length,
+    });
+
+    return {
+      success: true,
+      output: {
+        pages: results,
+        totalPages: results.length,
+        totalLinks: results.reduce((n, p) => n + p.links.length, 0),
+        totalForms: results.reduce((n, p) => n + p.forms.length, 0),
+      },
+    };
+  }
+
+  private async submitForm(args: Record<string, unknown>): Promise<ToolResult> {
+    const rawUrl = args.url as string;
+    const method = ((args.method as string) ?? "POST").toUpperCase();
+    const fields = (args.fields as Record<string, string>) ?? {};
+    const extraHeaders = (args.headers as Record<string, string>) ?? {};
+
+    // Resolve URL relative to target
+    let resolved: URL;
+    try {
+      resolved = new URL(rawUrl, this.ctx.target);
+    } catch {
+      return { success: false, output: null, error: `Invalid URL: ${rawUrl}` };
+    }
+
+    if (!["http:", "https:"].includes(resolved.protocol)) {
+      return { success: false, output: null, error: `Unsupported protocol: ${resolved.protocol}` };
+    }
+
+    // Encode fields as application/x-www-form-urlencoded
+    const encoded = new URLSearchParams(fields).toString();
+
+    let fetchUrl = resolved.toString();
+    const fetchOpts: RequestInit = {
+      method,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...extraHeaders,
+      },
+      redirect: "manual",
+    };
+
+    if (method === "GET") {
+      // Append fields to query string
+      const withParams = new URL(fetchUrl);
+      for (const [k, v] of Object.entries(fields)) {
+        withParams.searchParams.set(k, v);
+      }
+      fetchUrl = withParams.toString();
+    } else {
+      fetchOpts.body = encoded;
+    }
+
+    const controller = new AbortController();
+    fetchOpts.signal = controller.signal;
+    const timer = setTimeout(() => controller.abort(), 10_000);
+
+    try {
+      const res = await fetch(fetchUrl, fetchOpts);
+      clearTimeout(timer);
+      const text = await res.text();
+
+      const output = {
+        status: res.status,
+        headers: Object.fromEntries(res.headers.entries()),
+        body: text.slice(0, 10_000),
+      };
+
+      this.persistToolArtifact("submit_form", {
+        request: { url: fetchUrl, method, fields },
+        response: { status: output.status, body: output.body.slice(0, 5_000) },
+      });
+
+      return { success: true, output };
+    } catch (err) {
+      clearTimeout(timer);
+      const msg = err instanceof Error ? err.message : String(err);
+      return { success: false, output: null, error: msg };
     }
   }
 
@@ -703,9 +1001,9 @@ export class ToolExecutor {
 
 // ── Helper: get tools for a specific agent role ──
 
-export function getToolsForRole(role: string, opts?: { hasScope?: boolean }): ToolDefinition[] {
+export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMode?: boolean }): ToolDefinition[] {
   const common = ["query_findings", "done"];
-  const networkTools = ["http_request", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const networkTools = ["http_request", "crawl", "submit_form", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
   const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {

