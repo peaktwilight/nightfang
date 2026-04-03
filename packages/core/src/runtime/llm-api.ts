@@ -10,12 +10,40 @@ import type {
   NativeContentBlock,
 } from "./types.js";
 
+import { existsSync, readFileSync } from "node:fs";
+
 const DEFAULT_ANTHROPIC_MODEL = "claude-sonnet-4-6";
 const DEFAULT_OPENROUTER_MODEL = "anthropic/claude-sonnet-4.6";
 const FREE_OPENROUTER_MODEL = "nvidia/nemotron-3-super-120b-a12b:free";
 const DEFAULT_OPENAI_MODEL = "gpt-4o";
 
-type ApiProvider = "openrouter" | "anthropic" | "openai";
+type ApiProvider = "openrouter" | "anthropic" | "openai" | "azure";
+type WireApi = "chat_completions" | "responses";
+
+function parseCodexAzureConfig(): {
+  baseUrl?: string;
+  model?: string;
+  wireApi?: WireApi;
+} {
+  const configPath = `${process.env.HOME ?? ""}/.codex/config.toml`;
+  if (!existsSync(configPath)) return {};
+
+  try {
+    const content = readFileSync(configPath, "utf8");
+    const azureSectionMatch = content.match(/\[model_providers\.azure\]([\s\S]*?)(?:\n\[|$)/);
+    const baseUrlMatch = azureSectionMatch?.[1]?.match(/base_url\s*=\s*"([^"]+)"/);
+    const wireApiMatch = azureSectionMatch?.[1]?.match(/wire_api\s*=\s*"([^"]+)"/);
+    const modelMatch = content.match(/\nmodel\s*=\s*"([^"]+)"/);
+
+    return {
+      baseUrl: baseUrlMatch?.[1],
+      model: modelMatch?.[1],
+      wireApi: wireApiMatch?.[1] === "responses" ? "responses" : "chat_completions",
+    };
+  } catch {
+    return {};
+  }
+}
 
 /**
  * Detect which API provider to use based on available keys.
@@ -26,6 +54,7 @@ function detectProvider(configApiKey?: string): {
   apiKey: string;
   baseUrl: string;
   defaultModel: string;
+  wireApi: WireApi;
 } {
   // If an explicit API key is passed via config, try to guess the provider from the key prefix
   if (configApiKey) {
@@ -35,6 +64,7 @@ function detectProvider(configApiKey?: string): {
         apiKey: configApiKey,
         baseUrl: "https://openrouter.ai/api/v1",
         defaultModel: DEFAULT_OPENROUTER_MODEL,
+        wireApi: "chat_completions",
       };
     }
     if (configApiKey.startsWith("sk-ant-")) {
@@ -43,6 +73,7 @@ function detectProvider(configApiKey?: string): {
         apiKey: configApiKey,
         baseUrl: "https://api.anthropic.com",
         defaultModel: DEFAULT_ANTHROPIC_MODEL,
+        wireApi: "chat_completions",
       };
     }
     // Assume OpenAI-compatible for other keys
@@ -51,6 +82,7 @@ function detectProvider(configApiKey?: string): {
       apiKey: configApiKey,
       baseUrl: "https://api.openai.com/v1",
       defaultModel: DEFAULT_OPENAI_MODEL,
+      wireApi: "chat_completions",
     };
   }
 
@@ -62,6 +94,7 @@ function detectProvider(configApiKey?: string): {
       apiKey: openrouterKey,
       baseUrl: "https://openrouter.ai/api/v1",
       defaultModel: DEFAULT_OPENROUTER_MODEL,
+      wireApi: "chat_completions",
     };
   }
 
@@ -72,6 +105,19 @@ function detectProvider(configApiKey?: string): {
       apiKey: anthropicKey,
       baseUrl: process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com",
       defaultModel: DEFAULT_ANTHROPIC_MODEL,
+      wireApi: "chat_completions",
+    };
+  }
+
+  const azureKey = process.env.AZURE_OPENAI_API_KEY;
+  if (azureKey) {
+    const azureConfig = parseCodexAzureConfig();
+    return {
+      provider: "azure",
+      apiKey: azureKey,
+      baseUrl: process.env.AZURE_OPENAI_BASE_URL ?? process.env.OPENAI_BASE_URL ?? azureConfig.baseUrl ?? "https://api.openai.com/v1",
+      defaultModel: process.env.AZURE_OPENAI_MODEL ?? azureConfig.model ?? DEFAULT_OPENAI_MODEL,
+      wireApi: azureConfig.wireApi ?? "chat_completions",
     };
   }
 
@@ -82,6 +128,7 @@ function detectProvider(configApiKey?: string): {
       apiKey: openaiKey,
       baseUrl: "https://api.openai.com/v1",
       defaultModel: DEFAULT_OPENAI_MODEL,
+      wireApi: "chat_completions",
     };
   }
 
@@ -91,6 +138,7 @@ function detectProvider(configApiKey?: string): {
     apiKey: "",
     baseUrl: process.env.ANTHROPIC_BASE_URL ?? "https://api.anthropic.com",
     defaultModel: DEFAULT_ANTHROPIC_MODEL,
+    wireApi: "chat_completions",
   };
 }
 
@@ -102,7 +150,7 @@ function detectProvider(configApiKey?: string): {
  * - Anthropic (ANTHROPIC_API_KEY) — direct Claude API access
  * - OpenAI (OPENAI_API_KEY) — direct OpenAI API access
  *
- * Priority: OPENROUTER_API_KEY -> ANTHROPIC_API_KEY -> OPENAI_API_KEY
+ * Priority: OPENROUTER_API_KEY -> ANTHROPIC_API_KEY -> AZURE_OPENAI_API_KEY -> OPENAI_API_KEY
  *
  * Model can be overridden with PWNKIT_MODEL env var or --model flag.
  *
@@ -117,6 +165,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
   private apiKey: string;
   private baseUrl: string;
   private model: string;
+  private wireApi: WireApi;
 
   constructor(config: RuntimeConfig) {
     this.config = config;
@@ -124,6 +173,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
     this.provider = detected.provider;
     this.apiKey = detected.apiKey;
     this.baseUrl = detected.baseUrl;
+    this.wireApi = detected.wireApi;
     const requestedModel = config.model ?? process.env.PWNKIT_MODEL;
     // "free" is a special alias for the free OpenRouter model
     if (requestedModel === "free" && this.provider === "openrouter") {
@@ -135,7 +185,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
 
   /** Whether this provider uses OpenAI-compatible chat/completions format. */
   private get isOpenAICompat(): boolean {
-    return this.provider === "openrouter" || this.provider === "openai";
+    return this.provider === "openrouter" || this.provider === "openai" || this.provider === "azure";
   }
 
   /** Build the appropriate headers for the configured provider. */
@@ -143,8 +193,13 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
     if (this.isOpenAICompat) {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${this.apiKey}`,
       };
+      if (this.provider === "azure") {
+        // Azure OpenAI uses api-key header, not Bearer token
+        headers["api-key"] = this.apiKey;
+      } else {
+        headers["Authorization"] = `Bearer ${this.apiKey}`;
+      }
       if (this.provider === "openrouter") {
         headers["HTTP-Referer"] = "https://pwnkit.com";
         headers["X-Title"] = "pwnkit Security Scanner";
@@ -162,7 +217,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
   /** Build the API endpoint URL. */
   private buildUrl(): string {
     if (this.isOpenAICompat) {
-      return `${this.baseUrl}/chat/completions`;
+      return `${this.baseUrl}/${this.wireApi === "responses" ? "responses" : "chat/completions"}`;
     }
     return `${this.baseUrl}/v1/messages`;
   }
@@ -173,6 +228,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
       case "openrouter": return "OpenRouter";
       case "anthropic": return "Anthropic";
       case "openai": return "OpenAI";
+      case "azure": return "Azure OpenAI";
     }
   }
 
@@ -181,6 +237,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
       "No API key found. Set one of:\n" +
       "  export OPENROUTER_API_KEY=sk-or-...   (OpenRouter — many models, one key)\n" +
       "  export ANTHROPIC_API_KEY=sk-ant-...    (Anthropic — direct Claude access)\n" +
+      "  export AZURE_OPENAI_API_KEY=...        (Azure OpenAI — reuse your Codex Azure provider)\n" +
       "  export OPENAI_API_KEY=sk-...           (OpenAI — direct GPT access)"
     );
   }
@@ -214,8 +271,8 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
     try {
       let res: Response;
 
-      if (this.isOpenAICompat) {
-        // OpenRouter / OpenAI chat completions format
+      if (this.isOpenAICompat && this.wireApi === "chat_completions") {
+        // OpenRouter / OpenAI / Azure chat completions format
         const messages: Array<Record<string, string>> = [];
         if (systemPrompt) {
           messages.push({ role: "system", content: systemPrompt });
@@ -229,6 +286,30 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
             model: this.model,
             max_tokens: 8192,
             messages,
+          }),
+          signal: controller.signal,
+        });
+      } else if (this.isOpenAICompat && this.wireApi === "responses") {
+        // Azure Responses API format
+        const input: Array<Record<string, unknown>> = [];
+        if (systemPrompt) {
+          input.push({
+            role: "system",
+            content: [{ type: "input_text", text: systemPrompt }],
+          });
+        }
+        input.push({
+          role: "user",
+          content: [{ type: "input_text", text: prompt }],
+        });
+
+        res = await fetch(this.buildUrl(), {
+          method: "POST",
+          headers: this.buildHeaders(),
+          body: JSON.stringify({
+            model: this.model,
+            input,
+            max_output_tokens: 8192,
           }),
           signal: controller.signal,
         });
@@ -265,10 +346,21 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
 
       // Extract text from response (different formats)
       let text: string;
-      if (this.isOpenAICompat) {
+      if (this.isOpenAICompat && this.wireApi === "chat_completions") {
         const msg = json.choices?.[0]?.message;
         // Some models (reasoning models) return content: null with reasoning field
         text = msg?.content ?? msg?.reasoning ?? "";
+      } else if (this.isOpenAICompat && this.wireApi === "responses") {
+        text =
+          typeof json.output_text === "string" && json.output_text.trim()
+            ? json.output_text
+            : Array.isArray(json.output)
+              ? json.output
+                  .flatMap((item: Record<string, unknown>) => Array.isArray(item.content) ? item.content : [])
+                  .filter((block: Record<string, unknown>) => block.type === "output_text")
+                  .map((block: Record<string, unknown>) => String(block.text ?? ""))
+                  .join("\n")
+              : "";
       } else {
         text =
           json.content
@@ -326,7 +418,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
     try {
       let res: Response;
 
-      if (this.isOpenAICompat) {
+      if (this.isOpenAICompat && this.wireApi === "chat_completions") {
         // Convert to OpenAI chat completions format
         const chatMessages: Array<Record<string, unknown>> = [];
         chatMessages.push({ role: "system", content: system });
@@ -369,6 +461,77 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
               description: t.description,
               parameters: t.input_schema,
             },
+          }));
+        }
+
+        res = await fetch(this.buildUrl(), {
+          method: "POST",
+          headers: this.buildHeaders(),
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
+      } else if (this.isOpenAICompat && this.wireApi === "responses") {
+        // Responses API uses a flat list of items, not role-based messages.
+        // function_call and function_call_output are top-level items, not nested
+        // inside content arrays. See: developers.openai.com/docs/api-reference/responses
+        const input: Array<Record<string, unknown>> = [
+          {
+            role: "system",
+            content: [{ type: "input_text", text: system }],
+          },
+        ];
+
+        for (const m of messages) {
+          // Collect text blocks into a role-based message
+          const textBlocks: Array<Record<string, unknown>> = [];
+          for (const block of m.content) {
+            if (block.type === "text") {
+              textBlocks.push({ type: "input_text", text: block.text });
+            } else if (block.type === "tool_use") {
+              // Flush any pending text blocks first
+              if (textBlocks.length > 0) {
+                input.push({ role: m.role, content: [...textBlocks] });
+                textBlocks.length = 0;
+              }
+              // Assistant tool_use → top-level function_call item
+              input.push({
+                type: "function_call",
+                call_id: block.id,
+                name: block.name,
+                arguments: JSON.stringify(block.input),
+              });
+            } else if (block.type === "tool_result") {
+              // Flush any pending text blocks first
+              if (textBlocks.length > 0) {
+                input.push({ role: m.role, content: [...textBlocks] });
+                textBlocks.length = 0;
+              }
+              // Tool result → top-level function_call_output item
+              input.push({
+                type: "function_call_output",
+                call_id: block.tool_use_id,
+                output: block.content,
+              });
+            }
+          }
+          // Flush remaining text blocks
+          if (textBlocks.length > 0) {
+            input.push({ role: m.role, content: textBlocks });
+          }
+        }
+
+        const body: Record<string, unknown> = {
+          model: this.model,
+          input,
+          max_output_tokens: 8192,
+        };
+
+        if (tools.length > 0) {
+          body.tools = tools.map((t) => ({
+            type: "function",
+            name: t.name,
+            description: t.description,
+            parameters: t.input_schema,
           }));
         }
 
@@ -438,7 +601,7 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
       let stopReason: "end_turn" | "tool_use" | "max_tokens" | "error";
       let usage: { inputTokens: number; outputTokens: number } | undefined;
 
-      if (this.isOpenAICompat) {
+      if (this.isOpenAICompat && this.wireApi === "chat_completions") {
         const choice = json.choices?.[0];
         const msg = choice?.message;
         content = [];
@@ -471,6 +634,34 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
           usage = {
             inputTokens: json.usage.prompt_tokens ?? 0,
             outputTokens: json.usage.completion_tokens ?? 0,
+          };
+        }
+      } else if (this.isOpenAICompat && this.wireApi === "responses") {
+        content = [];
+        for (const item of json.output ?? []) {
+          if (item.type === "function_call") {
+            content.push({
+              type: "tool_use",
+              id: item.call_id as string,
+              name: item.name as string,
+              input: JSON.parse((item.arguments as string) || "{}"),
+            });
+            continue;
+          }
+
+          for (const block of item.content ?? []) {
+            if (block.type === "output_text") {
+              content.push({ type: "text", text: block.text as string });
+            }
+          }
+        }
+
+        stopReason = content.some((block) => block.type === "tool_use") ? "tool_use" : "end_turn";
+
+        if (json.usage) {
+          usage = {
+            inputTokens: json.usage.input_tokens ?? 0,
+            outputTokens: json.usage.output_tokens ?? 0,
           };
         }
       } else {
