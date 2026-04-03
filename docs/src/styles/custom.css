@@ -1,0 +1,93 @@
+/* pwnkit docs — match main site branding */
+
+:root {
+  --sl-color-accent-low: #1c1012;
+  --sl-color-accent: #DC2626;
+  --sl-color-accent-high: #fca5a5;
+  --sl-color-white: #fafafa;
+  --sl-color-gray-1: #e4e4e7;
+  --sl-color-gray-2: #a1a1aa;
+  --sl-color-gray-3: #71717a;
+  --sl-color-gray-4: #3f3f46;
+  --sl-color-gray-5: #27272a;
+  --sl-color-gray-6: #18181b;
+  --sl-color-black: #0a0a0a;
+
+  --sl-font: "Inter", "Segoe UI", system-ui, sans-serif;
+  --sl-font-mono: "SF Mono", "Cascadia Code", "Fira Code", "JetBrains Mono", "Consolas", monospace;
+}
+
+/* Force dark background to match pwnkit.com */
+:root[data-theme="light"] {
+  --sl-color-bg: #0a0a0a;
+  --sl-color-bg-nav: #0f0f0f;
+  --sl-color-bg-sidebar: #0f0f0f;
+  --sl-color-hairline-shade: rgba(255, 255, 255, 0.08);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.05);
+  --sl-color-text: #e4e4e7;
+  --sl-color-text-accent: #fca5a5;
+}
+
+:root[data-theme="dark"] {
+  --sl-color-bg: #0a0a0a;
+  --sl-color-bg-nav: #0f0f0f;
+  --sl-color-bg-sidebar: #0f0f0f;
+  --sl-color-hairline-shade: rgba(255, 255, 255, 0.08);
+  --sl-color-hairline-light: rgba(255, 255, 255, 0.05);
+}
+
+/* Logo / site title styling */
+.site-title {
+  font-weight: 700 !important;
+  letter-spacing: -0.02em;
+}
+
+/* Links use crimson */
+a:not([class]) {
+  color: var(--sl-color-accent);
+}
+a:not([class]):hover {
+  color: var(--sl-color-accent-high);
+}
+
+/* Inline code */
+:not(pre) > code {
+  background: rgba(220, 38, 38, 0.08);
+  border: 1px solid rgba(220, 38, 38, 0.15);
+  color: #fca5a5;
+  border-radius: 4px;
+  padding: 0.15em 0.35em;
+  font-size: 0.875em;
+}
+
+/* Code blocks */
+pre {
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 8px !important;
+}
+
+/* Sidebar active item */
+nav[aria-label="Main"] a[aria-current="page"] {
+  color: var(--sl-color-accent) !important;
+  border-color: var(--sl-color-accent) !important;
+}
+
+/* Hero on splash page */
+.hero .tagline {
+  color: var(--sl-color-gray-2) !important;
+}
+
+/* Table styling */
+table {
+  border-collapse: collapse;
+}
+th {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--sl-color-gray-2);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}

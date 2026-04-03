@@ -9,14 +9,27 @@ export default defineConfig({
     starlight({
       title: "pwnkit",
       description:
-        "Documentation for pwnkit — the general-purpose autonomous pentesting framework.",
+        "Documentation for pwnkit — fully autonomous agentic pentesting framework.",
+      logo: {
+        src: "./src/assets/pwnkit-icon.gif",
+        alt: "pwnkit",
+      },
       social: [
         {
           icon: "github",
           label: "GitHub",
           href: "https://github.com/peaktwilight/pwnkit",
         },
+        {
+          icon: "external",
+          label: "Website",
+          href: "https://pwnkit.com",
+        },
       ],
+      defaultLocale: "root",
+      expressiveCode: {
+        themes: ["dracula"],
+      },
       sidebar: [
         {
           label: "Getting Started",
@@ -43,7 +56,7 @@ export default defineConfig({
           slug: "api-keys",
         },
       ],
-      customCss: [],
+      customCss: ["./src/styles/custom.css"],
     }),
   ],
 });
