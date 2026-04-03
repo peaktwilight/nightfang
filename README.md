@@ -213,6 +213,37 @@ The short version:
 
 See the checklist below for details.
 
+## Benchmark
+
+pwnkit ships a built-in benchmark suite with 10 challenges across 9 vulnerability categories. Each challenge hides a `FLAG{...}` behind a real vulnerability — the scanner must exploit the vuln to extract the flag.
+
+```bash
+# Baseline (no API key, deterministic checks only)
+pnpm bench
+
+# Full agentic pipeline with AI analysis
+pnpm bench --agentic --runtime auto
+```
+
+**Baseline results (deterministic, no AI):**
+
+| Category | Detection |
+|----------|-----------|
+| CORS Misconfiguration | :white_check_mark: |
+| Sensitive Path (.git/config) | :white_check_mark: |
+| SSRF via MCP Tool | :white_check_mark: |
+| Prompt Injection | :x: needs AI |
+| System Prompt Extraction | :x: needs AI |
+| PII Data Leakage | :x: needs AI |
+| Encoding Bypass | :x: needs AI |
+| DAN Jailbreak | :x: needs AI |
+| Multi-Turn Escalation | :x: needs AI |
+| Indirect Prompt Injection | :x: needs AI |
+
+**Baseline: 30% detection** | Web + MCP deterministic checks work out of the box.
+
+Categories are inspired by the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) format (104 CTF challenges for traditional web vulns). pwnkit's benchmark focuses on AI/LLM-specific attack surfaces that tools like KinoSec and XBOW don't cover.
+
 ## How It Compares
 
 | Feature | pwnkit | promptfoo | garak | semgrep | nuclei |
