@@ -9,6 +9,10 @@
     "bench:quick": "tsx src/runner.ts --depth quick",
     "bench:agentic": "tsx src/runner.ts --agentic --runtime auto",
     "bench:agentic:api": "tsx src/runner.ts --agentic --runtime api",
+    "xbow": "tsx src/xbow-runner.ts",
+    "xbow:dry": "tsx src/xbow-runner.ts --dry-run",
+    "xbow:quick": "tsx src/xbow-runner.ts --limit 5",
+    "xbow:agentic": "tsx src/xbow-runner.ts --agentic",
     "report": "tsx src/report.ts"
   },
   "dependencies": {
