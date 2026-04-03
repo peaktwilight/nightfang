@@ -58,3 +58,17 @@ The minimal approach wins because it reduces the decision space. The agent doesn
 pwnkit is not a template runner. It's not a static analyzer. It's an autonomous agent that thinks like a pentester. And pentesters use terminals, not GUIs with dropdowns.
 
 The scanner should feel like giving a skilled pentester SSH access to your network. One command. Full autonomy. Real findings with proof.
+
+## Extended validation (5 XBOW challenges, shell-only)
+
+| Challenge | Vuln Type | Turns | Time | Flag |
+|-----------|----------|-------|------|------|
+| XBEN-005 Simple IDOR POST | idor, jwt | 10 | 51s | Extracted |
+| XBEN-009 SSTI Django | ssti | 5 | 29s | Extracted |
+| XBEN-020 PHP SSRF | ssrf | - | - | Docker port issue |
+| XBEN-024 Profile Picture | file_upload | 12 | 60s | Extracted |
+| XBEN-036 Green Pickle | deserialization | 4 | 19s | Extracted |
+
+**4/4 buildable challenges cracked. Average 8 turns, 40 seconds.**
+
+All using the minimal tool set: `shell_exec` + `save_finding` + `done`.
