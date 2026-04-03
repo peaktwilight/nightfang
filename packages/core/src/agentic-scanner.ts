@@ -15,6 +15,9 @@ import {
 } from "./agent/prompts.js";
 import type { ScanEvent, ScanListener } from "./scanner.js";
 import type { NativeRuntime } from "./runtime/types.js";
+import { isMcpTarget } from "./http.js";
+import { discoverMcpTarget, runMcpSecurityChecks } from "./mcp.js";
+import { createScanContext, finalize } from "./context.js";
 
 export interface AgenticScanOptions {
   config: ScanConfig;
@@ -227,6 +230,79 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
         "Codex CLI is not compatible with pwnkit's target-interaction tool loop. " +
         "Use runtime=api for live target scanning, or reserve codex for source-analysis/code-review workflows.",
       );
+    }
+
+    // ── MCP fast-path: use deterministic MCP security checks ──
+    // The agentic agent loops are designed for LLM API targets. For MCP targets,
+    // delegate to the structured MCP discovery + security checks which directly
+    // speak JSON-RPC to the MCP server.
+    if (config.mode === "mcp" || isMcpTarget(config.target)) {
+      emit({ type: "stage:start", stage: "discovery", message: "MCP discovery starting..." });
+      const mcpCtx = createScanContext(config);
+      mcpCtx.scanId = scanId;
+
+      try {
+        const targetInfo = await discoverMcpTarget(config.target, config.timeout);
+        mcpCtx.target = targetInfo;
+      } catch (err) {
+        mcpCtx.target = { url: config.target, type: "mcp" };
+      }
+      emit({ type: "stage:end", stage: "discovery", message: `MCP target discovered: ${mcpCtx.target.type}` });
+
+      emit({ type: "stage:start", stage: "attack", message: "Running MCP security checks..." });
+      const { results, findings } = await runMcpSecurityChecks(mcpCtx);
+      mcpCtx.attacks.push(...results);
+      for (const finding of findings) {
+        mcpCtx.findings.push(finding);
+      }
+      allFindings = [...findings];
+      emit({ type: "stage:end", stage: "attack", message: `MCP checks complete: ${findings.length} findings` });
+
+      // Persist findings
+      if (db) {
+        db.upsertTarget(mcpCtx.target);
+        for (const finding of findings) {
+          db.saveFinding(scanId, finding);
+        }
+        for (const result of results) {
+          db.saveAttackResult(scanId, result);
+        }
+      }
+
+      finalize(mcpCtx);
+
+      const summary = {
+        totalAttacks: results.length,
+        totalFindings: allFindings.length,
+        critical: allFindings.filter((f) => f.severity === "critical").length,
+        high: allFindings.filter((f) => f.severity === "high").length,
+        medium: allFindings.filter((f) => f.severity === "medium").length,
+        low: allFindings.filter((f) => f.severity === "low").length,
+        info: allFindings.filter((f) => f.severity === "info").length,
+      };
+
+      db.completeScan(scanId, summary);
+
+      const report: ScanReport = {
+        target: config.target,
+        scanDepth: config.depth,
+        startedAt: new Date().toISOString(),
+        completedAt: new Date().toISOString(),
+        durationMs: 0,
+        summary,
+        findings: allFindings,
+        warnings: [],
+      };
+
+      const dbScan = db.getScan(scanId);
+      if (dbScan) {
+        report.startedAt = dbScan.startedAt;
+        report.completedAt = dbScan.completedAt ?? report.completedAt;
+        report.durationMs = dbScan.durationMs ?? 0;
+      }
+
+      emit({ type: "stage:end", stage: "report", message: `Report: ${summary.totalFindings} findings` });
+      return report;
     }
 
     // ── Stage 1: Discovery Agent ──
