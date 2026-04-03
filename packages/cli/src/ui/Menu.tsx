@@ -110,9 +110,9 @@ function Menu({ onSelect }: { onSelect: (action: string, target?: string) => voi
   );
 }
 
-export function showInkMenu(): Promise<{ action: string; target?: string }> {
+export async function showInkMenu(): Promise<{ action: string; target?: string }> {
   // Print shared banner before Ink takes over
-  printBanner();
+  await printBanner();
 
   return new Promise((resolve) => {
     const instance = render(

@@ -37,6 +37,7 @@ await build({
     "better-sqlite3",
     "drizzle-orm",
     "drizzle-orm/*",
+    "cfonts",
   ],
   plugins: [stubPlugin],
 });
@@ -70,6 +71,7 @@ const publishPkg = {
   engines: { node: ">=20" },
   dependencies: {
     "better-sqlite3": rootPkg.dependencies["better-sqlite3"],
+    "cfonts": "^3.3.1",
     "drizzle-orm": rootPkg.dependencies["drizzle-orm"],
   },
 };

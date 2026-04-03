@@ -47,7 +47,7 @@ export function renderScanUI(opts: RenderScanOptions): RenderScanResult {
   const modeLabel = opts.mode === "audit" ? `auditing npm package \x1b[1m${opts.target}\x1b[0m`
     : opts.mode === "review" ? `reviewing source code \x1b[1m${opts.target}\x1b[0m`
     : `scanning target \x1b[1m${opts.target}\x1b[0m`;
-  printBanner(modeLabel);
+  void printBanner(modeLabel);
 
   function App() {
     const [tick, setTick] = useState(0);

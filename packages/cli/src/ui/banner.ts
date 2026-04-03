@@ -1,11 +1,10 @@
-import cfonts from "cfonts";
 import { VERSION } from "@pwnkit/shared";
 
 /**
  * Print the pwnkit banner. Called once before Ink takes over.
  * Shared between the interactive menu and the scan TUI.
  */
-export function printBanner(subtitle?: string): void {
+export async function printBanner(subtitle?: string): Promise<void> {
   const r = "\x1b[31m";
   const d = "\x1b[2m";
   const b = "\x1b[1m";
@@ -13,7 +12,8 @@ export function printBanner(subtitle?: string): void {
 
   console.log("");
   try {
-    cfonts.say(`pwnkit|v${VERSION}`, {
+    const cfonts = await import("cfonts");
+    cfonts.default.say(`pwnkit|v${VERSION}`, {
       font: "tiny",
       colors: ["red", "gray"],
       space: false,
