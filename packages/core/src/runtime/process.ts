@@ -152,6 +152,13 @@ export class ProcessRuntime implements Runtime {
       proc.stderr.on("data", (chunk: Buffer) => {
         const text = chunk.toString();
         stderr += text;
+
+        // Detect MCP permission loop: if the subprocess keeps asking for
+        // tool approval, kill it with a helpful error instead of looping
+        if (/permission|approve|allow.*tool/i.test(stderr) && stderr.length > 500) {
+          proc.kill("SIGTERM");
+          stderr += "\n[pwnkit] Subprocess killed: MCP tools require interactive approval. Use --runtime api instead.";
+        }
       });
 
       const timer = setTimeout(() => {
@@ -205,7 +212,9 @@ export class ProcessRuntime implements Runtime {
       case "claude": {
         const args = ["-p", prompt, "--verbose", "--output-format", "stream-json"];
         if (context?.mcp?.enableTargetTools && context.target && context.scanId) {
-          args.push("--mcp-config", buildClaudeMcpConfig(context), "--strict-mcp-config");
+          // --dangerously-skip-permissions auto-approves MCP tool calls
+          // without this, the subprocess hangs waiting for interactive approval
+          args.push("--mcp-config", buildClaudeMcpConfig(context), "--dangerously-skip-permissions");
         }
         if (context?.systemPrompt) {
           args.push("--system-prompt", context.systemPrompt);

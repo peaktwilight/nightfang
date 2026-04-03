@@ -11,7 +11,7 @@ export function registerScanCommand(program: Command): void {
     .requiredOption("--target <target>", "Target URL or mcp:// endpoint")
     .option("--depth <depth>", "Scan depth: quick, default, deep", "default")
     .option("--format <format>", "Output format: terminal, json, md, html, sarif", "terminal")
-    .option("--runtime <runtime>", "Runtime: api, claude, codex, gemini, auto", "auto")
+    .option("--runtime <runtime>", "Runtime: api (default), claude, codex, gemini, auto", "api")
     .option("--mode <mode>", "Scan mode: probe, deep, mcp, web")
     .option("--timeout <ms>", "Request timeout in milliseconds", "30000")
     .option("--db-path <path>", "Path to SQLite database")
