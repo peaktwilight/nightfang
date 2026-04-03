@@ -191,6 +191,37 @@ describe("ToolExecutor", () => {
     expect((result.output as any).summary).toBe("Completed all tests");
   });
 
+  // ── artifact persistence ──
+
+  it("persists http_request output as artifact via logEvent", async () => {
+    const loggedEvents: any[] = [];
+    const mockDb = {
+      logEvent: (event: any) => { loggedEvents.push(event); },
+    } as any;
+    const dbExecutor = new ToolExecutor(ctx, mockDb);
+
+    // Mock fetch for http_request
+    vi.stubGlobal("fetch", vi.fn(async () => ({
+      ok: true,
+      status: 200,
+      text: async () => '{"result":"ok"}',
+      headers: new Headers({ "content-type": "application/json" }),
+    } as Response)));
+
+    await dbExecutor.execute({
+      name: "http_request",
+      arguments: { url: "https://example.com/api", method: "GET" },
+    });
+
+    vi.restoreAllMocks();
+
+    const artifactEvent = loggedEvents.find((e) => e.eventType === "tool_artifact");
+    expect(artifactEvent).toBeDefined();
+    expect(artifactEvent.payload.tool).toBe("http_request");
+    expect(artifactEvent.payload.request.url).toBe("https://example.com/api");
+    expect(artifactEvent.payload.response.status).toBe(200);
+  });
+
   // ── unknown tool ──
 
   it("rejects unknown tools", async () => {

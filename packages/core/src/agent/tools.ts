@@ -449,14 +449,19 @@ export class ToolExecutor {
 
       clearTimeout(timer);
       const text = await res.text();
-      return {
-        success: true,
-        output: {
-          status: res.status,
-          headers: Object.fromEntries(res.headers.entries()),
-          body: text.slice(0, 10_000), // cap response size
-        },
+      const output = {
+        status: res.status,
+        headers: Object.fromEntries(res.headers.entries()),
+        body: text.slice(0, 10_000), // cap response size
       };
+
+      // Persist as run artifact
+      this.persistToolArtifact("http_request", {
+        request: { url, method, headers, body: body?.slice(0, 2_000) },
+        response: { status: output.status, body: output.body.slice(0, 5_000) },
+      });
+
+      return { success: true, output };
     } finally {
       clearTimeout(timer);
     }
@@ -468,10 +473,33 @@ export class ToolExecutor {
     try {
       const res = await sendPrompt(this.ctx.target, prompt, { timeout: 30_000 });
       const text = extractResponseText(res.body);
+
+      // Persist as run artifact
+      this.persistToolArtifact("send_prompt", {
+        request: { prompt: prompt.slice(0, 2_000), target: this.ctx.target },
+        response: { text: text.slice(0, 5_000), raw: JSON.stringify(res.body).slice(0, 5_000) },
+      });
+
       return { success: true, output: { response: text, raw: res.body } };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, output: null, error: msg };
+    }
+  }
+
+  /** Persist a tool call's request/response as a first-class run artifact via the event pipeline. */
+  private persistToolArtifact(toolName: string, data: Record<string, unknown>): void {
+    if (!this.db) return;
+    try {
+      this.db.logEvent({
+        scanId: this.ctx.scanId,
+        stage: "attack",
+        eventType: "tool_artifact",
+        payload: { tool: toolName, ...data },
+        timestamp: Date.now(),
+      });
+    } catch {
+      // Non-critical — don't fail the tool call if artifact persistence fails
     }
   }
 

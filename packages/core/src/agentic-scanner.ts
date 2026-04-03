@@ -25,6 +25,82 @@ export interface AgenticScanOptions {
 }
 
 /**
+ * Auto-detect whether an HTTP target is a web app vs an AI/API endpoint.
+ * If the target serves HTML and the user requested "deep" mode,
+ * automatically switch to "web" mode for better coverage.
+ */
+async function normalizeScanConfig(config: ScanConfig): Promise<ScanConfig> {
+  // Only auto-route for default/deep mode on HTTP targets
+  const requestedMode = config.mode ?? "deep";
+  if (requestedMode !== "deep") return config;
+  if (!config.target.startsWith("http://") && !config.target.startsWith("https://")) return config;
+
+  try {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), Math.min(config.timeout ?? 30_000, 8_000));
+    try {
+      const response = await fetch(config.target, {
+        method: "GET",
+        headers: {
+          Accept: "text/html,application/xhtml+xml,application/json;q=0.9,*/*;q=0.8",
+        },
+        signal: controller.signal,
+      });
+      const contentType = response.headers.get("content-type")?.toLowerCase() ?? "";
+      const body = await response.text();
+
+      // Check if response is HTML (web app)
+      const looksHtml =
+        contentType.includes("text/html")
+        || /^\s*<!doctype html/i.test(body)
+        || /<html[\s>]/i.test(body);
+
+      if (looksHtml) {
+        return { ...config, mode: "web" };
+      }
+
+      // Check if response looks like an AI/LLM API endpoint
+      // Common patterns: /v1/chat/completions, /v1/messages, /completions, /generate
+      const url = new URL(config.target);
+      const aiPathPatterns = [
+        /\/v\d+\/chat/,
+        /\/v\d+\/messages/,
+        /\/completions/,
+        /\/generate/,
+        /\/inference/,
+      ];
+      const looksLikeAiEndpoint = aiPathPatterns.some((p) => p.test(url.pathname));
+
+      // If it's a JSON API that doesn't match AI patterns, still use deep mode
+      // but if it returned 405 on GET, it's likely a POST-only API
+      if (response.status === 405 && !looksLikeAiEndpoint) {
+        // POST-only endpoint that's not an AI API — likely a web API, keep deep mode
+        return config;
+      }
+
+      // If JSON response with common AI indicators, keep deep mode (AI scanning)
+      if (contentType.includes("application/json")) {
+        try {
+          const json = JSON.parse(body);
+          const hasAiIndicators =
+            json.model || json.choices || json.content || json.completion
+            || json.object === "chat.completion" || json.object === "message";
+          if (hasAiIndicators) return config; // Confirmed AI endpoint
+        } catch {
+          // Not valid JSON, proceed with default
+        }
+      }
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch {
+    // Keep the requested mode if preflight fails
+  }
+
+  return config;
+}
+
+/**
  * Run a full agentic scan with multi-turn agents, tool use, and persistent state.
  *
  * Pipeline:
@@ -41,8 +117,9 @@ export interface AgenticScanOptions {
  * Sessions are saved so interrupted scans can be resumed.
  */
 export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport> {
-  const { config, dbPath, onEvent, resumeScanId } = opts;
+  const { dbPath, onEvent, resumeScanId } = opts;
   const emit = onEvent ?? (() => {});
+  const config = await normalizeScanConfig(opts.config);
 
   const db = await (async () => { try { const { pwnkitDB } = await import("@pwnkit/db"); return new pwnkitDB(dbPath); } catch { return null as any; } })() as any;
 
@@ -87,10 +164,19 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
       useNative = true;
     } else {
       const availableCli = await detectAvailableRuntimes();
-      if (availableCli.has("claude")) selectedRuntimeType = "claude";
-      else if (availableCli.has("codex")) selectedRuntimeType = "codex";
-      else if (availableCli.has("gemini")) selectedRuntimeType = "gemini";
-      else selectedRuntimeType = "api";
+      // Claude is the supported local adapter for live target scanning.
+      // Codex and Gemini are experimental and limited to source-analysis workflows.
+      if (availableCli.has("claude")) {
+        selectedRuntimeType = "claude";
+      } else if (availableCli.has("codex")) {
+        selectedRuntimeType = "codex";
+        emit({ type: "stage:start", stage: "discovery", message: "Warning: codex is experimental for live targets. Prefer runtime=api or install Claude Code CLI for full tool-loop support." });
+      } else if (availableCli.has("gemini")) {
+        selectedRuntimeType = "gemini";
+        emit({ type: "stage:start", stage: "discovery", message: "Warning: gemini is experimental for live targets. Prefer runtime=api or install Claude Code CLI for full tool-loop support." });
+      } else {
+        selectedRuntimeType = "api";
+      }
       useNative = false;
     }
   } else {
