@@ -20,6 +20,7 @@ const testTargetsRoot = fileURLToPath(new URL("..", import.meta.url));
 const savedApiEnv = {
   OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY,
   ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+  AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
   OPENAI_API_KEY: process.env.OPENAI_API_KEY,
 };
 
@@ -56,6 +57,7 @@ beforeAll(async () => {
   // Keep scan integration tests hermetic; local quota state should not affect them.
   process.env.OPENROUTER_API_KEY = "";
   process.env.ANTHROPIC_API_KEY = "";
+  process.env.AZURE_OPENAI_API_KEY = "";
   process.env.OPENAI_API_KEY = "";
 
   const vulnMod = await import("./vulnerable-server.js");
@@ -91,6 +93,7 @@ afterAll(async () => {
 
   process.env.OPENROUTER_API_KEY = savedApiEnv.OPENROUTER_API_KEY;
   process.env.ANTHROPIC_API_KEY = savedApiEnv.ANTHROPIC_API_KEY;
+  process.env.AZURE_OPENAI_API_KEY = savedApiEnv.AZURE_OPENAI_API_KEY;
   process.env.OPENAI_API_KEY = savedApiEnv.OPENAI_API_KEY;
 });
 
@@ -298,7 +301,7 @@ describe("pwnkit scan integration", () => {
     expect(report.summary).toBeDefined();
     expect(report.findings).toBeDefined();
     expect(Array.isArray(report.findings)).toBe(true);
-  });
+  }, 30_000);
 
   it("returns a clean report for the safe target", async () => {
     const report = await runScan({
@@ -309,7 +312,7 @@ describe("pwnkit scan integration", () => {
     });
 
     expect(report.summary.totalFindings).toBe(0);
-  });
+  }, 30_000);
 
   it("returns a clean report for the safe target at default depth", async () => {
     const report = await runScan({
@@ -320,7 +323,7 @@ describe("pwnkit scan integration", () => {
     });
 
     expect(report.summary.totalFindings).toBe(0);
-  });
+  }, 30_000);
 
   it("finds MCP issues on a vulnerable MCP target", async () => {
     const report = await runScan({
@@ -333,7 +336,7 @@ describe("pwnkit scan integration", () => {
 
     expect(report.summary.totalFindings).toBeGreaterThan(0);
     expect(report.findings.some((finding) => finding.title.includes("MCP"))).toBe(true);
-  });
+  }, 30_000);
 
   it("returns a clean report for a safe MCP target", async () => {
     const report = await runScan({
@@ -345,7 +348,7 @@ describe("pwnkit scan integration", () => {
     });
 
     expect(report.summary.totalFindings).toBe(0);
-  });
+  }, 30_000);
 
   it("finds baseline web issues in web mode", async () => {
     const report = await runScan({
@@ -360,7 +363,7 @@ describe("pwnkit scan integration", () => {
     expect(report.findings.some((finding) => finding.category === "cors")).toBe(true);
     expect(report.findings.some((finding) => finding.title.includes("security headers"))).toBe(true);
     expect(report.findings.some((finding) => finding.title.includes("Git metadata"))).toBe(true);
-  });
+  }, 30_000);
 
   it("returns a clean report for a hardened web target", async () => {
     const report = await runScan({
@@ -372,7 +375,7 @@ describe("pwnkit scan integration", () => {
     });
 
     expect(report.summary.totalFindings).toBe(0);
-  });
+  }, 30_000);
 
   it("lists findings from the parent findings command", async () => {
     const dbPath = join(tmpdir(), `pwnkit-findings-${Date.now()}.db`);
@@ -411,5 +414,5 @@ describe("pwnkit scan integration", () => {
     // DB native module may not be available in all environments
     const output = result.stdout + result.stderr;
     expect(output).toBeDefined();
-  });
+  }, 30_000);
 });

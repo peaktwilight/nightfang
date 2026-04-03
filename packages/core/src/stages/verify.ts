@@ -199,6 +199,14 @@ export async function runVerification(
         falsePositives++;
       }
     }
+
+    // Promote "discovered" findings from deterministic checks (web baseline,
+    // MCP probes) that don't need AI verification — they're validated by direct
+    // HTTP response matching and are already filtered for HTML false positives.
+    for (const f of agentFindings) {
+      f.status = "confirmed";
+      confirmed++;
+    }
   }
 
   return {
