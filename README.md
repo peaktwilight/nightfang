@@ -113,6 +113,10 @@ cd pwnkit && pnpm install && pnpm test
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
+---
+
+*Built by [Peak Twilight](https://doruk.ch) -- also building [FoxGuard](https://foxguard.dev), [vibecheck](https://vibechecked.doruk.ch), [unfuck](https://unfcked.doruk.ch), [whatdiditdo](https://whatdiditdo.doruk.ch)*
+
 ## License
 
 [Apache 2.0](LICENSE)
