@@ -17,7 +17,7 @@
     "build:bundle": "node ./scripts/bundle-cli.mjs",
     "dev": "pnpm -r --parallel dev",
     "lint": "pnpm -r exec tsc --noEmit",
-    "test": "pnpm --filter @pwnkit/test-targets test",
+    "test": "pnpm --filter @pwnkit/core test && pnpm --filter @pwnkit/test-targets test",
     "clean": "pnpm -r clean",
     "vulnerable": "PORT=43100 pnpm --filter @pwnkit/test-targets vulnerable",
     "safe": "PORT=43101 pnpm --filter @pwnkit/test-targets safe"
