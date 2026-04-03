@@ -332,9 +332,14 @@ When you find a vulnerability:
 5. Use submit_form for login forms and form submissions (application/x-www-form-urlencoded).
 6. Use http_request for API calls and GET requests. Include Cookie headers from login responses.
 7. Use crawl to re-examine the site after authenticating (you'll see new pages as an authenticated user).
-8. Use save_finding for EACH vulnerability with FULL evidence including any flags found.
-9. Do NOT give up after one failed payload — try ALL variations.
-10. Call done with a summary when you have the flag or exhausted the attack surface.`;
+8. Use shell_exec when structured tools aren't enough — run curl with complex flags, write Python exploit scripts, chain commands with pipes. The TARGET env var is set to the target URL. Examples:
+   - \`curl -s -c /tmp/cookies -b /tmp/cookies -d 'username=demo&password=demo' -L http://target/login\`
+   - \`curl -s -b /tmp/cookies 'http://target/user/2'\`
+   - \`python3 -c "import requests; s=requests.Session(); s.post('http://target/login', data={'user':'admin','pass':'admin'}); print(s.get('http://target/admin').text)"\`
+   - \`for i in $(seq 1 20); do curl -s -b /tmp/cookies "http://target/api/users/$i" | grep -i flag; done\`
+9. Use save_finding for EACH vulnerability with FULL evidence including any flags found.
+10. Do NOT give up after one failed payload — try ALL variations.
+11. Call done with a summary when you have the flag or exhausted the attack surface.`;
 }
 
 export function verifyPrompt(target: string, findings: Finding[]): string {

@@ -199,6 +199,17 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     required: ["url", "fields"],
   },
 
+  shell_exec: {
+    name: "shell_exec",
+    description:
+      "Execute any shell command for pentesting. Use this when structured tools (crawl, submit_form, http_request) aren't enough — for example, running curl with complex flags, writing Python exploit scripts, using sqlmap, chaining commands with pipes, or any operation that needs full shell flexibility. The command runs in the host environment with access to curl, python3, node, jq, and standard unix tools.",
+    parameters: {
+      command: { type: "string", description: "Shell command to execute. Supports pipes, redirects, and multi-line scripts." },
+      timeout: { type: "number", description: "Timeout in seconds (default 30, max 120)" },
+    },
+    required: ["command"],
+  },
+
   done: {
     name: "done",
     description:
@@ -459,6 +470,8 @@ export class ToolExecutor {
           return await this.submitForm(call.arguments);
         case "update_target":
           return this.updateTarget(call.arguments);
+        case "shell_exec":
+          return await this.shellExec(call.arguments);
         case "done":
           return this.markDone(call.arguments);
         default:
@@ -644,6 +657,7 @@ export class ToolExecutor {
       forms: Array<{ action: string; method: string; inputs: Array<{ name: string; type: string }> }>;
       scripts: string[];
       cookies: string[];
+      textContent?: string;
     }> = [];
 
     const queue: Array<{ url: string; depth: number }> = [{ url: resolved.toString(), depth: 1 }];
@@ -807,6 +821,55 @@ export class ToolExecutor {
       clearTimeout(timer);
       const msg = err instanceof Error ? err.message : String(err);
       return { success: false, output: null, error: msg };
+    }
+  }
+
+  private async shellExec(args: Record<string, unknown>): Promise<ToolResult> {
+    const command = (args.command as string)?.trim();
+    if (!command) {
+      return { success: false, output: null, error: "Command is required" };
+    }
+
+    const timeoutSec = Math.min((args.timeout as number) ?? 30, 120);
+
+    try {
+      const { execSync } = await import("node:child_process");
+      const result = execSync(command, {
+        timeout: timeoutSec * 1000,
+        maxBuffer: 1024 * 1024, // 1MB
+        encoding: "utf-8",
+        shell: "/bin/bash",
+        env: { ...process.env, TARGET: this.ctx.target },
+        stdio: ["pipe", "pipe", "pipe"],
+      });
+
+      const output = (result ?? "").slice(0, 10_000);
+
+      this.persistToolArtifact("shell_exec", {
+        command: command.slice(0, 500),
+        output: output.slice(0, 2_000),
+      });
+
+      return { success: true, output };
+    } catch (err: any) {
+      // execSync throws on non-zero exit — capture stdout+stderr anyway
+      const stdout = (err.stdout as string) ?? "";
+      const stderr = (err.stderr as string) ?? "";
+      const combined = (stdout + "\n" + stderr).trim().slice(0, 10_000);
+
+      if (combined) {
+        // Non-zero exit but we got output — return it as success
+        // (many pentesting tools exit non-zero on findings)
+        this.persistToolArtifact("shell_exec", {
+          command: command.slice(0, 500),
+          output: combined.slice(0, 2_000),
+          exitCode: err.status,
+        });
+        return { success: true, output: combined };
+      }
+
+      const msg = err.killed ? "Command timed out" : (err.message ?? String(err));
+      return { success: false, output: null, error: msg.slice(0, 2_000) };
     }
   }
 
@@ -1012,7 +1075,7 @@ export class ToolExecutor {
 
 export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMode?: boolean }): ToolDefinition[] {
   const common = ["query_findings", "done"];
-  const networkTools = ["http_request", "crawl", "submit_form", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const networkTools = ["http_request", "crawl", "submit_form", "shell_exec", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
   const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {
