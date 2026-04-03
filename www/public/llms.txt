@@ -2,26 +2,37 @@
 
 > Open-source agentic framework for autonomous security research.
 
-pwnkit uses AI agents in a research-then-verify pipeline to find and prove vulnerabilities. It scans LLM endpoints, npm packages, and source code.
+pwnkit uses AI agents in a research-then-verify pipeline to find and prove vulnerabilities. It scans LLM endpoints, web apps, npm packages, and source code.
 
 ## Quick Start
 
 ```bash
-npx pwnkit-cli scan https://your-app.com/api/chat
+npx pwnkit-cli scan --target https://your-app.com/api/chat
+npx pwnkit-cli scan --target https://example.com --mode web
 npx pwnkit-cli audit express
 npx pwnkit-cli review ./my-repo
+npx pwnkit-cli dashboard
 ```
 
 ## Key Features
 
 - **Autonomous multi-agent pipeline**: Research agent discovers and attacks, then a blind verify agent independently reproduces findings
 - **Verification eliminates false positives**: The Verify agent re-exploits every finding independently. If it can't reproduce it, the finding is dropped
-- **3 attack surfaces**: LLM endpoints, npm packages, source code
-- **5 commands**: scan, audit, review, findings, history
-- **Multi-runtime**: Works with Claude Code, Codex, Gemini CLI, OpenCode, or API-only mode
+- **4 attack surfaces**: LLM endpoints, web apps, npm packages, source code
+- **CLI commands**: scan, audit, review, resume, replay, history, findings, dashboard, orchestrate, doctor
+- **Local dashboard**: Web-based verification workbench for triage, evidence review, scan provenance, and finding workflow management
+- **Resumable scans**: Persist and resume interrupted audit and review scans
+- **Finding families**: Deduplicate findings across scans, triage once for all instances
+- **Multi-runtime**: Works with Claude Code, Codex, Gemini CLI, auto-detect, or API-only mode (Anthropic, OpenRouter, OpenAI, Azure OpenAI)
 - **SARIF output**: Findings appear directly in GitHub's Security tab
-- **GitHub Action**: Drop into CI/CD with `peaktwilight/pwnkit/action@v1`
-- **Zero config**: `npx pwnkit-cli scan` — no YAML, no setup
+- **GitHub Action**: Drop into CI/CD with `peaktwilight/pwnkit@main`
+- **Zero config**: `npx pwnkit-cli <target>` — auto-detects target type, no YAML, no setup
+- **Diff-aware review**: `--diff-base main --changed-only` to review only changed files in PRs
+
+## Product Model
+
+- **pwnkit-cli** is the execution surface. Run scans, audits, reviews from terminal or CI. Resume interrupted scans. Export SARIF, JSON, Markdown, or HTML.
+- **pwnkit-cli dashboard** is the operator surface. Local web UI for finding triage, evidence review, scan provenance, and human sign-off.
 
 ## Built From Real Research
 

@@ -88,7 +88,7 @@ const { title, description = "Open-source agentic framework for autonomous secur
           "name": "How does pwnkit eliminate false positives?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "pwnkit's Verify agent independently re-exploits every finding. If it can't reproduce the vulnerability, the finding is killed as a false positive. Only confirmed vulnerabilities with working proof-of-concept code make it into the final report."
+            "text": "pwnkit's Verify agent independently re-exploits every finding. If it can't reproduce the vulnerability, the finding is killed as a false positive. Only confirmed vulnerabilities with working proof-of-concept code make it into the final report. The local dashboard provides a triage workbench for operators to review evidence, manage finding families, and control the verification workflow."
           }
         },
         {
@@ -104,7 +104,7 @@ const { title, description = "Open-source agentic framework for autonomous secur
           "name": "What can pwnkit scan?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "pwnkit scans LLM endpoints, traditional web apps, npm packages, and source code repositories. The near-term roadmap is focused on resumable scans, triage workflows, replay, orchestration, and a local dashboard."
+            "text": "pwnkit scans LLM endpoints, traditional web apps, npm packages, and source code repositories. It includes resumable scans, finding triage with deduplication, deterministic replay, a local verification dashboard, diff-aware PR review, and autonomous orchestration workers."
           }
         }
       ]
