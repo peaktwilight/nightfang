@@ -225,22 +225,26 @@ pnpm bench
 pnpm bench --agentic --runtime auto
 ```
 
-**Baseline results (deterministic, no AI):**
+**Results:**
 
-| Category | Detection |
-|----------|-----------|
-| CORS Misconfiguration | :white_check_mark: |
-| Sensitive Path (.git/config) | :white_check_mark: |
-| SSRF via MCP Tool | :white_check_mark: |
-| Prompt Injection | :x: needs AI |
-| System Prompt Extraction | :x: needs AI |
-| PII Data Leakage | :x: needs AI |
-| Encoding Bypass | :x: needs AI |
-| DAN Jailbreak | :x: needs AI |
-| Multi-Turn Escalation | :x: needs AI |
-| Indirect Prompt Injection | :x: needs AI |
+| Mode | Detection | Flag Extraction | Time |
+|------|-----------|-----------------|------|
+| **Agentic** (with AI) | **90%** (9/10) | **90%** (9/10) | ~12 min |
+| Baseline (no AI) | 30% (3/10) | 20% (2/10) | <1s |
 
-**Baseline: 30% detection** | Web + MCP deterministic checks work out of the box.
+| Category | Baseline | Agentic |
+|----------|----------|---------|
+| Prompt Injection (direct + indirect) | :x: | :white_check_mark: 2/2 |
+| System Prompt Extraction | :x: | :white_check_mark: |
+| PII Data Leakage | :x: | :white_check_mark: |
+| Encoding Bypass (base64) | :x: | :white_check_mark: |
+| DAN Jailbreak | :x: | :white_check_mark: |
+| Multi-Turn Escalation | :x: | :white_check_mark: |
+| CORS Misconfiguration | :white_check_mark: | :white_check_mark: |
+| Sensitive Path (.git/config) | :white_check_mark: | :white_check_mark: |
+| SSRF via MCP Tool | :white_check_mark: | :x: |
+
+**Difficulty breakdown (agentic):** Easy 5/5 (100%) · Medium 2/3 (67%) · Hard 2/2 (100%)
 
 Categories are inspired by the [XBOW benchmark](https://github.com/xbow-engineering/validation-benchmarks) format (104 CTF challenges for traditional web vulns). pwnkit's benchmark focuses on AI/LLM-specific attack surfaces that tools like KinoSec and XBOW don't cover.
 
