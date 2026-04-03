@@ -156,8 +156,8 @@ export async function runVerification(
     // Replace any unverified findings with verified ones
     const verifiedIds = new Set(agentState.findings.map((f) => f.templateId));
 
-    // Remove unverified discoveries, keep verified
-    ctx.findings = ctx.findings.filter((f) => f.status === "confirmed" || verifiedIds.has(f.templateId));
+    // Keep only findings the verify agent confirmed; drop unverified discoveries
+    ctx.findings = ctx.findings.filter((f) => verifiedIds.has(f.templateId));
 
     // Add newly verified findings
     for (const f of agentState.findings) {
