@@ -176,7 +176,9 @@ async function runSensitivePathChecks(ctx: ScanContext): Promise<WebCheckResult>
       title: "Exposed environment file",
       severity: "critical" as const,
       analysis: "The application exposes its .env file over HTTP, which commonly contains secrets and deployment configuration.",
-      matcher: /[A-Z0-9_]+=\S+/,
+      // Require at least two KEY=value lines to avoid matching random HTML attributes
+      matcher: /^[A-Z][A-Z0-9_]+=\S+/m,
+      minMatches: 2,
     },
     {
       path: "/server-status",
@@ -199,7 +201,21 @@ async function runSensitivePathChecks(ctx: ScanContext): Promise<WebCheckResult>
         timeout: ctx.config.timeout,
       });
 
-      const vulnerable = response.status >= 200 && response.status < 300 && candidate.matcher.test(response.body);
+      const contentType = response.headers["content-type"]?.toLowerCase() ?? "";
+      const isHtmlResponse =
+        contentType.includes("text/html")
+        || /^\s*<!doctype html/i.test(response.body)
+        || /<html[\s>]/i.test(response.body);
+
+      // A 2xx response that matches the signature is only vulnerable if it's
+      // NOT an HTML page (SPA catch-all routes return 200 + HTML for every path).
+      const matchCount = (response.body.match(new RegExp(candidate.matcher, "gm")) ?? []).length;
+      const minRequired = ("minMatches" in candidate ? candidate.minMatches : 1) as number;
+      const vulnerable =
+        response.status >= 200
+        && response.status < 300
+        && !isHtmlResponse
+        && matchCount >= minRequired;
       results.push(
         createAttackResult(
           "web-sensitive-paths",
@@ -386,7 +402,7 @@ function createFinding(input: {
     description: input.description,
     severity: input.severity,
     category: input.category,
-    status: "confirmed",
+    status: "discovered",
     evidence: {
       request: input.request,
       response: input.response,
