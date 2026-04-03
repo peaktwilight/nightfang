@@ -5,7 +5,7 @@
 <h1 align="center">pwnkit</h1>
 
 <p align="center">
- <strong>Let autonomous agents hack you so the real ones can't.</strong><br/>
+ <strong>Let autonomous AI agents hack you so the real ones can't.</strong><br/>
  <em>Fully autonomous agentic pentesting framework. Blind PoC verification to minimize false positives.</em>
 </p>
 
