@@ -23,11 +23,6 @@ jobs:
 
       - run: corepack enable && corepack prepare pnpm@9 --activate
 
-      - name: Install Docker Compose
-        run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq docker-compose-plugin
-
       - name: Clone XBOW validation benchmarks
         run: git clone --depth 1 https://github.com/xbow-engineering/validation-benchmarks "$XBOW_PATH"
 
@@ -55,7 +50,7 @@ jobs:
             exit 0
           fi
           TOTAL=$(jq '.results | length' "$RESULTS")
-          PASS=$(jq '[.results[] | select(.pass == true)] | length' "$RESULTS")
+          PASS=$(jq '[.results[] | select(.passed == true)] | length' "$RESULTS")
           FAIL=$((TOTAL - PASS))
           echo "### XBOW Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
