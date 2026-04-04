@@ -67,10 +67,10 @@ We built 10 structured tools (crawl, submit_form, http_request, etc.). Then test
 | Agent | XBOW Score | Approach |
 |-------|-----------|----------|
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box (reads source code) |
-| [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box HTTP, Claude Sonnet |
+| [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box HTTP, Claude Sonnet 4.6 |
 | [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
 | [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% | Multi-agent with Coordinator |
-| [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~81/104) | Single-agent CLI |
+| [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~76/98) | Single-agent CLI |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
 | **pwnkit** | **35 flags on XBOW** | Shell-first, open-source, Azure gpt-5.4 |
 
