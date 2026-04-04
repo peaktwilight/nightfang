@@ -1,35 +1,42 @@
 ---
 title: Architecture
-description: How the 4-stage pipeline, runtime adapters, and MCP integration work.
+description: How the 5-stage pipeline, runtime adapters, and MCP integration work.
 ---
 
-pwnkit is a fully autonomous agentic pentesting framework that covers LLM endpoints, web applications, npm packages, and source code. It runs autonomous AI agents in a discover-attack-verify-report pipeline. For web pentesting, the agent uses a shell-first approach -- `shell_exec` (curl, python3, bash) is the primary tool, not structured APIs. For LLM and code targets, the agent uses specialized tools (`send_prompt`, `read_file`). Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
+pwnkit is a fully autonomous agentic pentesting framework that covers LLM endpoints, web applications, npm packages, and source code. It runs autonomous AI agents in a plan-discover-attack-verify-report pipeline. For web pentesting, the agent uses a shell-first approach -- `bash` (curl, python3, bash) is the primary tool, not structured APIs. For LLM and code targets, the agent uses specialized tools (`send_prompt`, `read_file`). Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
 
 ## The pipeline
 
-The core pipeline has four stages:
+The core pipeline has five stages:
 
 ```
-Discover -> Attack -> Verify -> Report
+Plan -> Discover -> Attack -> Verify -> Report
 ```
 
 These stages are grouped into two agent sessions:
 
-### 1. Research agent (Discover + Attack + PoC)
+### 1. Research agent (Plan + Discover + Attack + PoC)
 
 A single agent session that:
 
-1. **Discovers** the attack surface -- maps endpoints, detects models, identifies features, fingerprints web technologies, and enumerates exposed paths
-2. **Attacks** the target -- crafts multi-turn attacks spanning prompt injection, jailbreaks, tool poisoning, data exfiltration (LLM), CORS misconfiguration, SSRF, XSS, path traversal, header injection (web), supply chain and malicious code analysis (npm), and vulnerability patterns (source code)
-3. **Writes PoC code** -- produces a proof-of-concept that demonstrates each vulnerability
+1. **Plans** the engagement -- estimates target difficulty, identifies likely vulnerability classes, and prioritizes attack vectors. Research into top pentesting agents ([KinoSec](https://kinosec.ai) at 92.3%, [XBOW](https://xbow.com) at 85%, [MAPTA](https://arxiv.org/abs/2411.17314) at 76.9%) shows that planning before execution is a shared trait of high-performing agents. The plan is injected into the system prompt so the agent starts with a strategy rather than fumbling through discovery.
+2. **Discovers** the attack surface -- maps endpoints, detects models, identifies features, fingerprints web technologies, and enumerates exposed paths
+3. **Attacks** the target -- crafts multi-turn attacks spanning prompt injection, jailbreaks, tool poisoning, data exfiltration (LLM), CORS misconfiguration, SSRF, XSS, path traversal, header injection (web), supply chain and malicious code analysis (npm), and vulnerability patterns (source code)
+4. **Writes PoC code** -- produces a proof-of-concept that demonstrates each vulnerability
+
+**Challenge hints.** When available, challenge descriptions are passed to the agent as context. This is standard practice -- [XBOW provides challenge descriptions to all agents](https://xbow.com/blog/core-components-ai-pentesting-framework) in their benchmark. It is not benchmark-specific tuning; it is how a real pentester would receive a scope document.
 
 The research agent's tool set depends on the target type:
 
-- **Web targets:** `shell_exec` (primary -- run curl, python3, bash, sqlmap, anything), `save_finding`, `done`. The structured tools (`crawl_page`, `submit_form`, `http_request`) are available but optional -- benchmarking showed the agent performs better with just shell access.
-- **LLM targets:** `send_prompt` (talk to LLM endpoints), `shell_exec`, `save_finding`, `done`.
+- **Web targets:** `bash` (primary -- run curl, python3, bash, sqlmap, anything), `save_finding`, `done`. The structured tools (`crawl_page`, `submit_form`, `http_request`) are available but optional -- benchmarking showed the agent performs better with just shell access.
+- **LLM targets:** `send_prompt` (talk to LLM endpoints), `bash`, `save_finding`, `done`.
 - **Source/npm targets:** `read_file`, `search_code`, `list_files`, `run_command`, `save_finding`.
 
 The agent adapts its strategy based on what it discovers -- if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection. For web apps, it escalates from fingerprinting to active exploitation using real pentesting tools via shell. For source code, it traces data flows from user input to dangerous sinks.
+
+**Reflection checkpoints.** When the agent reaches 60% of its turn budget, pwnkit injects a reflection prompt forcing the agent to review what has been tried, what failed, and what alternative approaches remain. This is inspired by [deadend-cli](https://github.com/deadend-cli) (78% on XBOW) and [PentestAgent](https://arxiv.org/abs/2411.17314)'s self-reflection mechanism. Without reflection, agents frequently stall on a single approach and exhaust their budget.
+
+**Turn budget.** [MAPTA](https://arxiv.org/abs/2411.17314) data shows 40 tool calls is the sweet spot for CTF-style challenges -- enough to complete multi-step exploit chains without wasting tokens on dead ends. Deep mode uses a budget of 40 turns (increased from the original 20).
 
 ### 2. Verify agent (Blind validation)
 
@@ -59,7 +66,7 @@ The pipeline adapts its tooling and attack strategy based on the target type:
 
 | Mode | Target | What it does |
 |------|--------|-------------|
-| `deep` | LLM endpoint URL | Prompt injection, jailbreaks, tool poisoning, data exfiltration, multi-turn escalation |
+| `deep` | LLM endpoint URL | Prompt injection, jailbreaks, tool poisoning, data exfiltration, multi-turn escalation (40-turn budget) |
 | `probe` | LLM endpoint URL | Lightweight surface scan of an LLM endpoint |
 | `web` | Web application URL | CORS, headers, exposed files, SSRF, XSS, path traversal, fingerprinting |
 | `mcp` | MCP server | Tool poisoning, schema abuse, permission escalation |
@@ -112,7 +119,7 @@ The CLI runs scans and produces findings. The dashboard consumes those findings 
 
 For web application pentesting, pwnkit uses a shell-first approach. Instead of routing the agent through structured tools like `crawl_page`, `submit_form`, or `http_request`, the web mode gives the agent a minimal tool set:
 
-- `shell_exec` — run any bash command (curl, sqlmap, python, nmap, etc.)
+- `bash` — run any bash command (curl, sqlmap, python, nmap, etc.)
 - `save_finding` — record a confirmed vulnerability with PoC
 - `done` — signal completion
 
@@ -128,7 +135,7 @@ Each agent has access to a set of tools depending on the scan type:
 
 | Tool | Used in | Purpose |
 |------|---------|---------|
-| `shell_exec` | Web, LLM, Verify | **Primary tool for web pentesting.** Run any shell command (curl, python3, bash, sqlmap, nmap, etc.) |
+| `bash` | Web, LLM, Verify | **Primary tool for web pentesting.** Run any shell command (curl, python3, bash, sqlmap, nmap, etc.). Renamed from `shell_exec` to match [pi-mono](https://github.com/badlogic/pi-mono)'s naming convention. |
 | `save_finding` | All modes | Record a discovered vulnerability with PoC |
 | `done` | All modes | Signal that the agent has finished |
 | `send_prompt` | LLM | Send prompts to LLM/AI endpoints |
@@ -136,6 +143,6 @@ Each agent has access to a set of tools depending on the scan type:
 | `run_command` | Source, npm | Execute commands in a sandbox |
 | `list_files` | Source, npm | Enumerate files in a directory |
 | `search_code` | Source, npm | Search for patterns across a codebase |
-| `crawl_page` | Web (optional) | Crawl a web page -- available but `shell_exec` with curl is preferred |
-| `submit_form` | Web (optional) | Submit a form -- available but `shell_exec` with curl is preferred |
-| `http_request` | Web (optional) | Send HTTP requests -- available but `shell_exec` with curl is preferred |
+| `crawl_page` | Web (optional) | Crawl a web page -- available but `bash` with curl is preferred |
+| `submit_form` | Web (optional) | Submit a form -- available but `bash` with curl is preferred |
+| `http_request` | Web (optional) | Send HTTP requests -- available but `bash` with curl is preferred |

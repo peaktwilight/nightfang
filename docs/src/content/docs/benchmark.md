@@ -41,7 +41,9 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 
 ## XBOW Traditional Web Vulnerability Benchmark
 
-104 Docker CTF challenges from [xbow-engineering/validation-benchmarks](https://github.com/xbow-engineering/validation-benchmarks). Each hides a `FLAG{...}` behind a real web vulnerability. The agent used the shell-first tool set: `shell_exec` + `save_finding` + `done`.
+104 Docker CTF challenges from [xbow-engineering/validation-benchmarks](https://github.com/xbow-engineering/validation-benchmarks). Each hides a `FLAG{...}` behind a real web vulnerability. The agent used the shell-first tool set: `bash` + `save_finding` + `done`.
+
+> **Note:** Results below were collected before the Responses API `output_text` bug was fixed (see [Comparison](#comparison-with-other-tools) for details). The agent crashed after turn 3 on most challenges. Retesting is in progress.
 
 ### Overall
 
@@ -122,12 +124,17 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 
 | Tool | XBOW Score | Approach |
 |------|-----------|----------|
-| KinoSec | 92.3% (96/104) | Black-box, proprietary, Claude Sonnet |
-| XBOW | 85% (88/104) | Purpose-built for their benchmark |
-| MAPTA | 76.9% (80/104) | Multi-agent, academic |
+| [Shannon](https://arxiv.org/abs/2502.00477) | 96.15% (100/104) | White-box (reads source code) |
+| [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box, proprietary, Claude Sonnet |
+| [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
+| [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% (88/104) | Multi-agent with Coordinator |
+| [deadend-cli](https://github.com/deadend-cli) | 77.55% (~81/104) | Single-agent CLI |
+| [MAPTA](https://arxiv.org/abs/2411.17314) | 76.9% (80/104) | Multi-agent, academic |
 | **pwnkit** | **49% of tested (~22/45)** | Shell-first, open-source, Azure gpt-5.4 |
 
 Note: KinoSec, XBOW, and MAPTA scores are against the full 104 challenges on linux/amd64. pwnkit's score is against ~45 challenges that successfully ran on arm64. The 40 challenges that couldn't build (phantomjs, old base images) remain untested.
+
+> **Responses API bug (April 2026).** Previous XBOW results were affected by a critical bug in the Azure Responses API integration: assistant text was sent as `input_text` instead of `output_text`, causing Azure to crash after turn 3. This was the primary reason for low scores -- the agent never got past early discovery on most challenges. The bug is now fixed. Retesting with the corrected integration is in progress; expect scores to improve significantly.
 
 ### vs KinoSec
 
@@ -141,10 +148,10 @@ The XBOW benchmark consists of 104 CTF challenges focused on traditional web vul
 
 ## Methodology
 
-- **Tool set:** Minimal -- `shell_exec` + `save_finding` + `done`
+- **Tool set:** Minimal -- `bash` + `save_finding` + `done` (tool renamed from `shell_exec` to match pi-mono's convention)
 - **Model:** Azure OpenAI gpt-5.4 via Responses API
-- **Max turns:** 20 per challenge (some retried with 25)
-- **Approach:** Shell-first. Agent uses curl, python3, and bash to exploit targets.
+- **Max turns:** 40 per challenge in deep mode (increased from 20, based on [MAPTA](https://arxiv.org/abs/2411.17314) research showing 40 tool calls is the sweet spot)
+- **Approach:** Shell-first with planning phase and reflection checkpoints at 60% turn budget. Agent uses curl, python3, and bash to exploit targets.
 - **Scoring:** Binary flag extraction. `FLAG{...}` must appear in scan output.
 - **Non-determinism:** Same challenge can pass or fail across runs. Single-attempt scores vary 33-50%.
 
