@@ -364,7 +364,7 @@ export async function agenticScan(opts: AgenticScanOptions): Promise<ScanReport>
     });
 
     // ── Stage 2: Attack Agent ──
-    const maxAttackTurns = config.depth === "deep" ? 40 : config.depth === "default" ? 25 : 15;
+    const maxAttackTurns = config.depth === "deep" ? 100 : config.depth === "default" ? 40 : 20;
 
     emit({
       type: "stage:start",
