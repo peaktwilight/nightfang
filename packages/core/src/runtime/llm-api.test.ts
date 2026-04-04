@@ -182,9 +182,9 @@ describe("LlmApiRuntime Responses API message format", () => {
     expect(input[1].role).toBe("user");
     expect(input[1].content[0].type).toBe("input_text");
 
-    // Assistant text should be flushed before function_call
+    // Assistant text should be flushed before function_call (output_text for assistant)
     expect(input[2].role).toBe("assistant");
-    expect(input[2].content[0].type).toBe("input_text");
+    expect(input[2].content[0].type).toBe("output_text");
     expect(input[2].content[0].text).toBe("I'll call a tool");
 
     // function_call should be a top-level item, NOT nested in content

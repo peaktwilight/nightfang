@@ -191,16 +191,21 @@ export async function runNativeAgentLoop(
         break;
       }
 
-      // Push the agent to keep working
-      state.messages.push({
-        role: "user",
-        content: [
-          {
-            type: "text",
-            text: buildContinuePrompt(config, state.turnCount),
-          },
-        ],
-      });
+      // Push the agent to keep working — but only if the last message
+      // in the conversation is from the user (avoid invalid sequences
+      // where two user messages follow each other on the Responses API)
+      const lastMsg = state.messages[state.messages.length - 1];
+      if (lastMsg?.role !== "user") {
+        state.messages.push({
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: buildContinuePrompt(config, state.turnCount),
+            },
+          ],
+        });
+      }
       continue;
     }
 

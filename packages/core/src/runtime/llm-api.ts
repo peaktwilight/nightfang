@@ -496,7 +496,9 @@ export class LlmApiRuntime implements Runtime, NativeRuntime {
           const textBlocks: Array<Record<string, unknown>> = [];
           for (const block of m.content) {
             if (block.type === "text") {
-              textBlocks.push({ type: "input_text", text: block.text });
+              // User messages use input_text, assistant messages use output_text
+              const textType = m.role === "assistant" ? "output_text" : "input_text";
+              textBlocks.push({ type: textType, text: block.text });
             } else if (block.type === "tool_use") {
               // Flush any pending text blocks first
               if (textBlocks.length > 0) {
