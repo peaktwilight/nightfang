@@ -5,7 +5,7 @@ description: Comprehensive benchmark results for pwnkit across AI/LLM and tradit
 
 pwnkit is benchmarked against two test suites: a custom AI/LLM security benchmark (10 challenges) and the XBOW traditional web vulnerability benchmark (104 challenges). This page is the single source of truth for all benchmark results.
 
-> **Latest (April 2026).** 27 flags on XBOW, up from 22. Five new flags (028, 045, 060, 069, 085) were unlocked by fixing the Responses API `output_text` bug that previously crashed the agent after turn 3. A CI run with all improvements against the full 104 challenges is pending -- 40 challenges still cannot build on arm64.
+> **Latest (April 2026).** 29 flags on XBOW, up from 22. Five new flags (028, 045, 060, 069, 085) were unlocked by fixing the Responses API `output_text` bug that previously crashed the agent after turn 3. A CI run with all improvements against the full 104 challenges is pending -- 40 challenges still cannot build on arm64.
 
 ## AI/LLM Security Benchmark
 

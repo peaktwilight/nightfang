@@ -36,7 +36,7 @@ we kept `bash` as the primary tool for the rest of v0.4. every benchmark improve
 
 XBOW is the gold standard for evaluating AI pentesting agents. 104 challenges across real vulnerability categories, each requiring actual exploitation &mdash; not just detection, but flag extraction.
 
-pwnkit v0.4.2 extracted 27 flags across 13 vulnerability categories:
+pwnkit v0.4.2 extracted 29 flags across 13 vulnerability categories:
 
 - **injection**: SQLi, blind SQLi, SSTI, command injection
 - **access control**: IDOR, auth bypass, business logic flaws
