@@ -14,6 +14,11 @@
     "xbow:quick": "tsx src/xbow-runner.ts --limit 5",
     "xbow:agentic": "tsx src/xbow-runner.ts --agentic",
     "xbow:whitebox": "tsx src/xbow-runner.ts --agentic --white-box",
+    "autopenbench": "tsx src/autopenbench-runner.ts",
+    "autopenbench:dry": "tsx src/autopenbench-runner.ts --dry-run",
+    "harmbench": "tsx src/harmbench-runner.ts",
+    "harmbench:quick": "tsx src/harmbench-runner.ts --limit 20",
+    "harmbench:json": "tsx src/harmbench-runner.ts --json",
     "npm-bench": "tsx src/npm-bench.ts",
     "npm-bench:json": "tsx src/npm-bench.ts --json",
     "report": "tsx src/report.ts"
