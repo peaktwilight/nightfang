@@ -308,3 +308,25 @@ Shannon's pre-recon spawns 6 sub-agents for source analysis (architecture scanne
 
 **Realistic target with Playwright + turns + pre-analysis: 55-65/104 (53-63%).**
 On challenges pwnkit can run, 85%+.
+
+## AutoPenBench integration path
+
+33 Docker tasks (22 in-vitro + 11 real CVEs). Best autonomous score: 21%. Already has an MCP server.
+
+**Key difference from XBOW:** agent SSHes into a Kali Linux container, then pivots to targets on an internal Docker network. No direct HTTP target URL.
+
+**Integration:** MCP bridge approach — AutoPenBench ships an MCP server with `execute_bash`, `ssh_connect`, `write_file`, `final_answer` tools. pwnkit connects as MCP client. Shell-first approach maps directly to `execute_bash`. Estimated effort: 1-2 days.
+
+**Why it matters:** 21% bar is low. pwnkit's shell-first approach should significantly outperform on access control and web security tasks.
+
+## HarmBench / JailbreakBench (LLM safety)
+
+These measure **content safety** (can you make the model say harmful things), not **security** (can you exploit vulnerabilities). Different from pwnkit's existing AI/LLM benchmark.
+
+**HarmBench:** 510 behaviors, 18 attack methods tested. Best: ~31% ASR. Integration: lightweight loop using `sendPrompt()` + classifier. 2-3 days.
+
+**JailbreakBench:** 200 behaviors, NeurIPS leaderboard. Can submit via GitHub issue. 2-3 days.
+
+**Not worth:** running the full agentic scanner on 510 behaviors — wrong tool for single-shot content queries.
+
+**Worth doing:** lightweight harness for comparable benchmark numbers alongside XBOW scores.
