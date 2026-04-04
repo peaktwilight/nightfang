@@ -48,7 +48,7 @@ The minimal approach wins because it reduces the decision space. For full benchm
 
 ### Influences
 
-- **[pi-mono](https://github.com/badlogic/pi-mono)** -- 4 tools: read, write, edit, bash. Bash is the Swiss army knife.
+- **[pi-mono](https://github.com/badlogic/pi-mono)** -- minimal coding agent with bash as the primary tool. Bash is the Swiss army knife.
 - **[Terminus](https://www.tbench.ai/news/terminus)** -- single tmux tool, 74.7% on Terminal-Bench.
 - **[XBOW](https://xbow.com/blog/core-components-ai-pentesting-framework)** -- structured tools + real security tooling, 85%.
 - **[KinoSec](https://kinosec.ai)** -- 92.3% on XBOW, black-box HTTP.
@@ -65,9 +65,9 @@ An investigation into the top-performing pentesting agents validated pwnkit's ap
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box (reads source code) |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box HTTP, Claude Sonnet |
 | [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
-| [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% (88/104) | Multi-agent with Coordinator |
-| [deadend-cli](https://github.com/deadend-cli) | 77.55% (~81/104) | Single-agent CLI |
-| [MAPTA](https://arxiv.org/abs/2411.17314) | 76.9% (80/104) | Multi-agent, academic |
+| [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% | Multi-agent with Coordinator |
+| [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~81/104) | Single-agent CLI |
+| [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
 | **pwnkit** | **60% of tested (27/45)** | Shell-first, open-source, Azure gpt-5.4 |
 
 pwnkit's 27 flags on XBOW (avg 9.5 turns per flag):

@@ -19,7 +19,7 @@ These stages are grouped into two agent sessions:
 
 A single agent session that:
 
-1. **Plans** the engagement -- estimates target difficulty, identifies likely vulnerability classes, and prioritizes attack vectors. Research into top pentesting agents ([KinoSec](https://kinosec.ai) at 92.3%, [XBOW](https://xbow.com) at 85%, [MAPTA](https://arxiv.org/abs/2411.17314) at 76.9%) shows that planning before execution is a shared trait of high-performing agents. The plan is injected into the system prompt so the agent starts with a strategy rather than fumbling through discovery.
+1. **Plans** the engagement -- estimates target difficulty, identifies likely vulnerability classes, and prioritizes attack vectors. Research into top pentesting agents ([KinoSec](https://kinosec.ai) at 92.3%, [XBOW](https://xbow.com) at 85%, [MAPTA](https://arxiv.org/abs/2508.20816) at 76.9%) shows that planning before execution is a shared trait of high-performing agents. The plan is injected into the system prompt so the agent starts with a strategy rather than fumbling through discovery.
 2. **Discovers** the attack surface -- maps endpoints, detects models, identifies features, fingerprints web technologies, and enumerates exposed paths
 3. **Attacks** the target -- crafts multi-turn attacks spanning prompt injection, jailbreaks, tool poisoning, data exfiltration (LLM), CORS misconfiguration, SSRF, XSS, path traversal, header injection (web), supply chain and malicious code analysis (npm), and vulnerability patterns (source code)
 4. **Writes PoC code** -- produces a proof-of-concept that demonstrates each vulnerability
@@ -34,9 +34,9 @@ The research agent's tool set depends on the target type:
 
 The agent adapts its strategy based on what it discovers -- if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection. For web apps, it escalates from fingerprinting to active exploitation using real pentesting tools via shell. For source code, it traces data flows from user input to dangerous sinks.
 
-**Reflection checkpoints.** When the agent reaches 60% of its turn budget, pwnkit injects a reflection prompt forcing the agent to review what has been tried, what failed, and what alternative approaches remain. This is inspired by [deadend-cli](https://github.com/deadend-cli) (78% on XBOW) and [PentestAgent](https://arxiv.org/abs/2411.17314)'s self-reflection mechanism. Without reflection, agents frequently stall on a single approach and exhaust their budget.
+**Reflection checkpoints.** When the agent reaches 60% of its turn budget, pwnkit injects a reflection prompt forcing the agent to review what has been tried, what failed, and what alternative approaches remain. This is inspired by [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) (78% on XBOW) and [PentestAgent](https://arxiv.org/abs/2508.20816)'s self-reflection mechanism. Without reflection, agents frequently stall on a single approach and exhaust their budget.
 
-**Turn budget.** [MAPTA](https://arxiv.org/abs/2411.17314) data shows 40 tool calls is the sweet spot for CTF-style challenges -- enough to complete multi-step exploit chains without wasting tokens on dead ends. Deep mode uses a budget of 40 turns (increased from the original 20).
+**Turn budget.** [MAPTA](https://arxiv.org/abs/2508.20816) data shows 40 tool calls is the sweet spot for CTF-style challenges -- enough to complete multi-step exploit chains without wasting tokens on dead ends. Deep mode uses a budget of 40 turns (increased from the original 20).
 
 ### 2. Verify agent (Blind validation)
 
@@ -125,7 +125,7 @@ For web application pentesting, pwnkit uses a shell-first approach. Instead of r
 
 This works because the model already knows curl, bash pipelines, and standard pentesting tools from training data. A single `curl -c cookies.txt ... | jq` command replaces multiple structured tool calls and eliminates the state-threading confusion that causes agents to loop.
 
-The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access. On the XBOW benchmark, the shell-first approach extracted 22 flags from ~45 tested challenges (49%) across 13 vulnerability categories, with no benchmark-specific tuning.
+The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access. On the XBOW benchmark, the shell-first approach extracted 27 flags from ~45 tested challenges (49%) across 13 vulnerability categories, with no benchmark-specific tuning.
 
 See the [Philosophy](/philosophy/) page for the full rationale behind this design decision and the [Benchmark](/benchmark/) page for detailed results.
 

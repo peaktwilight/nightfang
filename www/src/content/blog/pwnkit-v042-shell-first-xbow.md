@@ -34,7 +34,7 @@ we kept `bash` as the primary tool for the rest of v0.4. every benchmark improve
 
 ## XBOW benchmark results
 
-XBOW is the gold standard for evaluating AI pentesting agents. 52 challenges across real vulnerability categories, each requiring actual exploitation &mdash; not just detection, but flag extraction.
+XBOW is the gold standard for evaluating AI pentesting agents. 104 challenges across real vulnerability categories, each requiring actual exploitation &mdash; not just detection, but flag extraction.
 
 pwnkit v0.4.2 extracted 23 flags across 13 vulnerability categories:
 

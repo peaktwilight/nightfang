@@ -132,9 +132,9 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 | [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box (reads source code) |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box, proprietary, Claude Sonnet |
 | [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
-| [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% (88/104) | Multi-agent with Coordinator |
-| [deadend-cli](https://github.com/deadend-cli) | 77.55% (~81/104) | Single-agent CLI |
-| [MAPTA](https://arxiv.org/abs/2411.17314) | 76.9% (80/104) | Multi-agent, academic |
+| [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% | Multi-agent with Coordinator |
+| [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~81/104) | Single-agent CLI |
+| [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
 | **pwnkit** | **60% of tested (~27/45)** | Shell-first, open-source, Azure gpt-5.4 |
 
 Note: KinoSec, XBOW, and MAPTA scores are against the full 104 challenges on linux/amd64. pwnkit's score is against ~45 challenges that successfully ran on arm64. The 40 challenges that couldn't build (phantomjs, old base images) remain untested.
@@ -155,7 +155,7 @@ The XBOW benchmark consists of 104 CTF challenges focused on traditional web vul
 
 - **Tool set:** Minimal -- `bash` + `save_finding` + `done` (tool renamed from `shell_exec` to match pi-mono's convention)
 - **Model:** Azure OpenAI gpt-5.4 via Responses API
-- **Max turns:** 40 per challenge in deep mode (increased from 20, based on [MAPTA](https://arxiv.org/abs/2411.17314) research showing 40 tool calls is the sweet spot)
+- **Max turns:** 40 per challenge in deep mode (increased from 20, based on [MAPTA](https://arxiv.org/abs/2508.20816) research showing 40 tool calls is the sweet spot)
 - **Approach:** Shell-first with planning phase and reflection checkpoints at 60% turn budget. Agent uses curl, python3, and bash to exploit targets.
 - **Scoring:** Binary flag extraction. `FLAG{...}` must appear in scan output.
 - **Non-determinism:** Same challenge can pass or fail across runs. Single-attempt scores vary 33-50%.
