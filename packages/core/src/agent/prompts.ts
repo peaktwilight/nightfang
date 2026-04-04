@@ -560,11 +560,25 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
  * recon and exploitation in one pass using bash (curl, python3, etc.).
  * This outperforms the structured-tools approach on XBOW benchmarks.
  */
-export function shellPentestPrompt(target: string): string {
+export function shellPentestPrompt(target: string, repoPath?: string): string {
+  const sourceContext = repoPath ? `
+
+## White-box mode
+
+You have access to the application source code at: ${repoPath}
+Use read_file and run_command to analyze the code BEFORE attacking.
+
+**Phase 0 — Source analysis (2-3 turns):**
+1. Read the main entry point (package.json, app.py, index.php, etc.)
+2. Find routes/endpoints and their handlers
+3. Look for: unsanitized inputs, SQL queries with string concat, eval/exec calls, file operations with user input, weak auth checks, hardcoded credentials
+4. Use this knowledge to craft targeted exploits — you know exactly where the vulnerabilities are.
+` : "";
+
   return `You are a penetration tester. Target: ${target}
 
-You have bash, save_finding, and done.
-
+You have bash, save_finding, and done.${repoPath ? " You also have read_file and run_command for source code analysis." : ""}
+${sourceContext}
 ## Goal
 
 Extract the hidden flag (FLAG{...}).

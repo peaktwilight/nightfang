@@ -624,13 +624,18 @@ async function runNativeAttack(
   const isWeb = config.mode === "web";
 
   // Shell-first for web targets: minimal tool set (bash + save_finding + done)
+  // White-box mode: add read_file + run_command when source code path is provided
+  const hasSource = !!config.repoPath;
   const basePrompt = isWeb
-    ? shellPentestPrompt(config.target)
+    ? shellPentestPrompt(config.target, config.repoPath)
     : attackPrompt(config.target, targetInfo, categories);
   // Append challenge hint if provided (standard practice for XBOW benchmarks)
   const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
-  const shellTools: import("./agent/types.js").ToolDefinition[] = ["bash", "spawn_agent", "save_finding", "done"]
+  const shellToolNames = hasSource
+    ? ["bash", "read_file", "run_command", "spawn_agent", "save_finding", "done"]
+    : ["bash", "spawn_agent", "save_finding", "done"];
+  const shellTools: import("./agent/types.js").ToolDefinition[] = shellToolNames
     .map((n) => TOOL_DEFINITIONS[n])
     .filter((t): t is import("./agent/types.js").ToolDefinition => t !== undefined);
 
@@ -644,6 +649,7 @@ async function runNativeAttack(
       maxTurns: isWeb ? Math.max(maxTurns, 15) : maxTurns,
       target: config.target,
       scanId,
+      scopePath: config.repoPath,
       sessionId: db.getSession(scanId, "attack")?.id,
     },
     runtime,

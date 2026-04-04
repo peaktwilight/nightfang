@@ -17,6 +17,7 @@ export function registerScanCommand(program: Command): void {
     .option("--db-path <path>", "Path to SQLite database")
     .option("--api-key <key>", "API key for LLM provider")
     .option("--model <model>", "LLM model to use")
+    .option("--repo <path>", "Source code path for white-box scanning (read code before attacking)")
     .option("--verbose", "Show detailed output", false)
     .option("--replay", "Replay the last scan's results", false)
     .action(async (opts) => {
@@ -79,6 +80,7 @@ export function registerScanCommand(program: Command): void {
         dbPath: opts.dbPath as string | undefined,
         apiKey: opts.apiKey as string | undefined,
         model: opts.model as string | undefined,
+        repoPath: opts.repo as string | undefined,
       });
     });
 }
