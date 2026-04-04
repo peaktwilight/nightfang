@@ -127,7 +127,7 @@ function detectProvider(configApiKey?: string): {
       apiKey: azureKey,
       baseUrl: process.env.AZURE_OPENAI_BASE_URL ?? process.env.OPENAI_BASE_URL ?? azureConfig.baseUrl ?? "https://api.openai.com/v1",
       defaultModel: process.env.AZURE_OPENAI_MODEL ?? azureConfig.model ?? DEFAULT_OPENAI_MODEL,
-      wireApi: azureConfig.wireApi ?? "chat_completions",
+      wireApi: (process.env.AZURE_OPENAI_WIRE_API as WireApi) ?? azureConfig.wireApi ?? "chat_completions",
     };
   }
 
