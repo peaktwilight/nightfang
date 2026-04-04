@@ -95,7 +95,7 @@ Validated across 5 benchmark suites: XBOW, AI/LLM security, AutoPenBench, HarmBe
 
 ### AI/LLM security
 
-**100% (10/10)** on custom challenges covering prompt injection, jailbreaks, system prompt extraction, PII leakage, encoding bypass, multi-turn escalation, and MCP SSRF. Zero false positives.
+10/10 on custom AI/LLM regression tests covering prompt injection, jailbreaks, system prompt extraction, PII leakage, encoding bypass, multi-turn escalation, and MCP SSRF. Zero false positives.
 
 See [benchmark details](https://docs.pwnkit.com/benchmark) for per-challenge breakdowns and the full flag table.
 

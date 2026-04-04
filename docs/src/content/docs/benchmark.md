@@ -11,7 +11,7 @@ pwnkit is benchmarked against five test suites: a custom AI/LLM security benchma
 
 10 custom challenges covering AI-specific attack surfaces. Each challenge hides a `FLAG{...}` behind a real vulnerability. The scanner must exploit the vulnerability to extract the flag.
 
-**Score: 100% (10/10) -- Flag extraction: 100% -- False positives: 0**
+**Score: 10/10 on our regression test suite.** These are self-authored challenges used to verify pwnkit handles known attack patterns. Not an independent benchmark.
 
 | Challenge | Category | Difficulty | Turns | Flag |
 |-----------|----------|------------|-------|------|
