@@ -68,6 +68,7 @@ export default defineConfig({
             { label: "Model Comparison", slug: "research/model-comparison" },
             { label: "XBOW Analysis", slug: "research/xbow-analysis" },
             { label: "Competitive Landscape", slug: "research/competitive-landscape" },
+            { label: "Agent Techniques", slug: "research/agent-techniques" },
           ],
         },
         {
