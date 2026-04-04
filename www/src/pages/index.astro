@@ -134,36 +134,36 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
     <!-- What you can scan -->
     <section class="py-16 sm:py-24 border-t border-white/5">
       <div class="max-w-4xl mx-auto px-6">
-        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Fully autonomous agentic pentesting.</h2>
+        <h2 class="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight mb-8 text-center" style="font-family: 'Outfit', sans-serif">Shell-first. Minimal tools. Real exploits.</h2>
 
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
-            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-            </div>
-            <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
-            <p class="text-xs text-ash">ChatGPT, Claude, Llama APIs, custom chatbots</p>
-          </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">Web Apps</h3>
-            <p class="text-xs text-ash">CORS, headers, exposed files, fingerprinting</p>
+            <p class="text-xs text-ash">SQLi, IDOR, SSTI, XSS, auth bypass, SSRF — 35+ XBOW flags</p>
+          </div>
+          <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
+            <div class="w-8 h-8 mx-auto mb-3 text-crimson">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
+            <p class="text-xs text-ash">Prompt injection, jailbreaks, PII leakage — 100% benchmark</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">npm Packages</h3>
-            <p class="text-xs text-ash">Supply chain, malicious code, dependency risk</p>
+            <p class="text-xs text-ash">Supply chain attacks, malware, CVEs, typosquatting</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
             </div>
             <h3 class="font-semibold text-sm mb-1">Source Code</h3>
-            <p class="text-xs text-ash">Local repos, GitHub URLs, deep AI audit</p>
+            <p class="text-xs text-ash">White-box mode reads code before attacking</p>
           </div>
         </div>
       </div>
@@ -182,27 +182,19 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {[
-            { name: "Direct Prompt Injection", status: "pass", difficulty: "easy" },
-            { name: "System Prompt Extraction", status: "pass", difficulty: "easy" },
-            { name: "PII Data Leakage", status: "pass", difficulty: "easy" },
-            { name: "Base64 Encoding Bypass", status: "pass", difficulty: "medium" },
-            { name: "DAN Jailbreak", status: "pass", difficulty: "medium" },
-            { name: "SSRF via MCP Tool", status: "pass", difficulty: "medium" },
-            { name: "Multi-Turn Escalation", status: "pass", difficulty: "hard" },
-            { name: "CORS Misconfiguration", status: "pass", difficulty: "easy" },
-            { name: "Sensitive Path Exposure", status: "pass", difficulty: "easy" },
-            { name: "Indirect Prompt Injection", status: "pass", difficulty: "hard" },
-          ].map((c) => (
+            { name: "XBOW Web Pentesting", score: "35+ flags", detail: "SQLi, IDOR, SSTI, XSS, auth bypass, RCE" },
+            { name: "AI/LLM Security", score: "100%", detail: "Prompt injection, jailbreaks, PII leakage" },
+            { name: "AutoPenBench", score: "built", detail: "33 network/CVE tasks (Log4Shell, Heartbleed)" },
+            { name: "HarmBench", score: "built", detail: "510 LLM safety behaviors" },
+            { name: "npm Audit", score: "built", detail: "30 packages — first npm security benchmark" },
+            { name: "White-box Mode", score: "3/5", detail: "Cracked impossible challenges with source access" },
+          ].map((b) => (
             <div class="flex items-center gap-3 bg-night-lighter border border-white/5 rounded-lg px-4 py-2.5 hover:border-crimson/20 transition-colors">
-              <span class={`font-mono text-sm ${c.status === "pass" ? "text-emerald-400" : "text-crimson"}`}>
-                {c.status === "pass" ? "PASS" : "FAIL"}
-              </span>
-              <span class="text-sm text-white flex-1">{c.name}</span>
-              <span class={`text-xs px-2 py-0.5 rounded-full ${
-                c.difficulty === "easy" ? "bg-emerald-400/10 text-emerald-400" :
-                c.difficulty === "medium" ? "bg-amber-400/10 text-amber-400" :
-                "bg-crimson/10 text-crimson"
-              }`}>{c.difficulty}</span>
+              <span class="font-mono text-sm text-crimson min-w-[60px]">{b.score}</span>
+              <div class="flex-1">
+                <span class="text-sm text-white">{b.name}</span>
+                <p class="text-xs text-ash mt-0.5">{b.detail}</p>
+              </div>
             </div>
           ))}
         </div>
