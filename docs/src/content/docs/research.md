@@ -275,3 +275,17 @@ Usage: `pwnkit scan --target http://target --repo ./source`
 Usage: `pwnkit scan --target http://target --repo ./source`
 
 CI runs both modes independently with a dropdown selector.
+
+## Other benchmarks to target
+
+Beyond XBOW, these benchmarks are relevant to pwnkit's capabilities:
+
+| Benchmark | Domain | Scale | Best autonomous score | pwnkit relevance |
+|-----------|--------|-------|----------------------|------------------|
+| [SastBench](https://arxiv.org/abs/2601.02941) | Code review | Real CVEs + FP triage | Not published | `pwnkit review` — TP/FP classification |
+| [HarmBench](https://github.com/centerforaisafety/HarmBench) | LLM red teaming | 510 behaviors | Varies by method | `pwnkit scan` on LLM targets |
+| [JailbreakBench](https://github.com/JailbreakBench/jailbreakbench) | Jailbreak detection | 200 behaviors | Leaderboard | Prompt injection + jailbreak detection |
+| [AutoPenBench](https://github.com/lucagioacchini/auto-pen-bench) | Web pentesting | 33 Docker tasks | 21% autonomous | Shell-first should beat this |
+| [CyberSecEval 4](https://github.com/meta-llama/PurpleLlama) | Multi-domain | Prompt injection, offensive ops | Varies | Meta brand, cherry-pick subsets |
+
+**Gap: no npm audit benchmark exists.** pwnkit could create one — 50-100 packages (malware, typosquats, safe) with ground truth. First mover advantage.
