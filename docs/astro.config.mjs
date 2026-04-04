@@ -56,6 +56,10 @@ export default defineConfig({
           slug: "benchmark",
         },
         {
+          label: "Research",
+          slug: "research",
+        },
+        {
           label: "API Keys",
           slug: "api-keys",
         },
