@@ -44,10 +44,6 @@ export default defineConfig({
           slug: "configuration",
         },
         {
-          label: "Philosophy",
-          slug: "philosophy",
-        },
-        {
           label: "Architecture",
           slug: "architecture",
         },

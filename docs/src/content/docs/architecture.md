@@ -125,9 +125,9 @@ For web application pentesting, pwnkit uses a shell-first approach. Instead of r
 
 This works because the model already knows curl, bash pipelines, and standard pentesting tools from training data. A single `curl -c cookies.txt ... | jq` command replaces multiple structured tool calls and eliminates the state-threading confusion that causes agents to loop.
 
-The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access. On the XBOW benchmark, the shell-first approach extracted 27 flags from ~45 tested challenges (49%) across 13 vulnerability categories, with no benchmark-specific tuning.
+The structured tools (`crawl_page`, `submit_form`, `http_request`) are still available as optional additions, but benchmarking showed the agent performs better with just shell access.
 
-See the [Philosophy](/philosophy/) page for the full rationale behind this design decision and the [Benchmark](/benchmark/) page for detailed results.
+See the [Research](/research/) page for the full rationale and data behind this design decision and the [Benchmark](/benchmark/) page for detailed results.
 
 ## Agent tools
 
