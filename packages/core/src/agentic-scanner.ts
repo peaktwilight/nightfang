@@ -623,23 +623,28 @@ async function runNativeAttack(
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
 
+  // Detect playwright availability for browser tool
+  let hasBrowser = false;
+  // @ts-ignore — playwright is an optional dependency
+  try { await import("playwright"); hasBrowser = true; } catch { /* playwright not installed */ }
+
   // Shell-first for web targets: minimal tool set (bash + save_finding + done)
   // White-box mode: add read_file + run_command when source code path is provided
   const hasSource = !!config.repoPath;
   const basePrompt = isWeb
-    ? shellPentestPrompt(config.target, config.repoPath)
+    ? shellPentestPrompt(config.target, config.repoPath, { hasBrowser })
     : attackPrompt(config.target, targetInfo, categories);
   // Append challenge hint if provided (standard practice for XBOW benchmarks)
   const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
   const shellToolNames = hasSource
-    ? ["bash", "read_file", "run_command", "spawn_agent", "save_finding", "done"]
-    : ["bash", "spawn_agent", "save_finding", "done"];
+    ? ["bash", ...(hasBrowser ? ["browser"] : []), "read_file", "run_command", "spawn_agent", "save_finding", "done"]
+    : ["bash", ...(hasBrowser ? ["browser"] : []), "spawn_agent", "save_finding", "done"];
   const shellTools: import("./agent/types.js").ToolDefinition[] = shellToolNames
     .map((n) => TOOL_DEFINITIONS[n])
     .filter((t): t is import("./agent/types.js").ToolDefinition => t !== undefined);
 
-  const tools = isWeb ? shellTools : getToolsForRole("attack");
+  const tools = isWeb ? shellTools : getToolsForRole("attack", { hasBrowser });
 
   const state = await runNativeAgentLoop({
     config: {

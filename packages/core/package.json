@@ -20,6 +20,9 @@
     "@pwnkit/templates": "workspace:*",
     "better-sqlite3": "^12.8.0"
   },
+  "optionalDependencies": {
+    "playwright": "^1.52.0"
+  },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
     "typescript": "^5.4.0",

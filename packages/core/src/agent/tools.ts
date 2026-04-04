@@ -210,6 +210,23 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     required: ["command"],
   },
 
+  browser: {
+    name: "browser",
+    description:
+      "Control a headless browser. Navigate to URLs, fill forms, click elements, execute JavaScript, and read page content. Use for XSS testing and pages that need JavaScript rendering.",
+    parameters: {
+      action: {
+        type: "string",
+        description: "Browser action",
+        enum: ["navigate", "click", "fill", "evaluate", "content", "screenshot"],
+      },
+      url: { type: "string", description: "URL to navigate to (for navigate action)" },
+      selector: { type: "string", description: "CSS selector (for click/fill actions)" },
+      value: { type: "string", description: "Value to fill or JavaScript to evaluate" },
+    },
+    required: ["action"],
+  },
+
   spawn_agent: {
     name: "spawn_agent",
     description:
@@ -452,10 +469,44 @@ function validateTargetUrl(baseUrl: string, requestedUrl: string): string {
 export class ToolExecutor {
   private db: pwnkitDB | null;
   private ctx: ToolContext;
+  private _browser: any = null;
+  private _browserPage: any = null;
+  private _browserDialogs: string[] = [];
+  private _browserConsole: string[] = [];
+  private _playwrightAvailable: boolean | null = null;
 
   constructor(ctx: ToolContext, db: pwnkitDB | null = null) {
     this.ctx = ctx;
     this.db = db;
+  }
+
+  /** Check if playwright is installed (cached). */
+  async isPlaywrightAvailable(): Promise<boolean> {
+    if (this._playwrightAvailable !== null) return this._playwrightAvailable;
+    try {
+      // @ts-ignore — playwright is an optional dependency
+      await import("playwright");
+      this._playwrightAvailable = true;
+    } catch {
+      this._playwrightAvailable = false;
+    }
+    return this._playwrightAvailable;
+  }
+
+  /** Clean up browser resources. Call when the agent loop ends. */
+  async cleanup(): Promise<void> {
+    try {
+      if (this._browserPage) {
+        await this._browserPage.close().catch(() => {});
+        this._browserPage = null;
+      }
+      if (this._browser) {
+        await this._browser.close().catch(() => {});
+        this._browser = null;
+      }
+    } catch {
+      // Best-effort cleanup
+    }
   }
 
   async execute(call: ToolCall): Promise<ToolResult> {
@@ -483,6 +534,8 @@ export class ToolExecutor {
           return this.updateTarget(call.arguments);
         case "bash":
           return await this.shellExec(call.arguments);
+        case "browser":
+          return await this.browserAction(call.arguments);
         case "spawn_agent":
           return await this.spawnAgent(call.arguments);
         case "done":
@@ -894,6 +947,169 @@ export class ToolExecutor {
     }
   }
 
+  // ── Browser automation (Playwright) ──
+
+  private async ensureBrowser(): Promise<{ page: any }> {
+    if (this._browserPage) return { page: this._browserPage };
+
+    // @ts-ignore — playwright is an optional dependency
+    const { chromium } = await import("playwright");
+    this._browser = await chromium.launch({ headless: true });
+    const context = await this._browser.newContext({
+      ignoreHTTPSErrors: true,
+      userAgent: "pwnkit-browser/1.0",
+    });
+    this._browserPage = await context.newPage();
+
+    // Capture dialogs (alert/confirm/prompt) — key XSS signal
+    this._browserPage.on("dialog", async (dialog: any) => {
+      this._browserDialogs.push(`${dialog.type()}: ${dialog.message()}`);
+      await dialog.dismiss().catch(() => {});
+    });
+
+    // Capture console messages
+    this._browserPage.on("console", (msg: any) => {
+      if (this._browserConsole.length < 50) {
+        this._browserConsole.push(`[${msg.type()}] ${msg.text()}`);
+      }
+    });
+
+    return { page: this._browserPage };
+  }
+
+  private async browserAction(args: Record<string, unknown>): Promise<ToolResult> {
+    const action = args.action as string;
+    if (!action) {
+      return { success: false, output: null, error: "action is required" };
+    }
+
+    if (!(await this.isPlaywrightAvailable())) {
+      return {
+        success: false,
+        output: null,
+        error: "playwright is not installed. Install it with: npm i playwright && npx playwright install chromium",
+      };
+    }
+
+    // Clear per-action dialog/console buffers
+    this._browserDialogs = [];
+    this._browserConsole = [];
+
+    const ACTION_TIMEOUT = 10_000;
+
+    try {
+      const { page } = await this.ensureBrowser();
+
+      let result: unknown;
+
+      switch (action) {
+        case "navigate": {
+          const url = args.url as string;
+          if (!url) return { success: false, output: null, error: "url is required for navigate" };
+          const response = await page.goto(url, { timeout: ACTION_TIMEOUT, waitUntil: "domcontentloaded" });
+          result = {
+            url: page.url(),
+            status: response?.status() ?? null,
+            title: await page.title(),
+            dialogs: [...this._browserDialogs],
+            console: this._browserConsole.slice(0, 20),
+          };
+          break;
+        }
+
+        case "click": {
+          const selector = args.selector as string;
+          if (!selector) return { success: false, output: null, error: "selector is required for click" };
+          await page.click(selector, { timeout: ACTION_TIMEOUT });
+          // Wait briefly for any navigation or DOM updates
+          await page.waitForTimeout(500);
+          result = {
+            clicked: selector,
+            url: page.url(),
+            title: await page.title(),
+            dialogs: [...this._browserDialogs],
+            console: this._browserConsole.slice(0, 20),
+          };
+          break;
+        }
+
+        case "fill": {
+          const selector = args.selector as string;
+          const value = args.value as string;
+          if (!selector) return { success: false, output: null, error: "selector is required for fill" };
+          if (value === undefined) return { success: false, output: null, error: "value is required for fill" };
+          await page.fill(selector, value, { timeout: ACTION_TIMEOUT });
+          result = {
+            filled: selector,
+            value,
+            dialogs: [...this._browserDialogs],
+          };
+          break;
+        }
+
+        case "evaluate": {
+          const expression = args.value as string;
+          if (!expression) return { success: false, output: null, error: "value (JavaScript) is required for evaluate" };
+          const evalResult = await page.evaluate(expression).catch((e: Error) => `Error: ${e.message}`);
+          result = {
+            result: typeof evalResult === "object" ? JSON.stringify(evalResult) : String(evalResult),
+            dialogs: [...this._browserDialogs],
+            console: this._browserConsole.slice(0, 20),
+          };
+          break;
+        }
+
+        case "content": {
+          const html = await page.content();
+          // Extract visible text for readability
+          const text = await page.evaluate(() => document.body?.innerText?.slice(0, 5000) ?? "").catch(() => "");
+          result = {
+            url: page.url(),
+            title: await page.title(),
+            html: html.slice(0, 10_000),
+            text: (text as string).slice(0, 5_000),
+            dialogs: [...this._browserDialogs],
+          };
+          break;
+        }
+
+        case "screenshot": {
+          const buffer = await page.screenshot({ type: "png", fullPage: false });
+          const base64 = buffer.toString("base64").slice(0, 50_000); // cap at ~37KB image
+          result = {
+            url: page.url(),
+            title: await page.title(),
+            screenshot_base64: base64,
+            dialogs: [...this._browserDialogs],
+          };
+          break;
+        }
+
+        default:
+          return {
+            success: false,
+            output: null,
+            error: `Unknown browser action: ${action}. Valid: navigate, click, fill, evaluate, content, screenshot`,
+          };
+      }
+
+      this.persistToolArtifact("browser", {
+        action,
+        url: (args.url as string) ?? page.url(),
+        dialogs: [...this._browserDialogs],
+      });
+
+      return { success: true, output: result };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      return {
+        success: false,
+        output: { dialogs: [...this._browserDialogs], console: this._browserConsole.slice(0, 10) },
+        error: msg.slice(0, 2_000),
+      };
+    }
+  }
+
   private async spawnAgent(args: Record<string, unknown>): Promise<ToolResult> {
     const task = args.task as string;
     if (!task) return { success: false, output: null, error: "Task description is required" };
@@ -1147,9 +1363,10 @@ export class ToolExecutor {
 
 // ── Helper: get tools for a specific agent role ──
 
-export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMode?: boolean }): ToolDefinition[] {
+export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMode?: boolean; hasBrowser?: boolean }): ToolDefinition[] {
   const common = ["query_findings", "done"];
-  const networkTools = ["http_request", "crawl", "submit_form", "bash", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const browserTools = opts?.hasBrowser ? ["browser"] : [];
+  const networkTools = ["http_request", "crawl", "submit_form", "bash", ...browserTools, "send_prompt", "save_finding", "update_finding", "update_target", ...common];
   const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {

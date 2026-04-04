@@ -80,14 +80,25 @@ ${sysPrompt}
 - Call done when you've exhausted your attack surface`;
 }
 
-export function webPentestPrompt(target: string): string {
+export function webPentestPrompt(target: string, opts?: { hasBrowser?: boolean }): string {
+  const browserSection = opts?.hasBrowser ? `
+
+## Browser Tool (Playwright)
+
+You have a **browser** tool for JavaScript-rendered pages and XSS confirmation.
+Actions: navigate, click, fill, evaluate, content, screenshot.
+- For XSS: use browser to navigate to a page with an injected payload, then check the "dialogs" array — if alert/confirm/prompt fires, XSS is confirmed
+- Use for pages that require JavaScript rendering (SPAs, dynamic forms)
+- Use evaluate to run arbitrary JS in the page context
+` : "";
+
   return `You are a senior web application penetration tester performing an authorized security assessment.
 
 TARGET: ${target}
 
 ## Your Mission
 
-Perform a comprehensive web application penetration test against the target. You have the http_request tool to send actual HTTP requests and the save_finding tool to record confirmed vulnerabilities.
+Perform a comprehensive web application penetration test against the target. You have the http_request tool to send actual HTTP requests and the save_finding tool to record confirmed vulnerabilities.${opts?.hasBrowser ? " You also have the browser tool for headless browser automation — use it for XSS confirmation and JS-rendered pages." : ""}
 
 ## Phase 1: Reconnaissance & Attack Surface Mapping
 
@@ -158,7 +169,7 @@ Perform a comprehensive web application penetration test against the target. You
 - Be thorough: test every input field and parameter you discover
 - Do NOT report missing security headers as critical/high — they are typically medium/low
 
-When done testing all categories, call the done tool with a summary of findings.`;
+When done testing all categories, call the done tool with a summary of findings.${browserSection}`;
 }
 
 export function webPentestDiscoveryPrompt(target: string): string {
@@ -560,7 +571,7 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
  * recon and exploitation in one pass using bash (curl, python3, etc.).
  * This outperforms the structured-tools approach on XBOW benchmarks.
  */
-export function shellPentestPrompt(target: string, repoPath?: string): string {
+export function shellPentestPrompt(target: string, repoPath?: string, opts?: { hasBrowser?: boolean }): string {
   const sourceContext = repoPath ? `
 
 ## White-box mode
@@ -575,10 +586,22 @@ Use read_file and run_command to analyze the code BEFORE attacking.
 4. Use this knowledge to craft targeted exploits — you know exactly where the vulnerabilities are.
 ` : "";
 
+  const browserHint = opts?.hasBrowser ? `
+
+## Browser tool (Playwright)
+
+You have a **browser** tool for JavaScript-rendered pages and XSS confirmation.
+Actions: navigate, click, fill, evaluate, content, screenshot.
+- Use browser to navigate to pages that require JS rendering
+- For XSS: inject payloads via forms, then check the dialogs array in the response — if alert/confirm/prompt fires, XSS is confirmed
+- Use evaluate to run arbitrary JS in the page context
+- Combine with bash for complex attack chains (e.g., bash to find injection points, browser to confirm XSS fires)
+` : "";
+
   return `You are a penetration tester. Target: ${target}
 
-You have bash, save_finding, and done.${repoPath ? " You also have read_file and run_command for source code analysis." : ""}
-${sourceContext}
+You have bash, save_finding, and done.${repoPath ? " You also have read_file and run_command for source code analysis." : ""}${opts?.hasBrowser ? " You also have the browser tool for headless browser automation (Playwright)." : ""}
+${sourceContext}${browserHint}
 ## Goal
 
 Extract the hidden flag (FLAG{...}).
