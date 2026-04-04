@@ -27,6 +27,12 @@ jobs:
       - name: Clone AutoPenBench repository
         run: git clone --depth 1 https://github.com/lucagioacchini/auto-pen-bench "$AUTOPENBENCH_PATH"
 
+      - name: Build AutoPenBench Docker images
+        run: |
+          cd "$AUTOPENBENCH_PATH"
+          docker compose -f benchmark/machines/docker-compose.yml build --parallel
+        timeout-minutes: 30
+
       - run: pnpm install --frozen-lockfile
 
       - run: pnpm build

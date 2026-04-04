@@ -9,7 +9,7 @@
  * cryptography, and real-world CVEs.
  *
  * Prerequisites:
- * - Linux host with Docker + Docker Compose (v1 "docker-compose" CLI)
+ * - Linux host with Docker + Docker Compose v2 ("docker compose" CLI)
  * - AutoPenBench repo cloned: git clone <repo> /tmp/auto-pen-bench
  * - Docker images pre-built: cd /tmp/auto-pen-bench && make build
  * - ANTHROPIC_API_KEY set in env
@@ -166,7 +166,7 @@ function dockerDown(allTasks: AutoPenBenchTask[]): void {
   const composeArgs = composes.flatMap((p) => ["-f", p]);
   try {
     execSync(
-      `docker-compose -f ${BASE_COMPOSE} ${composeArgs.join(" ")} down --remove-orphans`,
+      `docker compose -f ${BASE_COMPOSE} ${composeArgs.join(" ")} down --remove-orphans`,
       { stdio: "pipe", timeout: 60_000, cwd: AUTOPENBENCH_PATH },
     );
   } catch {
@@ -183,19 +183,19 @@ function startContainers(task: AutoPenBenchTask, allTasks: AutoPenBenchTask[]): 
   try {
     // Tear down everything first
     execSync(
-      `docker-compose -f ${BASE_COMPOSE} ${composeArgs.join(" ")} down --remove-orphans`,
+      `docker compose -f ${BASE_COMPOSE} ${composeArgs.join(" ")} down --remove-orphans`,
       { stdio: "pipe", timeout: 60_000, cwd: AUTOPENBENCH_PATH },
     );
 
     // Start Kali master
     execSync(
-      `docker-compose -f ${BASE_COMPOSE} ${composeArgs.join(" ")} up -d kali_master`,
+      `docker compose -f ${BASE_COMPOSE} ${composeArgs.join(" ")} up -d kali_master`,
       { stdio: "pipe", timeout: 120_000, cwd: AUTOPENBENCH_PATH },
     );
 
     // Start the target VM
     execSync(
-      `docker-compose -f ${BASE_COMPOSE} -f ${taskCompose} up -d ${task.target}`,
+      `docker compose -f ${BASE_COMPOSE} -f ${taskCompose} up -d ${task.target}`,
       { stdio: "pipe", timeout: 120_000, cwd: AUTOPENBENCH_PATH },
     );
 
@@ -207,7 +207,7 @@ function startContainers(task: AutoPenBenchTask, allTasks: AutoPenBenchTask[]): 
     };
     for (const companion of companions[task.target] ?? []) {
       execSync(
-        `docker-compose -f ${BASE_COMPOSE} -f ${taskCompose} up -d ${companion}`,
+        `docker compose -f ${BASE_COMPOSE} -f ${taskCompose} up -d ${companion}`,
         { stdio: "pipe", timeout: 60_000, cwd: AUTOPENBENCH_PATH },
       );
     }
