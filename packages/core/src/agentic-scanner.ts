@@ -623,14 +623,14 @@ async function runNativeAttack(
 ): Promise<AgentOutput> {
   const isWeb = config.mode === "web";
 
-  // Shell-first for web targets: minimal tool set (shell_exec + save_finding + done)
+  // Shell-first for web targets: minimal tool set (bash + save_finding + done)
   const basePrompt = isWeb
     ? shellPentestPrompt(config.target)
     : attackPrompt(config.target, targetInfo, categories);
   // Append challenge hint if provided (standard practice for XBOW benchmarks)
   const systemPrompt = challengeHint ? basePrompt + "\n" + challengeHint : basePrompt;
 
-  const shellTools: import("./agent/types.js").ToolDefinition[] = ["shell_exec", "save_finding", "done"]
+  const shellTools: import("./agent/types.js").ToolDefinition[] = ["bash", "save_finding", "done"]
     .map((n) => TOOL_DEFINITIONS[n])
     .filter((t): t is import("./agent/types.js").ToolDefinition => t !== undefined);
 

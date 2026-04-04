@@ -332,7 +332,7 @@ When you find a vulnerability:
 5. Use submit_form for login forms and form submissions (application/x-www-form-urlencoded).
 6. Use http_request for API calls and GET requests. Include Cookie headers from login responses.
 7. Use crawl to re-examine the site after authenticating (you'll see new pages as an authenticated user).
-8. Use shell_exec when structured tools aren't enough — run curl with complex flags, write Python exploit scripts, chain commands with pipes. The TARGET env var is set to the target URL. Examples:
+8. Use bash when structured tools aren't enough — run curl with complex flags, write Python exploit scripts, chain commands with pipes. The TARGET env var is set to the target URL. Examples:
    - \`curl -s -c /tmp/cookies -b /tmp/cookies -d 'username=demo&password=demo' -L http://target/login\`
    - \`curl -s -b /tmp/cookies 'http://target/user/2'\`
    - \`python3 -c "import requests; s=requests.Session(); s.post('http://target/login', data={'user':'admin','pass':'admin'}); print(s.get('http://target/admin').text)"\`
@@ -557,13 +557,13 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
 
 /**
  * Shell-first web pentesting prompt. Single session — the agent handles
- * recon and exploitation in one pass using shell_exec (curl, python3, etc.).
+ * recon and exploitation in one pass using bash (curl, python3, etc.).
  * This outperforms the structured-tools approach on XBOW benchmarks.
  */
 export function shellPentestPrompt(target: string): string {
   return `You are a senior penetration tester with authorized access to test ${target}.
 
-You have shell_exec to run ANY command: curl, python3, jq, etc.
+You have bash to run ANY command: curl, python3, jq, etc.
 You have save_finding to record vulnerabilities.
 You have done to signal completion.
 

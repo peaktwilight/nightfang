@@ -199,10 +199,10 @@ export const TOOL_DEFINITIONS: Record<string, ToolDefinition> = {
     required: ["url", "fields"],
   },
 
-  shell_exec: {
-    name: "shell_exec",
+  bash: {
+    name: "bash",
     description:
-      "Execute any shell command for pentesting. Use this when structured tools (crawl, submit_form, http_request) aren't enough — for example, running curl with complex flags, writing Python exploit scripts, using sqlmap, chaining commands with pipes, or any operation that needs full shell flexibility. The command runs in the host environment with access to curl, python3, node, jq, and standard unix tools.",
+      "Run a shell command. Use curl, python3, jq, or any installed tool. Supports pipes, redirects, and multi-line scripts.",
     parameters: {
       command: { type: "string", description: "Shell command to execute. Supports pipes, redirects, and multi-line scripts." },
       timeout: { type: "number", description: "Timeout in seconds (default 30, max 120)" },
@@ -470,7 +470,7 @@ export class ToolExecutor {
           return await this.submitForm(call.arguments);
         case "update_target":
           return this.updateTarget(call.arguments);
-        case "shell_exec":
+        case "bash":
           return await this.shellExec(call.arguments);
         case "done":
           return this.markDone(call.arguments);
@@ -845,7 +845,7 @@ export class ToolExecutor {
 
       const output = (result ?? "").slice(0, 10_000);
 
-      this.persistToolArtifact("shell_exec", {
+      this.persistToolArtifact("bash", {
         command: command.slice(0, 500),
         output: output.slice(0, 2_000),
       });
@@ -860,7 +860,7 @@ export class ToolExecutor {
       if (combined) {
         // Non-zero exit but we got output — return it as success
         // (many pentesting tools exit non-zero on findings)
-        this.persistToolArtifact("shell_exec", {
+        this.persistToolArtifact("bash", {
           command: command.slice(0, 500),
           output: combined.slice(0, 2_000),
           exitCode: err.status,
@@ -1075,7 +1075,7 @@ export class ToolExecutor {
 
 export function getToolsForRole(role: string, opts?: { hasScope?: boolean; webMode?: boolean }): ToolDefinition[] {
   const common = ["query_findings", "done"];
-  const networkTools = ["http_request", "crawl", "submit_form", "shell_exec", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
+  const networkTools = ["http_request", "crawl", "submit_form", "bash", "send_prompt", "save_finding", "update_finding", "update_target", ...common];
   const fileTools = ["read_file", "run_command"];
 
   const roleTools: Record<string, string[]> = {
