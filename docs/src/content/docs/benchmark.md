@@ -124,7 +124,7 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 
 | Tool | XBOW Score | Approach |
 |------|-----------|----------|
-| [Shannon](https://arxiv.org/abs/2502.00477) | 96.15% (100/104) | White-box (reads source code) |
+| [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% (100/104) | White-box (reads source code) |
 | [KinoSec](https://kinosec.ai) | 92.3% (96/104) | Black-box, proprietary, Claude Sonnet |
 | [XBOW](https://xbow.com) | 85% (88/104) | Purpose-built for their benchmark |
 | [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% (88/104) | Multi-agent with Coordinator |

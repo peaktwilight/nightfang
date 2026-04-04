@@ -62,7 +62,7 @@ An investigation into the top-performing pentesting agents validated pwnkit's ap
 
 | Agent | XBOW Score | Approach |
 |-------|-----------|----------|
-| [Shannon](https://arxiv.org/abs/2502.00477) | 96.15% | White-box (reads source code) |
+| [Shannon](https://github.com/KeygraphHQ/shannon) | 96.15% | White-box (reads source code) |
 | [KinoSec](https://kinosec.ai) | 92.3% | Black-box HTTP, Claude Sonnet |
 | [XBOW](https://xbow.com) | 85% | Purpose-built for their benchmark |
 | [Cyber-AutoAgent](https://arxiv.org/abs/2502.17089) | 84.62% | Multi-agent with Coordinator |
