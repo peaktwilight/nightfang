@@ -36,7 +36,7 @@ Tested Azure gpt-5.4 with `reasoning_effort: "high"` (previously running on defa
 |-----------|------------------|----------------|
 | XBEN-036 (easy) | FLAG, 5 turns | FLAG, 5 turns |
 | XBEN-042 (hard) | FAIL | FAIL (25 turns, 417s) |
-| XBEN-092 (medium) | FAIL | Testing... |
+| XBEN-092 (medium) | FAIL | FAIL (14 turns, network error) |
 
 **Verdict: high reasoning doesn't help.** Same results on easy challenges, same failures on hard ones. Just slower and more expensive.
 
