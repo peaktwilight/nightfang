@@ -22,6 +22,8 @@ export interface NativeAgentConfig {
   scanId: string;
   scopePath?: string;
   sessionId?: string; // Resume from existing session
+  /** Which retry attempt this is (0 = first attempt). Used by early-stop logic. */
+  retryCount?: number;
 }
 
 export interface NativeAgentLoopOptions {
@@ -42,6 +44,10 @@ export interface NativeAgentState {
   done: boolean;
   summary: string;
   totalUsage: { inputTokens: number; outputTokens: number };
+  /** Set to true when the loop stopped early because no save_finding was called by the halfway point. */
+  earlyStopNoProgress: boolean;
+  /** Brief description of tools/approaches used before the early stop (for retry context). */
+  attemptSummary: string;
 }
 
 /**
@@ -114,7 +120,14 @@ export async function runNativeAgentLoop(
     done: false,
     summary: "",
     totalUsage: { inputTokens: 0, outputTokens: 0 },
+    earlyStopNoProgress: false,
+    attemptSummary: "",
   };
+
+  // Early-stop tracking: has the agent called save_finding at least once?
+  let saveFindingCalled = false;
+  // Collect tool names used for the attempt summary (deduped)
+  const toolsUsedSet = new Set<string>();
 
   // Log session start
   if (db) {
@@ -241,6 +254,41 @@ export async function runNativeAgentLoop(
     // Append tool results as user message
     state.messages.push({ role: "user", content: toolResultBlocks });
 
+    // Track tool usage for early-stop logic
+    for (const call of toolCalls) {
+      toolsUsedSet.add(call.name);
+      if (call.name === "save_finding") {
+        saveFindingCalled = true;
+      }
+    }
+
+    // ── Early-stop check at 50% budget ──
+    // If the agent is at the halfway point, hasn't found anything, and this
+    // is the first attempt (retryCount === 0), bail out so the caller can
+    // retry with a different strategy. Only applies to attack role with a
+    // meaningful budget (>= 10 turns — below that, early-stop overhead isn't
+    // worth it).
+    const retryCount = config.retryCount ?? 0;
+    const halfwayTurn = Math.floor(config.maxTurns / 2);
+    if (
+      config.role === "attack"
+      && retryCount === 0
+      && config.maxTurns >= 10
+      && state.turnCount >= halfwayTurn
+      && !saveFindingCalled
+      && !state.done
+    ) {
+      state.earlyStopNoProgress = true;
+      state.attemptSummary = `Used tools: ${[...toolsUsedSet].join(", ")}. Ran ${state.turnCount} turns without calling save_finding.`;
+      state.summary = `Early stop at turn ${state.turnCount}/${config.maxTurns}: no findings — retry recommended.`;
+      onEvent?.("early_stop_no_progress", {
+        turn: state.turnCount,
+        maxTurns: config.maxTurns,
+        toolsUsed: [...toolsUsedSet],
+      });
+      break;
+    }
+
     // Notify callback
     onTurn?.(state.turnCount, toolCalls, toolResults);
 
@@ -271,7 +319,7 @@ export async function runNativeAgentLoop(
   state.attackResults = toolCtx.attackResults;
   state.targetInfo = toolCtx.targetInfo;
 
-  if (!state.done) {
+  if (!state.done && !state.earlyStopNoProgress) {
     state.summary = `Agent reached max turns (${config.maxTurns}) without completing.`;
   }
 

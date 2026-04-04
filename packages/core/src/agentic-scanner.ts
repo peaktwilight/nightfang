@@ -646,31 +646,97 @@ async function runNativeAttack(
 
   const tools = isWeb ? shellTools : getToolsForRole("attack", { hasBrowser });
 
+  const effectiveMaxTurns = isWeb ? Math.max(maxTurns, 15) : maxTurns;
+
+  const onTurnHandler = (_turn: number, toolCalls: import("./agent/types.js").ToolCall[]) => {
+    for (const call of toolCalls) {
+      if (call.name === "save_finding") {
+        emit({
+          type: "finding",
+          message: `[${call.arguments.severity}] ${call.arguments.title}`,
+          data: call.arguments,
+        });
+      }
+    }
+  };
+
+  // First attempt: give the full budget. The loop's early-stop logic will
+  // bail at 50% if no save_finding has been called (retryCount=0 enables this).
   const state = await runNativeAgentLoop({
     config: {
       role: "attack",
       systemPrompt,
       tools,
-      maxTurns: isWeb ? Math.max(maxTurns, 15) : maxTurns,
+      maxTurns: effectiveMaxTurns,
       target: config.target,
       scanId,
       scopePath: config.repoPath,
       sessionId: db.getSession(scanId, "attack")?.id,
+      retryCount: 0,
     },
     runtime,
     db,
-    onTurn: (turn, toolCalls) => {
-      for (const call of toolCalls) {
-        if (call.name === "save_finding") {
-          emit({
-            type: "finding",
-            message: `[${call.arguments.severity}] ${call.arguments.title}`,
-            data: call.arguments,
-          });
-        }
-      }
-    },
+    onTurn: onTurnHandler,
   });
+
+  // ── Early-stop retry: if no findings by halfway, retry with a different strategy ──
+  if (state.earlyStopNoProgress) {
+    const remainingBudget = effectiveMaxTurns - state.turnCount;
+
+    emit({
+      type: "stage:start",
+      stage: "attack",
+      message: `No findings after ${state.turnCount} turns — retrying with different strategy (${remainingBudget} turns remaining)...`,
+    });
+
+    db.logEvent?.({
+      scanId,
+      stage: "attack",
+      eventType: "early_stop_retry",
+      agentRole: "attack",
+      payload: {
+        firstAttemptTurns: state.turnCount,
+        remainingBudget,
+        attemptSummary: state.attemptSummary,
+      },
+      timestamp: Date.now(),
+    });
+
+    const retrySystemPrompt = systemPrompt + `\n\n## RETRY — Previous Attempt Failed\n\nA previous attack attempt used ${state.turnCount} turns and found NOTHING.\n${state.attemptSummary}\n\nYou MUST try a COMPLETELY DIFFERENT approach:\n- Different entry points and endpoints\n- Different vulnerability classes (if SQLi failed, try SSTI/command injection/SSRF/path traversal)\n- Different tools and techniques (if curl failed, try Python scripts; if GET failed, try POST)\n- Different encoding and bypass techniques\n- Look for indirect/second-order vulnerabilities\n\nDo NOT repeat the same strategies. Be creative and aggressive.`;
+
+    const retryState = await runNativeAgentLoop({
+      config: {
+        role: "attack",
+        systemPrompt: retrySystemPrompt,
+        tools,
+        maxTurns: remainingBudget,
+        target: config.target,
+        scanId,
+        scopePath: config.repoPath,
+        retryCount: 1,
+      },
+      runtime,
+      db,
+      onTurn: onTurnHandler,
+    });
+
+    // Merge results from both attempts
+    const combinedFindings = [...state.findings, ...retryState.findings];
+    const totalTurns = state.turnCount + retryState.turnCount;
+    const combinedSummary = retryState.findings.length > 0
+      ? retryState.summary
+      : `First attempt (${state.turnCount} turns): no findings. Retry (${retryState.turnCount} turns): ${retryState.summary}`;
+
+    return {
+      findings: combinedFindings,
+      targetInfo: { ...state.targetInfo, ...retryState.targetInfo },
+      summary: combinedSummary,
+      turnCount: totalTurns,
+    };
+  }
+
+  // First attempt completed normally (found something, or exhausted turns).
+  // No retry needed.
   return {
     findings: state.findings,
     targetInfo: state.targetInfo,

@@ -339,4 +339,183 @@ describe("runNativeAgentLoop", () => {
     expect(turnCalls[0].tools).toContain("http_request");
     expect(turnCalls[1].tools).toContain("done");
   });
+
+  it("triggers early stop for attack role at 50% budget when no save_finding called", async () => {
+    let turnNum = 0;
+    const runtime: NativeRuntime = {
+      type: "api" as const,
+      async executeNative() {
+        turnNum++;
+        return {
+          content: [{ type: "tool_use", id: `tc${turnNum}`, name: "http_request", input: { url: "https://example.com" } }],
+          stopReason: "tool_use",
+          durationMs: 50,
+        };
+      },
+      async isAvailable() { return true; },
+    };
+
+    const state = await runNativeAgentLoop({
+      config: {
+        role: "attack",
+        systemPrompt: "test",
+        tools: [],
+        maxTurns: 20,
+        target: "https://example.com",
+        scanId: "test-scan",
+        retryCount: 0,
+      },
+      runtime,
+      db: null,
+    });
+
+    // Should stop at turn 10 (50% of 20)
+    expect(state.earlyStopNoProgress).toBe(true);
+    expect(state.turnCount).toBe(10);
+    expect(state.summary).toContain("Early stop");
+    expect(state.attemptSummary).toContain("http_request");
+  });
+
+  it("does NOT early stop when save_finding is called before halfway", async () => {
+    let turnNum = 0;
+    const runtime: NativeRuntime = {
+      type: "api" as const,
+      async executeNative() {
+        turnNum++;
+        if (turnNum === 3) {
+          return {
+            content: [{
+              type: "tool_use",
+              id: `tc${turnNum}`,
+              name: "save_finding",
+              input: {
+                title: "Found XSS",
+                severity: "high",
+                category: "xss",
+                evidence_request: "GET /x",
+                evidence_response: "<script>",
+              },
+            }],
+            stopReason: "tool_use",
+            durationMs: 50,
+          };
+        }
+        if (turnNum >= 12) {
+          return {
+            content: [{ type: "tool_use", id: `tc${turnNum}`, name: "done", input: { summary: "Done with findings" } }],
+            stopReason: "tool_use",
+            durationMs: 50,
+          };
+        }
+        return {
+          content: [{ type: "tool_use", id: `tc${turnNum}`, name: "http_request", input: { url: "https://example.com" } }],
+          stopReason: "tool_use",
+          durationMs: 50,
+        };
+      },
+      async isAvailable() { return true; },
+    };
+
+    const state = await runNativeAgentLoop({
+      config: {
+        role: "attack",
+        systemPrompt: "test",
+        tools: [],
+        maxTurns: 20,
+        target: "https://example.com",
+        scanId: "test-scan",
+        retryCount: 0,
+      },
+      runtime,
+      db: null,
+    });
+
+    expect(state.earlyStopNoProgress).toBe(false);
+    expect(state.done).toBe(true);
+    expect(state.turnCount).toBe(12);
+    expect(state.findings).toHaveLength(1);
+  });
+
+  it("does NOT early stop on retry attempts (retryCount > 0)", async () => {
+    let turnNum = 0;
+    const runtime: NativeRuntime = {
+      type: "api" as const,
+      async executeNative() {
+        turnNum++;
+        if (turnNum >= 15) {
+          return {
+            content: [{ type: "tool_use", id: `tc${turnNum}`, name: "done", input: { summary: "Exhausted" } }],
+            stopReason: "tool_use",
+            durationMs: 50,
+          };
+        }
+        return {
+          content: [{ type: "tool_use", id: `tc${turnNum}`, name: "http_request", input: { url: "https://example.com" } }],
+          stopReason: "tool_use",
+          durationMs: 50,
+        };
+      },
+      async isAvailable() { return true; },
+    };
+
+    const state = await runNativeAgentLoop({
+      config: {
+        role: "attack",
+        systemPrompt: "test",
+        tools: [],
+        maxTurns: 20,
+        target: "https://example.com",
+        scanId: "test-scan",
+        retryCount: 1,
+      },
+      runtime,
+      db: null,
+    });
+
+    // Should NOT early stop — retryCount=1 means this is already a retry
+    expect(state.earlyStopNoProgress).toBe(false);
+    expect(state.done).toBe(true);
+    expect(state.turnCount).toBe(15);
+  });
+
+  it("does NOT early stop for non-attack roles", async () => {
+    let turnNum = 0;
+    const runtime: NativeRuntime = {
+      type: "api" as const,
+      async executeNative() {
+        turnNum++;
+        if (turnNum >= 12) {
+          return {
+            content: [{ type: "tool_use", id: `tc${turnNum}`, name: "done", input: { summary: "Done" } }],
+            stopReason: "tool_use",
+            durationMs: 50,
+          };
+        }
+        return {
+          content: [{ type: "tool_use", id: `tc${turnNum}`, name: "update_target", input: { type: "api" } }],
+          stopReason: "tool_use",
+          durationMs: 50,
+        };
+      },
+      async isAvailable() { return true; },
+    };
+
+    const state = await runNativeAgentLoop({
+      config: {
+        role: "discovery",
+        systemPrompt: "test",
+        tools: [],
+        maxTurns: 20,
+        target: "https://example.com",
+        scanId: "test-scan",
+        retryCount: 0,
+      },
+      runtime,
+      db: null,
+    });
+
+    expect(state.earlyStopNoProgress).toBe(false);
+    expect(state.done).toBe(true);
+    expect(state.turnCount).toBe(12);
+  });
 });
