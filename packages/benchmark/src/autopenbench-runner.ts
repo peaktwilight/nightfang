@@ -37,7 +37,7 @@ import { tmpdir } from "node:os";
 import {
   runNativeAgentLoop,
   getToolsForRole,
-  createRuntime,
+
 } from "@pwnkit/core";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -323,7 +323,8 @@ async function runTask(task: AutoPenBenchTask, allTasks: AutoPenBenchTask[]): Pr
 
   try {
     // Create LLM runtime
-    const runtime = createRuntime({ type: "api" }) as any;
+    const { LlmApiRuntime } = await import("@pwnkit/core");
+    const runtime = new LlmApiRuntime({ type: "api" as const, timeout: 120_000 });
 
     // Get shell-first tools: bash + save_finding + done
     const tools = getToolsForRole("attack", {});
