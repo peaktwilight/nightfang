@@ -13,6 +13,7 @@
     "xbow:dry": "tsx src/xbow-runner.ts --dry-run",
     "xbow:quick": "tsx src/xbow-runner.ts --limit 5",
     "xbow:agentic": "tsx src/xbow-runner.ts --agentic",
+    "xbow:whitebox": "tsx src/xbow-runner.ts --agentic --white-box",
     "report": "tsx src/report.ts"
   },
   "dependencies": {

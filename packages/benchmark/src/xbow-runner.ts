@@ -38,6 +38,7 @@ const jsonOutput = args.includes("--json");
 const useAgentic = args.includes("--agentic");
 const dryRun = args.includes("--dry-run");
 const retries = args.includes("--retries") ? parseInt(args[args.indexOf("--retries") + 1]) : 1;
+const whiteBox = args.includes("--white-box");
 
 // ── Types ──
 interface XbowChallenge {
@@ -206,8 +207,10 @@ async function runChallenge(challenge: XbowChallenge): Promise<XbowResult> {
       // Pass challenge description as a hint — this is standard practice
       // (KinoSec, XBOW, and MAPTA all receive the challenge description)
       const hint = challenge.description ? `\nChallenge hint: ${challenge.description}` : "";
+      // White-box: pass source code path so agent reads code before attacking
+      const repoPath = whiteBox ? challenge.path : undefined;
       report = await agenticScan({
-        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: "auto", verbose: hint ? true : false },
+        config: { target, depth: "quick", format: "json", mode: "web", timeout: 60_000, runtime: "auto", verbose: hint ? true : false, repoPath },
         dbPath,
         challengeHint: hint,
       });

@@ -2,6 +2,19 @@ name: XBOW Benchmark
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'Scan mode: black-box or white-box'
+        required: false
+        default: 'black-box'
+        type: choice
+        options:
+          - black-box
+          - white-box
+      limit:
+        description: 'Number of challenges to run'
+        required: false
+        default: '50'
   schedule:
     # Weekly on Sunday at 04:00 UTC
     - cron: "0 4 * * 0"
@@ -9,7 +22,7 @@ on:
 jobs:
   xbow:
     runs-on: ubuntu-latest
-    timeout-minutes: 240 # 4 hours — 104 Docker challenge builds
+    timeout-minutes: 240
 
     env:
       XBOW_PATH: /tmp/xbow-benchmarks
@@ -34,31 +47,41 @@ jobs:
 
       - run: pnpm build
 
-      - name: Run XBOW benchmark (agentic, first 50 challenges, 2 retries)
-        run: pnpm --filter @pwnkit/benchmark xbow --agentic --limit 50 --retries 2
+      - name: Run XBOW benchmark
+        run: |
+          MODE="${{ inputs.mode || 'black-box' }}"
+          LIMIT="${{ inputs.limit || '50' }}"
+          if [ "$MODE" = "white-box" ]; then
+            echo "Running WHITE-BOX (source-aware) benchmark..."
+            pnpm --filter @pwnkit/benchmark xbow --agentic --white-box --limit "$LIMIT" --retries 2
+          else
+            echo "Running BLACK-BOX benchmark..."
+            pnpm --filter @pwnkit/benchmark xbow --agentic --limit "$LIMIT" --retries 2
+          fi
         timeout-minutes: 180
 
       - name: Upload results artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xbow-results
+          name: xbow-results-${{ inputs.mode || 'black-box' }}
           path: packages/benchmark/results/xbow-latest.json
 
       - name: Post summary
         if: always()
         run: |
+          MODE="${{ inputs.mode || 'black-box' }}"
           RESULTS="packages/benchmark/results/xbow-latest.json"
           if [ ! -f "$RESULTS" ]; then
-            echo "### XBOW Benchmark" >> "$GITHUB_STEP_SUMMARY"
-            echo "No results file produced — run may have crashed." >> "$GITHUB_STEP_SUMMARY"
+            echo "### XBOW Benchmark ($MODE)" >> "$GITHUB_STEP_SUMMARY"
+            echo "No results file produced." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           TOTAL=$(jq '.results | length' "$RESULTS")
           FLAGS=$(jq '[.results[] | select(.flagFound == true)] | length' "$RESULTS")
           BUILT=$(jq '[.results[] | select(.error == null or .error == "")] | length' "$RESULTS")
           BUILD_FAIL=$((TOTAL - BUILT))
-          echo "### XBOW Benchmark Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "### XBOW Benchmark Results ($MODE)" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "| Metric | Count |" >> "$GITHUB_STEP_SUMMARY"
           echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
