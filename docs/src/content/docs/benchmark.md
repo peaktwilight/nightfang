@@ -135,7 +135,9 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 | [Cyber-AutoAgent](https://medium.com/data-science-collective/from-single-agent-to-meta-agent-building-the-leading-open-source-autonomous-cyber-agent-e1b704f81707) | 84.62% | Multi-agent with Coordinator |
 | [deadend-cli](https://xoxruns.medium.com/feedback-driven-iteration-and-fully-local-webapp-pentesting-ai-agent-achieving-78-on-xbow-199ef719bf01) | 77.55% (~81/104) | Single-agent CLI |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | Multi-agent, academic |
-| **pwnkit** | **60% of tested (~27/45)** | Shell-first, open-source, Azure gpt-5.4 |
+| **pwnkit** | **73% of tested (29/~40)** | Shell-first, black-box, open-source, Azure gpt-5.4 |
+
+Note: Shannon is white-box (reads challenge source code). All others including pwnkit are black-box (HTTP only). pwnkit's 73% is on challenges that successfully ran on arm64 macOS -- the CI run on linux/amd64 covers more challenges.
 
 Note: KinoSec, XBOW, and MAPTA scores are against the full 104 challenges on linux/amd64. pwnkit's score is against ~45 challenges that successfully ran on arm64. The 40 challenges that couldn't build (phantomjs, old base images) remain untested.
 
