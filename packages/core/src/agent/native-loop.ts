@@ -133,6 +133,18 @@ export async function runNativeAgentLoop(
   while (!state.done && state.turnCount < config.maxTurns) {
     state.turnCount++;
 
+    // Inject reflection checkpoint at ~60% of turn budget
+    const reflectionPoint = Math.floor(config.maxTurns * 0.6);
+    if (state.turnCount === reflectionPoint && state.findings.length === 0) {
+      state.messages.push({
+        role: "user",
+        content: [{
+          type: "text",
+          text: `CHECKPOINT: You have used ${state.turnCount} of ${config.maxTurns} turns with 0 findings. Review what you have tried so far. What attack vectors remain untested? What partial results (errors, leaked data) hint at the right approach? Adjust your strategy — try a completely different approach if current one is not working.`,
+        }],
+      });
+    }
+
     // Call Claude API with native messages + tools
     const result = await runtime.executeNative(
       config.systemPrompt,
