@@ -488,6 +488,14 @@ export class ToolExecutor {
         case "done":
           return this.markDone(call.arguments);
         default:
+          // Tool router hook (inspired by Cyber-AutoAgent): if the model
+          // hallucinates a tool name like "nmap" or "sqlmap", route it
+          // to bash transparently. This lets the agent invoke any CLI
+          // tool without explicit registration.
+          if (call.arguments.command || call.arguments.target || call.arguments.url) {
+            const cmd = (call.arguments.command as string) ?? `${call.name} ${Object.values(call.arguments).join(" ")}`;
+            return await this.shellExec({ command: cmd, timeout: 30 });
+          }
           return { success: false, output: null, error: `Unknown tool: ${call.name}` };
       }
     } catch (err) {
