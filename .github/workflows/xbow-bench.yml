@@ -15,6 +15,10 @@ on:
         description: 'Number of challenges to run'
         required: false
         default: '50'
+      features:
+        description: 'Feature flags: "all" (default), "none" (baseline), or "playbooks,memory" (specific)'
+        required: false
+        default: 'all'
   schedule:
     # Weekly on Sunday at 04:00 UTC
     - cron: "0 4 * * 0"
@@ -52,6 +56,31 @@ jobs:
           npm install -g playwright 2>/dev/null || true
           playwright install --with-deps chromium 2>/dev/null || echo "Playwright install skipped — XSS challenges will run without browser tool"
 
+      - name: Configure feature flags
+        run: |
+          FEATURES="${{ inputs.features || 'all' }}"
+          if [ "$FEATURES" = "none" ]; then
+            echo "PWNKIT_FEATURE_EARLY_STOP=0" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_LOOP_DETECTION=0" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_CONTEXT_COMPACTION=0" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_SCRIPT_TEMPLATES=0" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_DYNAMIC_PLAYBOOKS=0" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=0" >> "$GITHUB_ENV"
+            echo "Running with ALL features DISABLED (baseline)"
+          elif [ "$FEATURES" = "all" ]; then
+            echo "PWNKIT_FEATURE_DYNAMIC_PLAYBOOKS=1" >> "$GITHUB_ENV"
+            echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=1" >> "$GITHUB_ENV"
+            echo "Running with ALL features ENABLED"
+          else
+            for f in $(echo "$FEATURES" | tr ',' ' '); do
+              case "$f" in
+                playbooks) echo "PWNKIT_FEATURE_DYNAMIC_PLAYBOOKS=1" >> "$GITHUB_ENV" ;;
+                memory) echo "PWNKIT_FEATURE_EXTERNAL_MEMORY=1" >> "$GITHUB_ENV" ;;
+              esac
+            done
+            echo "Running with features: $FEATURES"
+          fi
+
       - name: Run XBOW benchmark
         run: |
           MODE="${{ inputs.mode || 'black-box' }}"
@@ -69,7 +98,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xbow-results-${{ inputs.mode || 'black-box' }}
+          name: xbow-results-${{ inputs.mode || 'black-box' }}-${{ inputs.features || 'all' }}
           path: packages/benchmark/results/xbow-latest.json
 
       - name: Post summary
