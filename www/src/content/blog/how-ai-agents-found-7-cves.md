@@ -100,7 +100,7 @@ the workflow worked. but it was manual. i had to set up each audit, configure th
 
 the obvious next step: automate the workflow so anyone can run it.
 
-that's what pwnkit is. the same agentic pipeline &mdash; discover, attack, verify, report &mdash; packaged as an open-source CLI tool. point it at an npm package, an LLM endpoint, an MCP server, or a source code repository. it runs autonomous AI agents in sequence, each specialized for a phase of the security assessment. the verification agent independently re-exploits every finding. if it can't reproduce, the finding is killed.
+that's what pwnkit is. the same agentic pipeline &mdash; discover, attack, verify, report &mdash; packaged as an open-source CLI tool. point it at an npm package, an LLM API, an MCP server, or a source code repository. it runs autonomous AI agents in sequence, each specialized for a phase of the security assessment. the verification agent independently re-exploits every finding. if it can't reproduce, the finding is killed.
 
 the 7 CVEs were the proof that this approach works. pwnkit is the tool that makes it accessible.
 

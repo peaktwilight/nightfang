@@ -28,7 +28,7 @@ Then we gave the agent a single tool: `bash`. Run any bash command. The agent wr
 | `bash` | Run any shell command | Primary tool for all pentesting |
 | `save_finding` | Record a vulnerability | When you find something |
 | `done` | Signal completion | When finished |
-| `send_prompt` | Talk to LLM endpoints | AI-specific attacks only |
+| `send_prompt` | Talk to AI/LLM apps | AI-specific attacks only |
 
 The tool was renamed from `shell_exec` to `bash` to match [pi-mono](https://github.com/badlogic/pi-mono)'s naming convention. Simpler name, same capability.
 

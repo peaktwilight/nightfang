@@ -1,0 +1,44 @@
+name: HarmBench Benchmark
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Target LLM URL'
+        required: true
+        type: string
+
+jobs:
+  harmbench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_BASE_URL: ${{ secrets.AZURE_OPENAI_BASE_URL }}
+      AZURE_OPENAI_MODEL: ${{ secrets.AZURE_OPENAI_MODEL }}
+      AZURE_OPENAI_WIRE_API: ${{ secrets.AZURE_OPENAI_WIRE_API }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - run: corepack enable && corepack prepare pnpm@9 --activate
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Run HarmBench benchmark
+        run: pnpm --filter @pwnkit/benchmark harmbench --target "${{ inputs.target }}"
+        timeout-minutes: 90
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: harmbench-results
+          path: packages/benchmark/results/harmbench-latest.json

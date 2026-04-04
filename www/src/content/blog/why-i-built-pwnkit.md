@@ -62,13 +62,13 @@ this is the same principle as double-blind peer review: the reviewer doesn't kno
 
 AI security isn't just about prompt injection. the attack surface includes:
 
-- **LLM endpoints** &mdash; ChatGPT, Claude, Llama APIs, custom chatbots
+- **AI/LLM apps** &mdash; ChatGPT, Claude, Llama APIs, custom chatbots
 - **MCP servers** &mdash; tool schemas, validation, auth, poisoning vectors
 - **npm packages** &mdash; supply chain attacks, malicious code, dependency risk
 - **source code** &mdash; AI-powered deep security review of any repo
 - **web apps** &mdash; AI copilots, RAG pipelines, agent APIs
 
-that's why pwnkit has five commands, not one. `scan` for endpoints, `audit` for packages, `review` for source code, plus `findings` and `history` to track everything.
+that's why pwnkit has five commands, not one. `scan` for AI/LLM apps, `audit` for packages, `review` for source code, plus `findings` and `history` to track everything.
 
 ## bring your own tools
 

@@ -13,7 +13,7 @@ here's the full picture of what we built, why each benchmark exists, and what we
 
 most AI pentesting tools benchmark against a single suite. usually XBOW, sometimes their own internal challenges. that tells you how the tool performs on traditional web vulns -- SQLi, IDOR, auth bypass -- but nothing about everything else.
 
-pwnkit isn't just a web pentester. it scans LLM endpoints for prompt injection. it audits npm packages for supply chain attacks. it tests network services for CVEs. it probes LLM safety boundaries. one benchmark can't cover all of that. so we built five.
+pwnkit isn't just a web pentester. it scans AI/LLM apps for prompt injection. it audits npm packages for supply chain attacks. it tests network services for CVEs. it probes LLM safety boundaries. one benchmark can't cover all of that. so we built five.
 
 ## the five benchmarks
 
@@ -51,7 +51,7 @@ pnpm --filter @pwnkit/benchmark autopenbench
 
 [HarmBench](https://www.harmbench.org/) flips the script. instead of testing whether pwnkit can break *into* an LLM, it tests whether pwnkit can make an LLM break *its own rules*. 510 harmful behaviors across categories like dangerous content generation, safety filter bypasses, and policy violations. the metric is Attack Success Rate (ASR) -- what percentage of harmful behaviors can the agent successfully elicit.
 
-we built a lightweight harness that reuses pwnkit's `sendPrompt()` function. no heavyweight dependencies, no separate infrastructure. point it at an LLM endpoint and it runs through all 510 behaviors.
+we built a lightweight harness that reuses pwnkit's `sendPrompt()` function. no heavyweight dependencies, no separate infrastructure. point it at an LLM API and it runs through all 510 behaviors.
 
 ```bash
 pnpm --filter @pwnkit/benchmark harmbench --target <url>

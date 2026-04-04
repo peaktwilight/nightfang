@@ -3,7 +3,7 @@ title: Architecture
 description: How the 5-stage pipeline, runtime adapters, and MCP integration work.
 ---
 
-pwnkit is a fully autonomous agentic pentesting framework that covers LLM endpoints, web applications, npm packages, and source code. It runs autonomous AI agents in a plan-discover-attack-verify-report pipeline. For web pentesting, the agent uses a shell-first approach -- `bash` (curl, python3, bash) is the primary tool, not structured APIs. For LLM and code targets, the agent uses specialized tools (`send_prompt`, `read_file`). Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
+pwnkit is a fully autonomous agentic pentesting framework that covers AI/LLM apps, web applications, npm packages, and source code. It runs autonomous AI agents in a plan-discover-attack-verify-report pipeline. For web pentesting, the agent uses a shell-first approach -- `bash` (curl, python3, bash) is the primary tool, not structured APIs. For LLM and code targets, the agent uses specialized tools (`send_prompt`, `read_file`). Blind verification kills false positives -- every finding is independently re-exploited by a second agent that never sees the original reasoning.
 
 ## The pipeline
 
@@ -29,7 +29,7 @@ A single agent session that:
 The research agent's tool set depends on the target type:
 
 - **Web targets:** `bash` (primary -- run curl, python3, bash, sqlmap, anything), `browser` (Playwright-based headless browser for XSS testing and JavaScript-rendered pages), `save_finding`, `done`. The structured tools (`crawl_page`, `submit_form`, `http_request`) are available but optional -- benchmarking showed the agent performs better with just shell access.
-- **LLM targets:** `send_prompt` (talk to LLM endpoints), `bash`, `save_finding`, `done`.
+- **LLM targets:** `send_prompt` (talk to AI/LLM apps), `bash`, `save_finding`, `done`.
 - **Source/npm targets:** `read_file`, `search_code`, `list_files`, `run_command`, `save_finding`.
 
 The agent adapts its strategy based on what it discovers -- if a naive prompt injection fails, it may try encoding bypasses, multi-turn escalation, or indirect injection. For web apps, it escalates from fingerprinting to active exploitation using real pentesting tools via shell. For source code, it traces data flows from user input to dangerous sinks.
@@ -66,8 +66,8 @@ The pipeline adapts its tooling and attack strategy based on the target type:
 
 | Mode | Target | What it does |
 |------|--------|-------------|
-| `deep` | LLM endpoint URL | Prompt injection, jailbreaks, tool poisoning, data exfiltration, multi-turn escalation (40-turn budget) |
-| `probe` | LLM endpoint URL | Lightweight surface scan of an LLM endpoint |
+| `deep` | LLM API URL | Prompt injection, jailbreaks, tool poisoning, data exfiltration, multi-turn escalation (40-turn budget) |
+| `probe` | LLM API URL | Lightweight surface scan of an LLM API |
 | `web` | Web application URL | CORS, headers, exposed files, SSRF, XSS, path traversal, fingerprinting |
 | `mcp` | MCP server | Tool poisoning, schema abuse, permission escalation |
 | `audit` | npm package name | Supply chain analysis, malicious code detection, dependency risk |
@@ -139,7 +139,7 @@ Each agent has access to a set of tools depending on the scan type:
 | `browser` | Web | Playwright-based headless browser for XSS testing and JavaScript-rendered pages. Complements `bash`/curl for cases where a real browser DOM is needed. |
 | `save_finding` | All modes | Record a discovered vulnerability with PoC |
 | `done` | All modes | Signal that the agent has finished |
-| `send_prompt` | LLM | Send prompts to LLM/AI endpoints |
+| `send_prompt` | LLM | Send prompts to AI/LLM apps |
 | `read_file` | Source, npm | Read source files for code review |
 | `run_command` | Source, npm | Execute commands in a sandbox |
 | `list_files` | Source, npm | Enumerate files in a directory |

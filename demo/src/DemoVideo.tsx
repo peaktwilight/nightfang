@@ -63,7 +63,7 @@ const S = {
 const COMMANDS = [
   { text: "pwnkit-cli express", label: "npm package" },
   { text: "pwnkit-cli ./my-repo", label: "source code" },
-  { text: "pwnkit-cli https://api.com/chat", label: "LLM endpoint" },
+  { text: "pwnkit-cli https://api.com/chat", label: "LLM API" },
 ];
 
 // ── Main Component ──

@@ -23,7 +23,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
           <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] mb-8" style="font-family: 'Outfit', sans-serif">
             Let autonomous AI agents hack you<br/><span class="text-crimson">so the real ones can't.</span>
           </h1>
-          <p class="text-smoke text-lg mb-2 max-w-2xl mx-auto">Fully autonomous agentic pentesting framework. Attacks LLM endpoints, web apps, npm packages, and source code. Blind PoC verification to minimize false positives.</p>
+          <p class="text-smoke text-lg mb-2 max-w-2xl mx-auto">Fully autonomous agentic pentesting framework. Attacks AI/LLM apps, web apps, npm packages, and source code. Blind PoC verification to minimize false positives.</p>
         </div>
 
         <!-- CTA -->
@@ -148,7 +148,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
             <div class="w-8 h-8 mx-auto mb-3 text-crimson">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
             </div>
-            <h3 class="font-semibold text-sm mb-1">LLM Endpoints</h3>
+            <h3 class="font-semibold text-sm mb-1">AI/LLM Apps</h3>
             <p class="text-xs text-ash">Prompt injection, jailbreaks, PII leakage, MCP tool abuse</p>
           </div>
           <div class="bg-night-lighter border border-white/5 rounded-xl p-5 hover:border-crimson/20 transition-colors text-center">
@@ -231,7 +231,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
           {[
             { cmd: "pwnkit-cli express", desc: "Audit an npm package", color: "text-amber-400" },
             { cmd: "pwnkit-cli ./my-repo", desc: "Review source code", color: "text-blue-400" },
-            { cmd: "pwnkit-cli https://api.com/chat", desc: "Scan an LLM endpoint", color: "text-crimson" },
+            { cmd: "pwnkit-cli https://api.com/chat", desc: "Scan an LLM API", color: "text-crimson" },
             { cmd: "pwnkit-cli https://example.com --mode web", desc: "Pentest a web app", color: "text-emerald-400" },
             { cmd: "pwnkit-cli dashboard", desc: "Local mission control", color: "text-purple-400" },
             { cmd: "pwnkit-cli findings list --severity critical", desc: "Triage across scans", color: "text-smoke" },
@@ -351,7 +351,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
                 <td class="py-3 px-3 text-center text-ash">&mdash;</td>
               </tr>
               <tr class="border-b border-white/5">
-                <td class="py-3 pr-4">LLM endpoint scanning</td>
+                <td class="py-3 pr-4">AI/LLM app scanning</td>
                 <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
                 <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
                 <td class="py-3 px-3 text-center text-emerald-400">&check;</td>
@@ -522,7 +522,7 @@ import PwnkitHero3D from '../components/PwnkitHero3D';
         </h2>
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-xl mx-auto mb-10">
           {[
-            { cmd: "pwnkit-cli https://api.example.com/chat", label: "Scan an LLM endpoint" },
+            { cmd: "pwnkit-cli https://api.example.com/chat", label: "Scan an LLM API" },
             { cmd: "pwnkit-cli express", label: "Audit a package" },
             { cmd: "pwnkit-cli ./my-repo", label: "Review source code" },
             { cmd: "pwnkit-cli https://github.com/org/repo", label: "Review a GitHub repo" },

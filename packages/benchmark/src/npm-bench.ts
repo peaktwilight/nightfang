@@ -12,13 +12,12 @@
  *   tsx src/npm-bench.ts --depth deep
  */
 
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { packageAudit } from "@pwnkit/core";
+import type { ScanDepth } from "@pwnkit/shared";
 
-const execFileAsync = promisify(execFile);
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // ── CLI Args ──
@@ -110,26 +109,39 @@ interface NpmBenchReport {
 // ── Runner ──
 
 async function auditPackage(pkg: string): Promise<{ findings: any[]; raw: string }> {
-  try {
-    const { stdout } = await execFileAsync(
-      "pwnkit",
-      ["audit", pkg, "--format", "json", "--depth", depth],
-      { timeout: 60_000 },
-    );
-    const parsed = JSON.parse(stdout);
-    return { findings: parsed.findings ?? [], raw: stdout };
-  } catch (err: any) {
-    // pwnkit may exit non-zero when findings exist; try to parse stdout anyway
-    if (err.stdout) {
-      try {
-        const parsed = JSON.parse(err.stdout);
-        return { findings: parsed.findings ?? [], raw: err.stdout };
-      } catch {
-        // fall through
-      }
+  // Parse package specifier into name and optional version
+  let packageName: string;
+  let version: string | undefined;
+
+  if (pkg.startsWith("@")) {
+    // Scoped package: @scope/name or @scope/name@version
+    const idx = pkg.indexOf("@", 1);
+    if (idx !== -1) {
+      packageName = pkg.slice(0, idx);
+      version = pkg.slice(idx + 1);
+    } else {
+      packageName = pkg;
     }
-    throw err;
+  } else {
+    const idx = pkg.indexOf("@");
+    if (idx !== -1) {
+      packageName = pkg.slice(0, idx);
+      version = pkg.slice(idx + 1);
+    } else {
+      packageName = pkg;
+    }
   }
+
+  const report = await packageAudit({
+    config: {
+      package: packageName,
+      version,
+      depth: depth as ScanDepth,
+      format: "json",
+    },
+  });
+
+  return { findings: report.findings ?? [], raw: JSON.stringify(report) };
 }
 
 function shouldHaveFindings(verdict: Verdict): boolean {

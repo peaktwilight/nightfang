@@ -2,7 +2,7 @@
 
 > Open-source agentic framework for autonomous security research.
 
-pwnkit uses AI agents in a research-then-verify pipeline to find and prove vulnerabilities. It scans LLM endpoints, web apps, npm packages, and source code.
+pwnkit uses AI agents in a research-then-verify pipeline to find and prove vulnerabilities. It scans AI/LLM apps, web apps, npm packages, and source code.
 
 ## Quick Start
 
@@ -18,7 +18,7 @@ npx pwnkit-cli dashboard
 
 - **Autonomous multi-agent pipeline**: Research agent discovers and attacks, then a blind verify agent independently reproduces findings
 - **Verification eliminates false positives**: The Verify agent re-exploits every finding independently. If it can't reproduce it, the finding is dropped
-- **4 attack surfaces**: LLM endpoints, web apps, npm packages, source code
+- **4 attack surfaces**: AI/LLM apps, web apps, npm packages, source code
 - **CLI commands**: scan, audit, review, resume, replay, history, findings, dashboard, orchestrate, doctor
 - **Local dashboard**: Web-based verification workbench for triage, evidence review, scan provenance, and finding workflow management
 - **Resumable scans**: Persist and resume interrupted audit and review scans

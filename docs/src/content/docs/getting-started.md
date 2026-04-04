@@ -3,7 +3,7 @@ title: Getting Started
 description: Install pwnkit, set up your API key, and run your first scan.
 ---
 
-pwnkit is a general-purpose autonomous pentesting framework. It scans LLM endpoints, web applications, npm packages, and source code using an agentic pipeline that discovers, attacks, verifies, and reports -- with blind verification to kill false positives. It ships as an npm package. You can run it directly with `npx` or install it globally.
+pwnkit is a general-purpose autonomous pentesting framework. It scans AI/LLM apps, web applications, npm packages, and source code using an agentic pipeline that discovers, attacks, verifies, and reports -- with blind verification to kill false positives. It ships as an npm package. You can run it directly with `npx` or install it globally.
 
 ## Installation
 
@@ -36,7 +36,7 @@ See [API Keys](/api-keys/) for full details on supported providers.
 
 ## Your first scan
 
-### Scan an LLM endpoint
+### Scan an LLM API
 
 ```bash
 npx pwnkit-cli scan --target https://your-app.com/api/chat
@@ -78,7 +78,7 @@ You can skip the subcommand entirely. pwnkit figures out what to do:
 pwnkit-cli express              # audits npm package
 pwnkit-cli ./my-repo            # reviews source code
 pwnkit-cli https://github.com/user/repo  # clones and reviews
-pwnkit-cli https://example.com/api/chat  # scans LLM endpoint
+pwnkit-cli https://example.com/api/chat  # scans LLM API
 pwnkit-cli https://example.com --mode web  # pentests web app
 ```
 

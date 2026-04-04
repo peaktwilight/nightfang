@@ -1,0 +1,39 @@
+name: npm-bench Benchmark
+
+on:
+  workflow_dispatch:
+
+jobs:
+  npm-bench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    env:
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_BASE_URL: ${{ secrets.AZURE_OPENAI_BASE_URL }}
+      AZURE_OPENAI_MODEL: ${{ secrets.AZURE_OPENAI_MODEL }}
+      AZURE_OPENAI_WIRE_API: ${{ secrets.AZURE_OPENAI_WIRE_API }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - run: corepack enable && corepack prepare pnpm@9 --activate
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Run npm-bench benchmark
+        run: pnpm --filter @pwnkit/benchmark npm-bench
+        timeout-minutes: 45
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: npm-bench-results
+          path: packages/benchmark/results/npm-bench-latest.json

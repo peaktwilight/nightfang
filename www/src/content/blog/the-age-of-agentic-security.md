@@ -85,7 +85,7 @@ that's what an AI agent can do when pointed at source code with a security resea
 
 the age of agentic coding is here. stripe's Minions are writing a thousand PRs a week. other companies are doing the same. the volume of code being produced by AI agents is growing exponentially.
 
-agentic security needs to keep pace. every AI-written PR should be AI-tested for security. every dependency should be AI-audited before it enters the supply chain. every LLM endpoint and MCP server should be AI-pentested before it goes to production.
+agentic security needs to keep pace. every AI-written PR should be AI-tested for security. every dependency should be AI-audited before it enters the supply chain. every AI/LLM app and MCP server should be AI-pentested before it goes to production.
 
 the alternative is simple: the attackers will use AI agents too. and they won't bother with responsible disclosure.
 

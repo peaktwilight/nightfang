@@ -1,0 +1,43 @@
+name: AutoPenBench Benchmark
+
+on:
+  workflow_dispatch:
+
+jobs:
+  autopenbench:
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+
+    env:
+      AUTOPENBENCH_PATH: /tmp/autopenbench
+      AZURE_OPENAI_API_KEY: ${{ secrets.AZURE_OPENAI_API_KEY }}
+      AZURE_OPENAI_BASE_URL: ${{ secrets.AZURE_OPENAI_BASE_URL }}
+      AZURE_OPENAI_MODEL: ${{ secrets.AZURE_OPENAI_MODEL }}
+      AZURE_OPENAI_WIRE_API: ${{ secrets.AZURE_OPENAI_WIRE_API }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+
+      - run: corepack enable && corepack prepare pnpm@9 --activate
+
+      - name: Clone AutoPenBench repository
+        run: git clone --depth 1 https://github.com/lucagioacchini/auto-pen-bench "$AUTOPENBENCH_PATH"
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm build
+
+      - name: Run AutoPenBench benchmark
+        run: pnpm --filter @pwnkit/benchmark autopenbench
+        timeout-minutes: 180
+
+      - name: Upload results artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: autopenbench-results
+          path: packages/benchmark/results/autopenbench-latest.json

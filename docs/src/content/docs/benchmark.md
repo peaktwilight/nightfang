@@ -5,7 +5,7 @@ description: Comprehensive benchmark results for pwnkit across five domains -- A
 
 pwnkit is benchmarked against five test suites: a custom AI/LLM security benchmark (10 challenges), the XBOW traditional web vulnerability benchmark (104 challenges), AutoPenBench network/CVE pentesting (33 tasks), HarmBench LLM safety (510 behaviors), and an npm audit benchmark (30 packages). This page is the single source of truth for all benchmark results.
 
-> **Latest (April 2026).** 35 unique flags on XBOW (29 local + 6 CI-only), up from 22. Local: 29/~40 ran (73%). CI: 20/30 buildable (67%). Six new CI-only flags (XBEN-027, 032, 038, 039, 040, 043) added from linux/amd64 runs. Previous gains from fixing the Responses API `output_text` bug remain. ~40 challenges still cannot build on arm64.
+> **Latest (April 2026).** 35 unique flags on XBOW (29 local + 6 CI-only). Latest CI runs: **white-box 14/18 buildable = 77.8%**, black-box 20/37 buildable = 54.1% (50 challenges, 2 retries). White-box captured 2 extra flags (XBEN-022 Loan Calculator, XBEN-025 Art Gallery) that black-box missed on the same 30-challenge subset. ~40 challenges still cannot build on arm64.
 
 ## AI/LLM Security Benchmark
 
@@ -55,7 +55,8 @@ By difficulty: Easy 5/5 (100%) -- Medium 3/3 (100%) -- Hard 2/2 (100%).
 | Successfully ran (local) | ~40 |
 | **Flags extracted (total unique)** | **35** |
 | Local flags | 29/~40 (73%) |
-| CI-only flags | 6/~30 buildable (20/30 = 67%) |
+| CI black-box (50 challenges, 2 retries) | 20/37 buildable (54.1%) |
+| CI white-box (30 challenges, no retries) | 14/18 buildable (77.8%) |
 | Average turns per flag | 9.5 |
 | Vulnerability categories cracked | 17 |
 
@@ -215,7 +216,7 @@ pnpm --filter @pwnkit/benchmark npm-bench
 | [Cyber-AutoAgent](https://github.com/westonbrown/Cyber-AutoAgent) | 84.62% (88/104) | Claude 4.5 Sonnet | Black-box | Repo archived; v0.1.0 was 46%, iterated to 84% |
 | [deadend-cli](https://github.com/xoxruns/deadend-cli) | 77.55% (~76/98) | Claude Sonnet 4.5 | Black-box | Only tested 98 of 104 challenges; README claims ~80% on 104 with Kimi K2.5 |
 | [MAPTA](https://arxiv.org/abs/2508.20816) | 76.9% (80/104) | GPT-5 | Black-box | Patched 43 Docker images; $21.38 total cost |
-| **pwnkit** | **35 flags (73% local, 67% CI)** | Azure gpt-5.4 | Black-box + white-box | Open-source, shell-first, 3 tools |
+| **pwnkit** | **35 flags (78% white-box CI, 54% black-box CI)** | Azure gpt-5.4 | Black-box + white-box | Open-source, shell-first, 3 tools |
 
 **Important caveats:**
 - Shannon ran on a modified benchmark fork and reads source code — not comparable to black-box tools
@@ -224,6 +225,7 @@ pnpm --filter @pwnkit/benchmark npm-bench
 - MAPTA patched 43 of the 104 Docker images before testing
 - No competitor publishes retry counts per challenge — all scores could represent best-of-N
 - pwnkit's white-box mode (`--repo`) cracked XBEN-042 which no black-box approach could solve
+- Latest CI white-box run: 14/18 (77.8%) vs black-box 12/18 (66.7%) on the same 30 challenges — white-box adds XBEN-022 and XBEN-025
 
 > **Responses API bug (April 2026).** Previous XBOW results (22 flags) were affected by a critical bug in the Azure Responses API integration: assistant text was sent as `input_text` instead of `output_text`, causing Azure to crash after turn 3. Fixing this bug unlocked 5 new flags (XBEN-028, 045, 060, 069, 085), bringing the local total to 29. A subsequent CI run on linux/amd64 added 6 CI-only flags (XBEN-027, 032, 038, 039, 040, 043), bringing the combined total to 35 unique flags.
 

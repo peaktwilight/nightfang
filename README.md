@@ -30,7 +30,7 @@
 
 ---
 
-Autonomous AI agents that pentest web apps, LLM endpoints, npm packages, and source code. The agent gets a `bash` tool and acts like a real pentester -- writing curl commands, Python exploit scripts, and chaining vulnerabilities. Every finding is independently re-exploited by a blind verify agent to kill false positives.
+Autonomous AI agents that pentest web apps, AI/LLM apps, npm packages, and source code. The agent gets a `bash` tool and acts like a real pentester -- writing curl commands, Python exploit scripts, and chaining vulnerabilities. Every finding is independently re-exploited by a blind verify agent to kill false positives.
 
 **v0.5.0** adds Playwright-based XSS detection, white-box mode (`--repo`) for source-aware scanning, and validation across 5 benchmark suites.
 
@@ -47,7 +47,7 @@ npx pwnkit-cli scan --target https://example.com --mode web
 # White-box scan with source code access
 npx pwnkit-cli scan --target https://example.com --repo ./source
 
-# Scan an LLM endpoint
+# Scan an LLM API
 npx pwnkit-cli scan --target https://your-app.com/api/chat
 
 # Audit an npm package

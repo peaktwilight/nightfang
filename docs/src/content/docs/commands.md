@@ -7,10 +7,10 @@ All commands are available via `npx pwnkit-cli <command>`. You can also skip the
 
 ## scan
 
-Probe LLM endpoints or web apps for vulnerabilities.
+Probe AI/LLM apps or web apps for vulnerabilities.
 
 ```bash
-# Scan an LLM endpoint
+# Scan an LLM API
 npx pwnkit-cli scan --target https://api.example.com/chat
 
 # Scan a traditional web app

@@ -177,7 +177,7 @@ function buildReplayLines(data: ReplayData): ReplayLine[] {
           chalk.white(`GET ${truncTarget}`) +
           chalk.dim(" \u2192 ") +
           chalk.white("200") +
-          chalk.gray(" (LLM endpoint detected)")
+          chalk.gray(" (LLM API detected)")
       ),
       delay: MED,
     });

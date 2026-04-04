@@ -8,7 +8,7 @@ interface MenuOption {
 }
 
 const options: MenuOption[] = [
-  { value: "scan",    label: "Scan an endpoint" },
+  { value: "scan",    label: "Scan a target" },
   { value: "audit",   label: "Audit an npm package" },
   { value: "review",  label: "Review a codebase" },
   { value: "dashboard", label: "Open local mission control" },
