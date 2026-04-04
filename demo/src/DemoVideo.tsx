@@ -51,12 +51,20 @@ const S = {
   // Scene 4: Results (14-18s)
   resultsStart: 14,
   resultsEnd: 18,
-  // Scene 5: CTA (18-22s)
-  ctaStart: 18,
-  ctaEnd: 22,
+  // Scene 5: Benchmark (18-22s)
+  benchStart: 18,
+  benchEnd: 22,
+  // Scene 6: CTA (22-26s)
+  ctaStart: 22,
+  ctaEnd: 26,
 };
 
-const COMMAND = "npx pwnkit-cli audit express";
+// Auto-detect commands shown in sequence
+const COMMANDS = [
+  { text: "pwnkit-cli express", label: "npm package" },
+  { text: "pwnkit-cli ./my-repo", label: "source code" },
+  { text: "pwnkit-cli https://api.com/chat", label: "LLM endpoint" },
+];
 
 // ── Main Component ──
 export const DemoVideo = () => {
@@ -75,6 +83,16 @@ export const DemoVideo = () => {
     >
       {/* Subtle grid background */}
       <GridBackground />
+
+      {/* Radial vignette for depth */}
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          background: "radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.6) 100%)",
+          pointerEvents: "none",
+        }}
+      />
 
       {/* Scene 1: Intro */}
       <Sequence from={0} durationInFrames={Math.floor(S.introEnd * fps)} layout="none">
@@ -96,10 +114,37 @@ export const DemoVideo = () => {
         <ResultsScene />
       </Sequence>
 
-      {/* Scene 5: CTA */}
+      {/* Scene 5: Benchmark */}
+      <Sequence from={Math.floor(S.benchStart * fps)} durationInFrames={Math.floor((S.benchEnd - S.benchStart) * fps)} layout="none">
+        <BenchmarkScene />
+      </Sequence>
+
+      {/* Scene 6: CTA */}
       <Sequence from={Math.floor(S.ctaStart * fps)} durationInFrames={Math.floor((S.ctaEnd - S.ctaStart) * fps)} layout="none">
         <CTAScene />
       </Sequence>
+
+      {/* Bottom progress bar */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: 3,
+          backgroundColor: "rgba(220, 38, 38, 0.1)",
+        }}
+      >
+        <div
+          style={{
+            height: "100%",
+            width: `${(sec / S.ctaEnd) * 100}%`,
+            backgroundColor: C.crimson,
+            boxShadow: `0 0 8px ${C.crimson}`,
+            borderRadius: "0 2px 2px 0",
+          }}
+        />
+      </div>
     </AbsoluteFill>
   );
 };
@@ -193,7 +238,7 @@ const IntroScene = () => {
         opacity: fadeOut,
       }}
     >
-      {/* Animated Logo */}
+      {/* Animated Logo with glow */}
       <div
         style={{
           opacity: logoOpacity,
@@ -204,6 +249,16 @@ const IntroScene = () => {
           position: "relative",
         }}
       >
+        {/* Glow behind logo */}
+        <div
+          style={{
+            position: "absolute",
+            inset: -30,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.crimsonGlow} 0%, transparent 70%)`,
+            opacity: glowIntensity,
+          }}
+        />
         <PwnkitIcon />
       </div>
 
@@ -233,33 +288,13 @@ const IntroScene = () => {
           textTransform: "uppercase",
         }}
       >
-        Open-source agentic harness for autonomous security research
+        Autonomous AI agents hack you so the real ones can't
       </div>
     </AbsoluteFill>
   );
 };
 
-// ── pwnkit Logo (Fang SVG with eyes) ──
-const pwnkitLogo = ({ size = 120 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 128 128"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M32 48 L64 24 L96 48 L96 88 L80 104 L64 88 L48 104 L32 88Z"
-      fill="none"
-      stroke={C.crimson}
-      strokeWidth="5"
-      strokeLinejoin="round"
-    />
-    <circle cx="52" cy="64" r="5" fill={C.crimson} />
-    <circle cx="76" cy="64" r="5" fill={C.crimson} />
-  </svg>
-);
-
-// ── Scene 2: THE COMMAND ──
+// ── Scene 2: THE COMMAND (auto-detect multi-target) ──
 const CommandScene = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -277,27 +312,18 @@ const CommandScene = () => {
     extrapolateRight: "clamp",
   });
 
-  // Typewriter starts at 1s into scene
-  const typeDelay = 1.0;
-  const typeDuration = 2.5;
-  const typeProgress = Math.min(
-    1,
-    Math.max(0, (sec - typeDelay) / typeDuration),
-  );
-  const charsVisible = Math.floor(typeProgress * COMMAND.length);
+  // "Just give it a target" header
+  const headerOpacity = interpolate(sec, [0.3, 0.7], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
 
-  // Cursor blink
-  const showCursor = sec < 4.2 && Math.floor(frame / 8) % 2 === 0;
-
-  // "Enter" flash at ~3.5s
-  const enterTime = 3.8;
-  const enterFlash =
-    sec >= enterTime
-      ? interpolate(sec, [enterTime, enterTime + 0.3], [0.15, 0], {
-          extrapolateLeft: "clamp",
-          extrapolateRight: "clamp",
-        })
-      : 0;
+  // Staggered command entries
+  const cmdTimings = [
+    { start: 0.8, typeEnd: 1.8 },
+    { start: 2.0, typeEnd: 2.8 },
+    { start: 3.0, typeEnd: 4.0 },
+  ];
 
   // Fade out
   const fadeOut = interpolate(sec, [4.2, 5.0], [1, 0], {
@@ -314,18 +340,6 @@ const CommandScene = () => {
         opacity: fadeOut,
       }}
     >
-      {/* Flash overlay on enter */}
-      {enterFlash > 0 && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            backgroundColor: C.crimson,
-            opacity: enterFlash,
-          }}
-        />
-      )}
-
       <div
         style={{
           width: 900,
@@ -333,6 +347,21 @@ const CommandScene = () => {
           transform: `scale(${0.95 + terminalScale * 0.05})`,
         }}
       >
+        {/* "Just give it a target" */}
+        <div
+          style={{
+            opacity: headerOpacity,
+            fontSize: 14,
+            color: C.dimmed,
+            textTransform: "uppercase",
+            letterSpacing: 4,
+            marginBottom: 16,
+            textAlign: "center",
+          }}
+        >
+          Just give it a target
+        </div>
+
         {/* Terminal chrome */}
         <div
           style={{
@@ -354,7 +383,7 @@ const CommandScene = () => {
           <div style={{ flex: 1 }} />
         </div>
 
-        {/* Terminal body */}
+        {/* Terminal body with multiple commands */}
         <div
           style={{
             backgroundColor: C.bg,
@@ -364,23 +393,68 @@ const CommandScene = () => {
             border: `1px solid ${C.border}`,
             borderTop: "none",
             fontSize: 17,
-            lineHeight: 1.8,
+            lineHeight: 2.2,
             whiteSpace: "pre",
           }}
         >
-          <span style={{ color: C.green }}>{">"}</span>{" "}
-          <span style={{ color: C.white }}>{COMMAND.slice(0, charsVisible)}</span>
-          {showCursor && (
-            <span
-              style={{
-                backgroundColor: C.crimson,
-                color: C.bg,
-                padding: "0 2px",
-              }}
-            >
-              {" "}
-            </span>
-          )}
+          {COMMANDS.map((cmd, i) => {
+            const timing = cmdTimings[i];
+            const lineOpacity = interpolate(sec, [timing.start, timing.start + 0.15], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            });
+            const typeDur = timing.typeEnd - timing.start;
+            const typeProgress = Math.min(1, Math.max(0, (sec - timing.start) / typeDur));
+            const charsVisible = Math.floor(typeProgress * cmd.text.length);
+            const showCursor = sec >= timing.start && typeProgress < 1 && Math.floor(frame / 8) % 2 === 0;
+
+            return (
+              <div key={i} style={{ opacity: lineOpacity, display: "flex", alignItems: "center" }}>
+                <span style={{ color: C.green }}>{">"}</span>{" "}
+                <span style={{ color: C.white }}>{cmd.text.slice(0, charsVisible)}</span>
+                {showCursor && (
+                  <span style={{ backgroundColor: C.crimson, color: C.bg, padding: "0 2px" }}>{" "}</span>
+                )}
+                {typeProgress >= 1 && (() => {
+                  const labelAge = sec - timing.typeEnd;
+                  const labelOpacity = interpolate(labelAge, [0, 0.25], [0, 1], {
+                    extrapolateLeft: "clamp",
+                    extrapolateRight: "clamp",
+                  });
+                  const labelSlide = interpolate(labelAge, [0, 0.25], [8, 0], {
+                    extrapolateLeft: "clamp",
+                    extrapolateRight: "clamp",
+                    easing: Easing.out(Easing.cubic),
+                  });
+                  const labelScale = interpolate(labelAge, [0, 0.2], [0.85, 1], {
+                    extrapolateLeft: "clamp",
+                    extrapolateRight: "clamp",
+                  });
+                  return (
+                    <span
+                      style={{
+                        marginLeft: 16,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: C.crimson,
+                        backgroundColor: "rgba(220, 38, 38, 0.12)",
+                        border: `1px solid ${C.crimson}30`,
+                        borderRadius: 4,
+                        padding: "2px 8px",
+                        textTransform: "uppercase",
+                        letterSpacing: 1,
+                        opacity: labelOpacity,
+                        transform: `translateX(${labelSlide}px) scale(${labelScale})`,
+                        display: "inline-block",
+                      }}
+                    >
+                      {cmd.label}
+                    </span>
+                  );
+                })()}
+              </div>
+            );
+          })}
         </div>
       </div>
     </AbsoluteFill>
@@ -483,16 +557,38 @@ const AgentsScene = () => {
         Agents at work
       </div>
 
-      {/* 4 Lanes */}
+      {/* 4 Lanes with flow arrows */}
       <div
         style={{
           display: "flex",
-          gap: 16,
+          gap: 0,
           flex: 1,
+          alignItems: "stretch",
         }}
       >
         {lanes.map((lane, idx) => (
-          <LaneColumn key={lane.name} lane={lane} sec={sec} fps={fps} frame={frame} index={idx} />
+          <div key={lane.name} style={{ display: "flex", flex: 1, alignItems: "stretch" }}>
+            <div style={{ flex: 1 }}>
+              <LaneColumn lane={lane} sec={sec} fps={fps} frame={frame} index={idx} />
+            </div>
+            {idx < lanes.length - 1 && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 28,
+                  flexShrink: 0,
+                }}
+              >
+                <FlowArrow
+                  sec={sec}
+                  activateAt={lanes[idx + 1].activateAt}
+                  color={lanes[idx + 1].color}
+                />
+              </div>
+            )}
+          </div>
         ))}
       </div>
     </AbsoluteFill>
@@ -537,7 +633,7 @@ const LaneColumn = ({
   return (
     <div
       style={{
-        flex: 1,
+        height: "100%",
         display: "flex",
         flexDirection: "column",
         backgroundColor: isActive ? C.laneActive : "transparent",
@@ -706,6 +802,40 @@ const ActivityBar = ({
   );
 };
 
+const FlowArrow = ({
+  sec,
+  activateAt,
+  color,
+}: {
+  sec: number;
+  activateAt: number;
+  color: string;
+}) => {
+  const opacity = interpolate(sec, [activateAt - 0.2, activateAt + 0.3], [0, 0.7], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const slideX = interpolate(sec, [activateAt - 0.2, activateAt + 0.3], [-4, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  return (
+    <div
+      style={{
+        opacity,
+        transform: `translateX(${slideX}px)`,
+        color,
+        fontSize: 16,
+        fontWeight: 700,
+        textShadow: `0 0 6px ${color}`,
+      }}
+    >
+      {"\u203A"}
+    </div>
+  );
+};
+
 // ── Scene 4: RESULTS ──
 const ResultsScene = () => {
   const frame = useCurrentFrame();
@@ -843,7 +973,11 @@ const ResultsScene = () => {
             </span>
             <span style={{ color: C.border }}>|</span>
             <span>
-              <span style={{ color: C.white, fontWeight: 700 }}>5</span> re-exploited
+              <span style={{ color: C.green, fontWeight: 700 }}>5</span> blind-verified
+            </span>
+            <span style={{ color: C.border }}>|</span>
+            <span>
+              <span style={{ color: C.crimson, fontWeight: 700 }}>0</span> false positives
             </span>
             <span style={{ color: C.border }}>|</span>
             <span>
@@ -893,7 +1027,202 @@ const SeverityBadge = ({
   );
 };
 
-// ── Scene 5: CTA ──
+// ── Scene 5: BENCHMARK ──
+const benchmarkCategories = [
+  { name: "Direct Prompt Injection", difficulty: "easy" },
+  { name: "System Prompt Extraction", difficulty: "easy" },
+  { name: "PII Data Leakage", difficulty: "easy" },
+  { name: "Base64 Encoding Bypass", difficulty: "medium" },
+  { name: "DAN Jailbreak", difficulty: "medium" },
+  { name: "SSRF via MCP Tool", difficulty: "medium" },
+  { name: "Multi-Turn Escalation", difficulty: "hard" },
+  { name: "CORS Misconfiguration", difficulty: "easy" },
+  { name: "Sensitive Path Exposure", difficulty: "easy" },
+  { name: "Indirect Prompt Injection", difficulty: "hard" },
+];
+
+const BenchmarkScene = () => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const sec = frame / fps;
+
+  const fadeIn = interpolate(frame, [0, 15], [0, 1], {
+    extrapolateRight: "clamp",
+  });
+
+  const fadeOut = interpolate(sec, [3.2, 4.0], [1, 0], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Big "100%" counter animation
+  const countProgress = interpolate(sec, [0.3, 1.5], [0, 100], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  const headerOpacity = interpolate(sec, [0.2, 0.5], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+
+  // Staggered checkmarks for each category
+  const checkStartTime = 0.8;
+  const checkInterval = 0.15;
+
+  // "0 false positives" callout
+  const fpOpacity = interpolate(sec, [2.4, 2.7], [0, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+  });
+  const fpScale = interpolate(sec, [2.4, 2.7], [0.9, 1], {
+    extrapolateLeft: "clamp",
+    extrapolateRight: "clamp",
+    easing: Easing.out(Easing.cubic),
+  });
+
+  return (
+    <AbsoluteFill
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        opacity: fadeIn * fadeOut,
+      }}
+    >
+      <div style={{ display: "flex", gap: 60, alignItems: "center" }}>
+        {/* Left: Big stat */}
+        <div style={{ textAlign: "center", minWidth: 280 }}>
+          <div
+            style={{
+              opacity: headerOpacity,
+              fontSize: 14,
+              color: C.dimmed,
+              textTransform: "uppercase",
+              letterSpacing: 4,
+              marginBottom: 12,
+            }}
+          >
+            AI/LLM Benchmark
+          </div>
+          <div
+            style={{
+              fontSize: 80,
+              fontWeight: 700,
+              color: C.green,
+              lineHeight: 1,
+              fontFamily: spaceMono,
+            }}
+          >
+            {Math.round(countProgress)}%
+          </div>
+          <div
+            style={{
+              fontSize: 18,
+              color: C.dimmed,
+              marginTop: 8,
+            }}
+          >
+            <span style={{ color: C.white, fontWeight: 700 }}>10</span>/10 detection &bull;{" "}
+            <span style={{ color: C.white, fontWeight: 700 }}>10</span>/10 flag extraction
+          </div>
+
+          {/* Zero false positives badge */}
+          <div
+            style={{
+              opacity: fpOpacity,
+              transform: `scale(${fpScale})`,
+              marginTop: 20,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              backgroundColor: "rgba(34, 197, 94, 0.1)",
+              border: `1px solid ${C.green}40`,
+              borderRadius: 8,
+              padding: "8px 20px",
+              fontSize: 15,
+              fontWeight: 700,
+              color: C.green,
+            }}
+          >
+            0 false positives
+          </div>
+        </div>
+
+        {/* Right: Category checklist with PASS badges */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 3,
+          }}
+        >
+          {benchmarkCategories.map((cat, i) => {
+            const checkTime = checkStartTime + i * checkInterval;
+            const checkOpacity = interpolate(sec, [checkTime, checkTime + 0.1], [0, 1], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            });
+            const checkSlide = interpolate(sec, [checkTime, checkTime + 0.15], [8, 0], {
+              extrapolateLeft: "clamp",
+              extrapolateRight: "clamp",
+            });
+
+            const diffColor =
+              cat.difficulty === "hard" ? C.crimson : cat.difficulty === "medium" ? C.orange : C.dimmed;
+
+            return (
+              <div
+                key={i}
+                style={{
+                  opacity: checkOpacity,
+                  transform: `translateX(${checkSlide}px)`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  fontSize: 15,
+                  padding: "3px 0",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 700,
+                    color: C.green,
+                    backgroundColor: "rgba(34, 197, 94, 0.15)",
+                    border: `1px solid ${C.green}40`,
+                    borderRadius: 3,
+                    padding: "1px 6px",
+                    letterSpacing: 1,
+                    fontFamily: spaceMono,
+                  }}
+                >
+                  PASS
+                </span>
+                <span style={{ color: C.white }}>{cat.name}</span>
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: diffColor,
+                    opacity: 0.8,
+                    backgroundColor: `${diffColor}15`,
+                    borderRadius: 3,
+                    padding: "1px 5px",
+                  }}
+                >
+                  {cat.difficulty}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </AbsoluteFill>
+  );
+};
+
+// ── Scene 6: CTA ──
 const CTAScene = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
@@ -947,7 +1276,7 @@ const CTAScene = () => {
         gap: 20,
       }}
     >
-      {/* Animated Logo */}
+      {/* Animated Logo with glow */}
       <div
         style={{
           opacity: logoOpacity,
@@ -958,14 +1287,37 @@ const CTAScene = () => {
           position: "relative",
         }}
       >
+        {/* Glow behind logo */}
+        <div
+          style={{
+            position: "absolute",
+            inset: -40,
+            borderRadius: "50%",
+            background: `radial-gradient(circle, ${C.crimsonGlow} 0%, transparent 70%)`,
+            opacity: glowIntensity,
+          }}
+        />
         <PwnkitIcon />
+      </div>
+
+      {/* Tagline */}
+      <div
+        style={{
+          opacity: cmdOpacity,
+          transform: `translateY(${cmdY}px)`,
+          fontSize: 16,
+          color: C.dimmed,
+          letterSpacing: 1,
+          marginBottom: 4,
+        }}
+      >
+        Fully autonomous agentic pentesting framework
       </div>
 
       {/* Command */}
       <div
         style={{
           opacity: cmdOpacity,
-          transform: `translateY(${cmdY}px)`,
           fontSize: 20,
           padding: "14px 32px",
           backgroundColor: "rgba(220, 38, 38, 0.1)",
@@ -975,40 +1327,69 @@ const CTAScene = () => {
         }}
       >
         <span style={{ color: C.green }}>{">"}</span>{" "}
-        npx pwnkit-cli audit{" "}
-        <span style={{ color: C.crimson }}>{"<package>"}</span>
+        npx pwnkit-cli{" "}
+        <span style={{ color: C.crimson }}>{"<target>"}</span>
       </div>
 
-      {/* URL */}
+      {/* URLs */}
       <div
         style={{
           opacity: urlOpacity,
-          fontSize: 28,
-          fontWeight: 700,
-          color: C.crimson,
+          display: "flex",
+          gap: 24,
+          alignItems: "center",
           marginTop: 8,
         }}
       >
-        pwnkit.com
+        <span style={{ fontSize: 28, fontWeight: 700, color: C.crimson }}>
+          pwnkit.com
+        </span>
+        <span style={{ color: C.border }}>|</span>
+        <span style={{ fontSize: 18, color: C.dimmed }}>
+          docs.pwnkit.com
+        </span>
       </div>
 
-      {/* GitHub badge */}
+      {/* Action badges */}
       <div
         style={{
           opacity: badgeOpacity,
           display: "flex",
           alignItems: "center",
-          gap: 10,
-          backgroundColor: "#1a1a1a",
-          border: `1px solid ${C.border}`,
-          borderRadius: 8,
-          padding: "10px 20px",
-          fontSize: 15,
+          gap: 12,
           marginTop: 4,
         }}
       >
-        <span style={{ color: C.yellow }}>{"★"}</span>
-        <span style={{ color: C.white, fontWeight: 700 }}>Star on GitHub</span>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            backgroundColor: "#1a1a1a",
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            padding: "10px 16px",
+            fontSize: 14,
+          }}
+        >
+          <span style={{ color: C.green, fontFamily: spaceMono, fontWeight: 700 }}>npm i</span>
+          <span style={{ color: C.white }}>pwnkit-cli</span>
+        </div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            backgroundColor: "#1a1a1a",
+            border: `1px solid ${C.border}`,
+            borderRadius: 8,
+            padding: "10px 16px",
+            fontSize: 14,
+          }}
+        >
+          <span style={{ color: C.yellow }}>{"★"}</span>
+          <span style={{ color: C.white, fontWeight: 700 }}>Star on GitHub</span>
+        </div>
       </div>
     </AbsoluteFill>
   );
