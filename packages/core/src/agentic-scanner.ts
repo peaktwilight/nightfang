@@ -16,6 +16,7 @@ import {
   webPentestAttackPrompt,
   shellPentestPrompt,
 } from "./agent/prompts.js";
+import { features } from "./agent/features.js";
 import type { ScanEvent, ScanListener } from "./scanner.js";
 import type { NativeRuntime } from "./runtime/types.js";
 import { isMcpTarget } from "./http.js";
@@ -680,7 +681,7 @@ async function runNativeAttack(
   });
 
   // ── Early-stop retry: if no findings by halfway, retry with a different strategy ──
-  if (state.earlyStopNoProgress) {
+  if (features.earlyStopRetry && state.earlyStopNoProgress) {
     const remainingBudget = effectiveMaxTurns - state.turnCount;
 
     emit({

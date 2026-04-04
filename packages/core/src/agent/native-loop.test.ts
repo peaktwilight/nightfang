@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { runNativeAgentLoop } from "./native-loop.js";
+import { detectPlaybooks, buildPlaybookInjection, PLAYBOOKS } from "./playbooks.js";
 import type { NativeRuntime, NativeRuntimeResult, NativeMessage, NativeToolDef } from "../runtime/types.js";
 
 // ── Mock runtime that returns scripted responses ──
@@ -517,5 +518,95 @@ describe("runNativeAgentLoop", () => {
     expect(state.earlyStopNoProgress).toBe(false);
     expect(state.done).toBe(true);
     expect(state.turnCount).toBe(12);
+  });
+});
+
+// ── Playbook detection tests ──
+
+describe("detectPlaybooks", () => {
+  it("detects SQLi from SQL error messages", () => {
+    const texts = [
+      'Error: You have an error in your SQL syntax near \'"\' at line 1',
+      "SELECT * FROM users WHERE id = 1",
+    ];
+    const types = detectPlaybooks(texts);
+    expect(types).toContain("sqli");
+  });
+
+  it("detects SSTI from template syntax", () => {
+    const texts = [
+      "Response: Hello {{user.name}}, welcome!",
+      "Using Jinja2 template engine",
+    ];
+    const types = detectPlaybooks(texts);
+    expect(types).toContain("ssti");
+  });
+
+  it("detects IDOR from URL patterns with IDs", () => {
+    const texts = [
+      "Found endpoint: /api/users/1",
+      "GET /profile?id=42 returned user data with user_id field",
+    ];
+    const types = detectPlaybooks(texts);
+    expect(types).toContain("idor");
+  });
+
+  it("requires at least 2 pattern matches to trigger", () => {
+    // Only one pattern match — should not trigger
+    const texts = ["some random text with the word password in it"];
+    const types = detectPlaybooks(texts);
+    // auth_bypass requires 2+ matches; "password" alone is just 1
+    expect(types).not.toContain("sqli");
+    expect(types).not.toContain("ssti");
+  });
+
+  it("returns at most 3 playbook types", () => {
+    const texts = [
+      "SQL syntax error in SELECT query from information_schema",
+      "{{7*7}} returned 49 in Jinja2 template",
+      "/api/users/1 with user_id and owner_id",
+      "<script>alert(1)</script> reflected with onerror handler and innerHTML",
+      "webhook callback url with proxy and redirect",
+      "file path include traversal ../../etc/passwd /proc/self",
+      "login auth password session jwt bearer unauthorized 401 403",
+      "exec system popen subprocess child_process shell ping",
+    ];
+    const types = detectPlaybooks(texts);
+    expect(types.length).toBeLessThanOrEqual(3);
+  });
+
+  it("returns empty array when no patterns match", () => {
+    const texts = ["Everything looks normal here", "No vulnerabilities found"];
+    const types = detectPlaybooks(texts);
+    expect(types).toHaveLength(0);
+  });
+});
+
+describe("buildPlaybookInjection", () => {
+  it("returns empty string for empty types", () => {
+    expect(buildPlaybookInjection([])).toBe("");
+  });
+
+  it("includes playbook content for detected types", () => {
+    const result = buildPlaybookInjection(["sqli", "idor"]);
+    expect(result).toContain("SQLi Playbook");
+    expect(result).toContain("IDOR Playbook");
+    expect(result).toContain("Dynamic Playbook Injection");
+  });
+
+  it("skips unknown types gracefully", () => {
+    const result = buildPlaybookInjection(["sqli", "unknown_type"]);
+    expect(result).toContain("SQLi Playbook");
+    expect(result).not.toContain("unknown_type");
+  });
+});
+
+describe("PLAYBOOKS registry", () => {
+  it("contains all expected vulnerability types", () => {
+    const expectedTypes = ["sqli", "ssti", "idor", "xss", "ssrf", "lfi", "auth_bypass", "command_injection"];
+    for (const t of expectedTypes) {
+      expect(PLAYBOOKS[t]).toBeDefined();
+      expect(PLAYBOOKS[t].length).toBeGreaterThan(50);
+    }
   });
 });

@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import * as fs from "node:fs";
 import type {
   NativeRuntime,
   NativeMessage,
@@ -8,8 +9,17 @@ import type {
 } from "../runtime/types.js";
 import type { ToolDefinition, ToolCall, ToolResult, ToolContext, AgentRole } from "./types.js";
 import { ToolExecutor, getToolsForRole } from "./tools.js";
+import { features } from "./features.js";
+import { detectPlaybooks, buildPlaybookInjection } from "./playbooks.js";
 import type { pwnkitDB } from "@pwnkit/db";
 import type { Finding, AttackResult, TargetInfo } from "@pwnkit/shared";
+
+// ── External Memory ──
+// The agent can persist working state (creds, endpoints, attack plans) to this
+// file via bash. At reflection checkpoints the contents are injected back into
+// the conversation so the agent doesn't lose track of discoveries.
+const EXTERNAL_MEMORY_PATH = "/tmp/pwnkit-state.json";
+const EXTERNAL_MEMORY_MAX_CHARS = 2000;
 
 // ── Native Agent Loop Config ──
 
@@ -108,6 +118,11 @@ export async function runNativeAgentLoop(
       role: "user",
       content: [{ type: "text", text: buildInitialPrompt(config) }],
     });
+
+    // Clean up external memory file at the start of a new scan (not between retries)
+    if (features.externalMemory && (config.retryCount ?? 0) === 0) {
+      try { fs.unlinkSync(EXTERNAL_MEMORY_PATH); } catch { /* file may not exist */ }
+    }
   }
 
   const state: NativeAgentState = {
@@ -131,6 +146,10 @@ export async function runNativeAgentLoop(
 
   // Context window compaction flag — only compact once per session
   let contextCompacted = false;
+
+  // Dynamic playbook injection — only inject once per session
+  let playbookInjected = false;
+  const recentToolResultTexts: string[] = [];
 
   // Loop / oscillation detection (BoxPwnr-inspired)
   const loopDetector = new LoopDetector();
@@ -169,7 +188,8 @@ export async function runNativeAgentLoop(
     // When the context grows too large, summarize old messages while preserving
     // critical ones (credentials, flags, findings). Only compact once.
     if (
-      !contextCompacted
+      features.contextCompaction
+      && !contextCompacted
       && state.totalUsage.inputTokens > 30_000
       && state.messages.length > 15
     ) {
@@ -296,9 +316,55 @@ export async function runNativeAgentLoop(
     // Append tool results as user message
     state.messages.push({ role: "user", content: toolResultBlocks });
 
+    // ── Collect tool result text for playbook detection ──
+    if (features.dynamicPlaybooks && !playbookInjected) {
+      for (const block of toolResultBlocks) {
+        if (block.type === "tool_result") {
+          recentToolResultTexts.push(block.content);
+        }
+      }
+    }
+
+    // ── Dynamic playbook injection at ~30% budget ──
+    // After initial reconnaissance, pattern-match tool results to detect
+    // vulnerability types and inject targeted methodology playbooks.
+    const playbookPct = state.turnCount / config.maxTurns;
+    if (
+      features.dynamicPlaybooks
+      && !playbookInjected
+      && playbookPct >= 0.3
+      && recentToolResultTexts.length > 0
+    ) {
+      const detectedTypes = detectPlaybooks(recentToolResultTexts);
+      if (detectedTypes.length > 0) {
+        const playbookText = buildPlaybookInjection(detectedTypes);
+        if (playbookText) {
+          state.messages.push({
+            role: "user",
+            content: [{ type: "text", text: playbookText }],
+          });
+          playbookInjected = true;
+          onEvent?.("playbook_injected", {
+            turn: state.turnCount,
+            types: detectedTypes,
+          });
+          if (db) {
+            db.logEvent({
+              scanId: config.scanId,
+              stage: config.role,
+              eventType: "playbook_injected",
+              agentRole: config.role,
+              payload: { turn: state.turnCount, types: detectedTypes },
+              timestamp: Date.now(),
+            });
+          }
+        }
+      }
+    }
+
     // ── Loop / oscillation detection ──
-    loopDetector.record(toolCalls);
-    const loopWarning = loopDetector.detect();
+    if (features.loopDetection) loopDetector.record(toolCalls);
+    const loopWarning = features.loopDetection ? loopDetector.detect() : null;
     if (loopWarning) {
       // Inject warning into the conversation so the model sees it next turn
       state.messages.push({
@@ -325,7 +391,8 @@ export async function runNativeAgentLoop(
     const retryCount = config.retryCount ?? 0;
     const halfwayTurn = Math.floor(config.maxTurns / 2);
     if (
-      config.role === "attack"
+      features.earlyStopRetry
+      && config.role === "attack"
       && retryCount === 0
       && config.maxTurns >= 10
       && state.turnCount >= halfwayTurn
@@ -642,6 +709,24 @@ const LOOP_WARNING =
 
 // ── Helpers ──
 
+/**
+ * Read the agent's external working memory file. Returns a formatted suffix
+ * to append to the reflection checkpoint prompt, or an empty string if the
+ * file doesn't exist or the feature is off.
+ */
+function readExternalMemory(): string {
+  try {
+    const raw = fs.readFileSync(EXTERNAL_MEMORY_PATH, "utf-8");
+    if (!raw.trim()) return "";
+    const capped = raw.length > EXTERNAL_MEMORY_MAX_CHARS
+      ? raw.slice(0, EXTERNAL_MEMORY_MAX_CHARS) + "\n...(truncated)"
+      : raw;
+    return `\n\n## Your Saved State\n\`\`\`json\n${capped}\n\`\`\`\nUpdate this file as you discover new information.`;
+  } catch {
+    return "";
+  }
+}
+
 function buildInitialPrompt(config: NativeAgentConfig): string {
   return [
     `You are a ${config.role} agent for pwnkit, an AI red-teaming toolkit.`,
@@ -656,18 +741,23 @@ function buildContinuePrompt(config: NativeAgentConfig, turnCount: number): stri
   const pct = turnCount / config.maxTurns;
   const remaining = config.maxTurns - turnCount;
 
+  // Read external memory at reflection checkpoints (30%/50%/70%/85%)
+  const memorySuffix = (pct >= 0.3 && features.externalMemory)
+    ? readExternalMemory()
+    : "";
+
   // Multi-checkpoint budget awareness (inspired by Cyber-AutoAgent)
   if (pct >= 0.85) {
-    return `FINAL PUSH: ${remaining} turns left. Go for the highest-confidence exploit path ONLY. No more exploration — exploit what you found. Use your tools.`;
+    return `FINAL PUSH: ${remaining} turns left. Go for the highest-confidence exploit path ONLY. No more exploration — exploit what you found. Use your tools.${memorySuffix}`;
   }
   if (pct >= 0.7) {
-    return `URGENCY: ${remaining} turns left. If current approach is not working, SWITCH NOW to a completely different technique. Use your tools.`;
+    return `URGENCY: ${remaining} turns left. If current approach is not working, SWITCH NOW to a completely different technique. Use your tools.${memorySuffix}`;
   }
   if (pct >= 0.5) {
-    return `HALFWAY: ${remaining} turns left. List every approach tried and its result. What is the MOST PROMISING untested vector? Focus there. Use your tools.`;
+    return `HALFWAY: ${remaining} turns left. List every approach tried and its result. What is the MOST PROMISING untested vector? Focus there. Use your tools.${memorySuffix}`;
   }
   if (pct >= 0.3) {
-    return `STATUS: ${remaining} turns left. Summarize what you have learned. What is your top hypothesis? Use your tools to test it.`;
+    return `STATUS: ${remaining} turns left. Summarize what you have learned. What is your top hypothesis? Use your tools to test it.${memorySuffix}`;
   }
 
   switch (config.role) {

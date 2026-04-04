@@ -1,4 +1,13 @@
 import type { TargetInfo, Finding } from "@pwnkit/shared";
+import { features as featureFlags } from "./features.js";
+
+const EXTERNAL_MEMORY_INSTRUCTION = `
+
+## Working Memory
+
+Save important discoveries (credentials, endpoints, tokens, attack plans) to /tmp/pwnkit-state.json using bash. This file persists across reflection checkpoints and will be reminded to you. Example:
+\`echo '{"creds":["admin:pass"],"endpoints":["/api/users"],"plan":"try IDOR on /api/users/2"}' > /tmp/pwnkit-state.json\`
+Update it whenever you discover something new.`;
 
 export function discoveryPrompt(target: string): string {
   return `You are the Discovery Agent for pwnkit AI red-teaming toolkit.
@@ -77,7 +86,7 @@ ${sysPrompt}
 - Use save_finding for EVERY vulnerability discovered
 - Be creative — combine techniques, use multi-turn approaches
 - If one approach fails, try another angle
-- Call done when you've exhausted your attack surface`;
+- Call done when you've exhausted your attack surface${featureFlags.externalMemory ? EXTERNAL_MEMORY_INSTRUCTION : ""}`;
 }
 
 export function webPentestPrompt(target: string, opts?: { hasBrowser?: boolean }): string {
@@ -169,7 +178,7 @@ Perform a comprehensive web application penetration test against the target. You
 - Be thorough: test every input field and parameter you discover
 - Do NOT report missing security headers as critical/high — they are typically medium/low
 
-When done testing all categories, call the done tool with a summary of findings.${browserSection}`;
+When done testing all categories, call the done tool with a summary of findings.${browserSection}${featureFlags.externalMemory ? EXTERNAL_MEMORY_INSTRUCTION : ""}`;
 }
 
 export function webPentestDiscoveryPrompt(target: string): string {
@@ -350,7 +359,7 @@ When you find a vulnerability:
    - \`for i in $(seq 1 20); do curl -s -b /tmp/cookies "http://target/api/users/$i" | grep -i flag; done\`
 9. Use save_finding for EACH vulnerability with FULL evidence including any flags found.
 10. Do NOT give up after one failed payload — try ALL variations.
-11. Call done with a summary when you have the flag or exhausted the attack surface.`;
+11. Call done with a summary when you have the flag or exhausted the attack surface.${featureFlags.externalMemory ? EXTERNAL_MEMORY_INSTRUCTION : ""}`;
 }
 
 export function verifyPrompt(target: string, findings: Finding[]): string {
@@ -598,25 +607,7 @@ Actions: navigate, click, fill, evaluate, content, screenshot.
 - Combine with bash for complex attack chains (e.g., bash to find injection points, browser to confirm XSS fires)
 ` : "";
 
-  return `You are a penetration tester. Target: ${target}
-
-You have bash, save_finding, and done.${repoPath ? " You also have read_file and run_command for source code analysis." : ""}${opts?.hasBrowser ? " You also have the browser tool for headless browser automation (Playwright)." : ""}
-${sourceContext}${browserHint}
-## Goal
-
-Extract the hidden flag (FLAG{...}).
-
-## Approach
-
-1. **Recon**: curl -i the target. Read ALL text — credentials, hints, tech stack. Check /robots.txt, /api/, /openapi.json, /.git/config, /admin, /login.
-
-2. **Auth**: If there's a login, read the page for credentials. Try them + defaults (demo/demo, admin/admin, test/test). Use curl -c /tmp/jar -b /tmp/jar for cookies.
-
-3. **Attack**: Test every input for SQLi (' OR 1=1--), SSTI ({{7*7}}), command injection (;id), path traversal (../../flag.txt). Test IDOR by changing IDs in URLs. Check indirect IDOR — results may appear on different pages.
-
-4. **Exploit**: When you find a vulnerability, EXPLOIT IT FULLY. Enumerate tables for SQLi, escalate SSTI to RCE (cat /flag*), chain auth bypass to admin endpoints. Write Python scripts for complex chains.
-
-5. **Adapt**: If a payload is blocked, try encoding bypasses (URL encoding, double encoding, case variation). Never repeat the same payload — mutate or move on. After 2 failures on one approach, try something different.
+  const scriptSection = featureFlags.scriptTemplates ? `
 
 ## Script Patterns
 
@@ -641,8 +632,28 @@ for pos in range(1, 64):
 curl -s -c /tmp/jar -d 'user=demo&pass=demo' $TARGET/login
 curl -s -b /tmp/jar $TARGET/admin/users/2   # IDOR — change the ID
 curl -s -b /tmp/jar "$TARGET/export?file=../../flag.txt"  # chain path traversal
-\`\`\`
+\`\`\`` : "";
 
+  return `You are a penetration tester. Target: ${target}
+
+You have bash, save_finding, and done.${repoPath ? " You also have read_file and run_command for source code analysis." : ""}${opts?.hasBrowser ? " You also have the browser tool for headless browser automation (Playwright)." : ""}
+${sourceContext}${browserHint}
+## Goal
+
+Extract the hidden flag (FLAG{...}).
+
+## Approach
+
+1. **Recon**: curl -i the target. Read ALL text — credentials, hints, tech stack. Check /robots.txt, /api/, /openapi.json, /.git/config, /admin, /login.
+
+2. **Auth**: If there's a login, read the page for credentials. Try them + defaults (demo/demo, admin/admin, test/test). Use curl -c /tmp/jar -b /tmp/jar for cookies.
+
+3. **Attack**: Test every input for SQLi (' OR 1=1--), SSTI ({{7*7}}), command injection (;id), path traversal (../../flag.txt). Test IDOR by changing IDs in URLs. Check indirect IDOR — results may appear on different pages.
+
+4. **Exploit**: When you find a vulnerability, EXPLOIT IT FULLY. Enumerate tables for SQLi, escalate SSTI to RCE (cat /flag*), chain auth bypass to admin endpoints. Write Python scripts for complex chains.
+
+5. **Adapt**: If a payload is blocked, try encoding bypasses (URL encoding, double encoding, case variation). Never repeat the same payload — mutate or move on. After 2 failures on one approach, try something different.
+${scriptSection}${featureFlags.externalMemory ? EXTERNAL_MEMORY_INSTRUCTION : ""}
 ## Rules
 - Read ALL response headers and cookies after every request
 - Log in FIRST if there is a login form
